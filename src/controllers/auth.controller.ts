@@ -13,24 +13,24 @@ export class AuthController {
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
       const { name, email, password } = req.body;
-      
+
       const result = await this.authService.register({ name, email, password });
-      
+
       const response: ApiResponse = {
         success: true,
         data: result,
-        message: 'User registered successfully'
+        message: 'User registered successfully',
       };
-      
+
       res.status(201).json(response);
     } catch (error) {
-      logger.error('Registration error:', error);
-      
+      logger.error(`Registration error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Registration failed'
+        error: error instanceof Error ? error.message : 'Registration failed',
       };
-      
+
       res.status(400).json(response);
     }
   };
@@ -38,24 +38,24 @@ export class AuthController {
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body;
-      
+
       const result = await this.authService.login({ email, password });
-      
+
       const response: ApiResponse = {
         success: true,
         data: result,
-        message: 'Login successful'
+        message: 'Login successful',
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Login error:', error);
-      
+      logger.error(`Login error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Login failed'
+        error: error instanceof Error ? error.message : 'Login failed',
       };
-      
+
       res.status(401).json(response);
     }
   };
@@ -65,18 +65,18 @@ export class AuthController {
       // Implementation for logout
       const response: ApiResponse = {
         success: true,
-        message: 'Logout successful'
+        message: 'Logout successful',
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Logout error:', error);
-      
+      logger.error(`Logout error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: 'Logout failed'
+        error: 'Logout failed',
       };
-      
+
       res.status(500).json(response);
     }
   };
@@ -84,48 +84,52 @@ export class AuthController {
   public refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
       const { refreshToken } = req.body;
-      
+
       const result = await this.authService.refreshToken(refreshToken);
-      
+
       const response: ApiResponse = {
         success: true,
         data: result,
-        message: 'Token refreshed successfully'
+        message: 'Token refreshed successfully',
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Token refresh error:', error);
-      
+      logger.error(`Token refresh error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Token refresh failed'
+        error: error instanceof Error ? error.message : 'Token refresh failed',
       };
-      
+
       res.status(401).json(response);
     }
   };
 
-  public forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  public forgotPassword = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { email } = req.body;
-      
+
       await this.authService.forgotPassword(email);
-      
+
       const response: ApiResponse = {
         success: true,
-        message: 'Password reset email sent'
+        message: 'Password reset email sent',
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Forgot password error:', error);
-      
+      logger.error(`Forgot password error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send reset email'
+        error:
+          error instanceof Error ? error.message : 'Failed to send reset email',
       };
-      
+
       res.status(400).json(response);
     }
   };
@@ -133,24 +137,24 @@ export class AuthController {
   public resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
       const { token, password } = req.body;
-      
+
       await this.authService.resetPassword(token, password);
-      
+
       const response: ApiResponse = {
         success: true,
-        message: 'Password reset successful'
+        message: 'Password reset successful',
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Reset password error:', error);
-      
+      logger.error(`Reset password error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Password reset failed'
+        error: error instanceof Error ? error.message : 'Password reset failed',
       };
-      
+
       res.status(400).json(response);
     }
   };
-} 
+}

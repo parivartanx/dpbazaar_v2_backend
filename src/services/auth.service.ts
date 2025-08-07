@@ -45,7 +45,7 @@ export class AuthService {
       role: UserRole.USER,
       isActive: true,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // Save user to database
@@ -65,10 +65,10 @@ export class AuthService {
         role: user.role,
         isActive: user.isActive,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
       },
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
@@ -89,7 +89,7 @@ export class AuthService {
       role: UserRole.USER,
       isActive: true,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // Verify password
@@ -114,18 +114,20 @@ export class AuthService {
         role: user.role,
         isActive: user.isActive,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
       },
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
-  public async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+  public async refreshToken(
+    refreshToken: string
+  ): Promise<{ accessToken: string }> {
     try {
       // Verify refresh token
       const decoded = jwt.verify(refreshToken, config.JWT_SECRET) as JwtPayload;
-      
+
       // Find user
       // const user = await this.userRepository.findById(decoded.userId);
       // if (!user || !user.isActive) {
@@ -137,7 +139,7 @@ export class AuthService {
         {
           userId: decoded.userId,
           email: decoded.email,
-          role: decoded.role
+          role: decoded.role,
         },
         config.JWT_SECRET,
         { expiresIn: config.JWT_EXPIRES_IN }
@@ -171,11 +173,14 @@ export class AuthService {
     // await this.emailService.sendPasswordResetEmail(email, resetToken);
   }
 
-  public async resetPassword(token: string, newPassword: string): Promise<void> {
+  public async resetPassword(
+    token: string,
+    newPassword: string
+  ): Promise<void> {
     try {
       // Verify reset token
       const decoded = jwt.verify(token, config.JWT_SECRET) as any;
-      
+
       if (decoded.type !== 'password-reset') {
         throw new Error('Invalid reset token');
       }
@@ -197,21 +202,24 @@ export class AuthService {
     }
   }
 
-  private generateTokens(user: User): { accessToken: string; refreshToken: string } {
+  private generateTokens(user: User): {
+    accessToken: string;
+    refreshToken: string;
+  } {
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
     };
 
     const accessToken = jwt.sign(payload, config.JWT_SECRET, {
-      expiresIn: config.JWT_EXPIRES_IN
+      expiresIn: config.JWT_EXPIRES_IN,
     });
 
     const refreshToken = jwt.sign(payload, config.JWT_SECRET, {
-      expiresIn: config.JWT_REFRESH_EXPIRES_IN
+      expiresIn: config.JWT_REFRESH_EXPIRES_IN,
     });
 
     return { accessToken, refreshToken };
   }
-} 
+}

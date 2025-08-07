@@ -21,7 +21,7 @@ export const errorHandler = (
     url: req.url,
     method: req.method,
     ip: req.ip,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get('User-Agent'),
   });
 
   // Handle specific error types
@@ -50,6 +50,6 @@ export const errorHandler = (
   res.status(statusCode).json({
     success: false,
     error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
-}; 
+};

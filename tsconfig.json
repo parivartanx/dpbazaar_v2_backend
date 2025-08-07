@@ -18,7 +18,7 @@
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false,
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
@@ -40,18 +40,10 @@
       "@/interfaces/*": ["interfaces/*"]
     }
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "tests",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests", "**/*.test.ts", "**/*.spec.ts"],
   "ts-node": {
     "esm": false,
     "experimentalSpecifierResolution": "node"
   }
-} 
+}
