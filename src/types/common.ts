@@ -21,9 +21,12 @@ export interface User {
 }
 
 export enum UserRole {
-  USER = 'USER',
+  SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
-  MODERATOR = 'MODERATOR'
+  MANAGER = 'MANAGER',
+  EMPLOYEE = 'EMPLOYEE',
+  VENDOR = 'VENDOR',
+  CUSTOMER = 'CUSTOMER',
 }
 
 // JWT related types
@@ -46,6 +49,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  role?: UserRole;
 }
 
 export interface RefreshTokenRequest {
@@ -77,4 +81,4 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
-} 
+}

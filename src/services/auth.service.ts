@@ -2,12 +2,14 @@ import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { config } from '../config/environment';
 import { User, UserRole, JwtPayload } from '../types/common';
+import { IUserRepository } from '../repositories/interfaces/IUserRepository';
 
 interface RegisterData {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
+  role?: UserRole; // Optional role, defaults to CUSTOMER
 }
 
 interface LoginData {
@@ -23,20 +25,24 @@ interface AuthResult {
 
 export class AuthService {
   // In a real application, you would inject the user repository
-  // private userRepository: IUserRepository;
+  private userRepository: IUserRepository;
+
+  constructor(userRepository: IUserRepository) {
+    this.userRepository = userRepository;
+  }
 
   public async register(data: RegisterData): Promise<AuthResult> {
-    const { firstName, lastName, email, password } = data;
+    const { firstName, lastName, email, password, role } = data;
 
     // Check if user already exists
-    // const existingUser = await this.userRepository.findByEmail(email);
-    // if (existingUser) {
-    //   throw new Error('User already exists');
-    // }
+    const existingUser = await this.userRepository.findByEmail(email);
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
 
     // Hash password
     const saltRounds = config.security.bcryptRounds;
-    await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Create user
     const user: User = {
@@ -44,7 +50,7 @@ export class AuthService {
       firstName,
       lastName,
       email,
-      role: UserRole.USER,
+      role: role || UserRole.CUSTOMER,
       isActive: true,
       emailVerified: false,
       createdAt: new Date(),
@@ -52,17 +58,23 @@ export class AuthService {
     };
 
     // Save user to database
-    // const savedUser = await this.userRepository.create({
-    //   ...user,
-    //   password: hashedPassword
-    // });
+    const savedUser = await this.userRepository.create({
+      ...user,
+      password: hashedPassword,
+    });
+
+    if (!savedUser) {
+      throw new Error('User registration failed');
+    }
+    // Log user creation
+    console.log(`User created: ${savedUser.password}`);
 
     // Generate tokens
     const { accessToken, refreshToken } = this.generateTokens(user);
 
     return {
       user: {
-        id: user.id,
+        id: savedUser.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -92,7 +104,7 @@ export class AuthService {
       firstName: 'Test',
       lastName: 'User',
       email,
-      role: UserRole.USER,
+      role: UserRole.CUSTOMER,
       isActive: true,
       emailVerified: true,
       createdAt: new Date(),
@@ -135,7 +147,10 @@ export class AuthService {
   ): Promise<{ accessToken: string }> {
     try {
       // Verify refresh token
-      const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret) as JwtPayload;
+      const decoded = jwt.verify(
+        refreshToken,
+        config.jwt.refreshSecret
+      ) as JwtPayload;
 
       // Find user
       // const user = await this.userRepository.findById(decoded.userId);
@@ -169,11 +184,9 @@ export class AuthService {
     // }
 
     // Generate reset token
-    jwt.sign(
-      { email, type: 'password-reset' },
-      config.jwt.secret,
-      { expiresIn: config.jwt.accessTokenExpiry } as SignOptions
-    );
+    jwt.sign({ email, type: 'password-reset' }, config.jwt.secret, {
+      expiresIn: config.jwt.accessTokenExpiry,
+    } as SignOptions);
 
     // Save reset token to database
     // await this.userRepository.updateResetToken(user.id, resetToken);
@@ -221,17 +234,13 @@ export class AuthService {
       role: user.role,
     };
 
-    const accessToken = jwt.sign(
-      payload, 
-      config.jwt.secret, 
-      { expiresIn: config.jwt.accessTokenExpiry } as SignOptions
-    );
+    const accessToken = jwt.sign(payload, config.jwt.secret, {
+      expiresIn: config.jwt.accessTokenExpiry,
+    } as SignOptions);
 
-    const refreshToken = jwt.sign(
-      payload,
-      config.jwt.refreshSecret,
-      { expiresIn: config.jwt.refreshTokenExpiry } as SignOptions
-    );
+    const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, {
+      expiresIn: config.jwt.refreshTokenExpiry,
+    } as SignOptions);
 
     return { accessToken, refreshToken };
   }

@@ -2,19 +2,25 @@ import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../types/common';
+import { UserRepository } from '../repositories/prisma/UserRepository';
 
 export class AuthController {
   private authService: AuthService;
 
   constructor() {
-    this.authService = new AuthService();
+    this.authService = new AuthService(new UserRepository());
   }
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
       const { firstName, lastName, email, password } = req.body;
 
-              const result = await this.authService.register({ firstName, lastName, email, password });
+      const result = await this.authService.register({
+        firstName,
+        lastName,
+        email,
+        password,
+      });
 
       const response: ApiResponse = {
         success: true,
