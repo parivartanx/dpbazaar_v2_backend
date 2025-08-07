@@ -1,65 +1,71 @@
 import { body } from 'express-validator';
 
+/**
+ * Validation schemas for authentication endpoints
+ */
 export const authValidation = {
+  // Register validation
   register: [
-    body('name')
-      .trim()
-      .isLength({ min: 2, max: 50 })
-      .withMessage('Name must be between 2 and 50 characters'),
     body('email')
       .isEmail()
-      .normalizeEmail()
-      .withMessage('Please provide a valid email'),
+      .withMessage('Please provide a valid email address')
+      .normalizeEmail(),
     body('password')
       .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters long')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-      .withMessage('Password must be at least 8 characters and contain uppercase, lowercase, number and special character'),
-    body('confirmPassword')
-      .custom((value, { req }) => {
-        if (value !== req.body.password) {
-          throw new Error('Password confirmation does not match password');
-        }
-        return true;
-      })
+      .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+    body('firstName')
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('First name must be between 2 and 50 characters')
+      .matches(/^[a-zA-Z\s]+$/)
+      .withMessage('First name can only contain letters and spaces'),
+    body('lastName')
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Last name must be between 2 and 50 characters')
+      .matches(/^[a-zA-Z\s]+$/)
+      .withMessage('Last name can only contain letters and spaces'),
   ],
 
+  // Login validation
   login: [
     body('email')
       .isEmail()
-      .normalizeEmail()
-      .withMessage('Please provide a valid email'),
+      .withMessage('Please provide a valid email address')
+      .normalizeEmail(),
     body('password')
       .notEmpty()
-      .withMessage('Password is required')
+      .withMessage('Password is required'),
   ],
 
+  // Refresh token validation
   refreshToken: [
     body('refreshToken')
       .notEmpty()
       .withMessage('Refresh token is required')
+      .isJWT()
+      .withMessage('Invalid refresh token format'),
   ],
 
+  // Forgot password validation
   forgotPassword: [
     body('email')
       .isEmail()
-      .normalizeEmail()
-      .withMessage('Please provide a valid email')
+      .withMessage('Please provide a valid email address')
+      .normalizeEmail(),
   ],
 
+  // Reset password validation
   resetPassword: [
     body('token')
       .notEmpty()
       .withMessage('Reset token is required'),
-    body('password')
+    body('newPassword')
       .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters long')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-      .withMessage('Password must be at least 8 characters and contain uppercase, lowercase, number and special character'),
-    body('confirmPassword')
-      .custom((value, { req }) => {
-        if (value !== req.body.password) {
-          throw new Error('Password confirmation does not match password');
-        }
-        return true;
-      })
-  ]
+      .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+  ],
 }; 

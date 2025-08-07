@@ -1,39 +1,32 @@
-// Common API Response Types
+// Common API response interface
 export interface ApiResponse<T = any> {
   success: boolean;
+  message: string;
   data?: T;
   error?: string;
-  message?: string;
-  pagination?: PaginationInfo;
+  timestamp: string;
 }
 
-export interface PaginationInfo {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-// User Types
+// User related types
 export interface User {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
   isActive: boolean;
+  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export enum UserRole {
-  USER = 'user',
-  ADMIN = 'admin',
-  MODERATOR = 'moderator'
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+  MODERATOR = 'MODERATOR'
 }
 
-// Authentication Types
+// JWT related types
 export interface JwtPayload {
   userId: string;
   email: string;
@@ -42,33 +35,46 @@ export interface JwtPayload {
   exp?: number;
 }
 
-// Request Types
-export interface AuthenticatedRequest extends Request {
-  user?: User;
+// Authentication related types
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
-// Database Types
-export interface BaseEntity {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
 }
 
-// Validation Types
-export interface ValidationError {
-  field: string;
-  message: string;
-  value?: any;
+export interface RefreshTokenRequest {
+  refreshToken: string;
 }
 
-// File Upload Types
-export interface FileUpload {
-  fieldname: string;
-  originalname: string;
-  encoding: string;
-  mimetype: string;
-  size: number;
-  destination: string;
-  filename: string;
-  path: string;
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
+// Database related types
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 } 

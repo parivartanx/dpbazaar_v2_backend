@@ -4,21 +4,20 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-
+import { logger } from './utils/logger';
 // Import routes
 import { errorHandler } from './middlewares/errorHandler';
 import { notFoundHandler } from './middlewares/notFoundHandler';
-import { logger } from './utils/logger';
 import { routes } from './routes';
+import { config } from './config/environment';
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.port;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet()); 
 app.use(cors());
 
 // Rate limiting

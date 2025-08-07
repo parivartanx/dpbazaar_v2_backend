@@ -12,14 +12,15 @@ export class AuthController {
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, email, password } = req.body;
+      const { firstName, lastName, email, password } = req.body;
 
-      const result = await this.authService.register({ name, email, password });
+              const result = await this.authService.register({ firstName, lastName, email, password });
 
       const response: ApiResponse = {
         success: true,
         data: result,
         message: 'User registered successfully',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(201).json(response);
@@ -29,6 +30,8 @@ export class AuthController {
       const response: ApiResponse = {
         success: false,
         error: error instanceof Error ? error.message : 'Registration failed',
+        message: 'Registration failed',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(400).json(response);
@@ -45,6 +48,7 @@ export class AuthController {
         success: true,
         data: result,
         message: 'Login successful',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(200).json(response);
@@ -54,6 +58,8 @@ export class AuthController {
       const response: ApiResponse = {
         success: false,
         error: error instanceof Error ? error.message : 'Login failed',
+        message: 'Login failed',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(401).json(response);
@@ -66,6 +72,7 @@ export class AuthController {
       const response: ApiResponse = {
         success: true,
         message: 'Logout successful',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(200).json(response);
@@ -75,6 +82,8 @@ export class AuthController {
       const response: ApiResponse = {
         success: false,
         error: 'Logout failed',
+        message: 'Logout failed',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(500).json(response);
@@ -91,6 +100,7 @@ export class AuthController {
         success: true,
         data: result,
         message: 'Token refreshed successfully',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(200).json(response);
@@ -100,6 +110,8 @@ export class AuthController {
       const response: ApiResponse = {
         success: false,
         error: error instanceof Error ? error.message : 'Token refresh failed',
+        message: 'Token refresh failed',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(401).json(response);
@@ -118,6 +130,7 @@ export class AuthController {
       const response: ApiResponse = {
         success: true,
         message: 'Password reset email sent',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(200).json(response);
@@ -128,6 +141,8 @@ export class AuthController {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to send reset email',
+        message: 'Failed to send reset email',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(400).json(response);
@@ -143,6 +158,7 @@ export class AuthController {
       const response: ApiResponse = {
         success: true,
         message: 'Password reset successful',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(200).json(response);
@@ -152,6 +168,8 @@ export class AuthController {
       const response: ApiResponse = {
         success: false,
         error: error instanceof Error ? error.message : 'Password reset failed',
+        message: 'Password reset failed',
+        timestamp: new Date().toISOString(),
       };
 
       res.status(400).json(response);
