@@ -46,9 +46,14 @@ export class AuthController {
 
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, password } = req.body;
+      const { email, password, role } = req.body;
+      console.log('Login request received:', req.body);
 
-      const result = await this.authService.login({ email, password });
+      if (!email || !password || !role) {
+        throw new Error('Email, password and role are required');
+      }
+
+      const result = await this.authService.login({ email, password, role });
 
       const response: ApiResponse = {
         success: true,
@@ -98,7 +103,12 @@ export class AuthController {
 
   public refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { refreshToken } = req.body;
+      const authheader = req.headers.authorization;
+      const refreshToken = authheader && authheader.split(' ')[1];
+
+      if (!refreshToken) {
+        throw new Error('Refresh token is missing');
+      }
 
       const result = await this.authService.refreshToken(refreshToken);
 
