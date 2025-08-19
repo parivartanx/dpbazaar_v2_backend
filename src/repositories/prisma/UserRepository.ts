@@ -1,5 +1,5 @@
 import { IUserRepository } from '../interfaces/IUserRepository';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, User, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -24,6 +24,19 @@ export class UserRepository implements IUserRepository {
         password: data.password,
         role: data.role || UserRole.CUSTOMER,
       },
+    });
+  }
+
+  async findById(id: string): Promise<User | null> {
+    return await prisma.user.findUnique({
+      where: { id },
+    });
+  }
+
+  async updatePassword(id: string, password: string): Promise<void> {
+    await prisma.user.update({
+      where: { id },
+      data: { password },
     });
   }
 }

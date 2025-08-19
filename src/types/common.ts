@@ -1,4 +1,6 @@
+import { UserRole as PrismaUserRole } from '@prisma/client';
 // Common API response interface
+
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
@@ -13,11 +15,18 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
-  isActive: boolean;
+  role: PrismaUserRole;
+  status: string;
   emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface LoginUser {
+  email: string;
+  id: string;
+  role: PrismaUserRole;
+  status: string;
 }
 
 export enum UserRole {
@@ -33,7 +42,7 @@ export enum UserRole {
 export interface JwtPayload {
   userId: string;
   email: string;
-  role: UserRole;
+  role: PrismaUserRole;
   iat?: number;
   exp?: number;
 }
@@ -81,4 +90,65 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
+}
+
+export enum ProductStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export enum StockStatus {
+  IN_STOCK = 'IN_STOCK',
+  OUT_OF_STOCK = 'OUT_OF_STOCK',
+  LOW_STOCK = 'LOW_STOCK',
+}
+
+export interface Product {
+  id: string;
+  sku?: string;
+  name: string;
+  slug?: string;
+  description: string;
+  shortDescription?: string;
+
+  mrp?: number;
+  sellingPrice?: number;
+  costPrice?: number;
+
+  taxRate?: number;
+  hsnCode?: string;
+
+  brandId?: string | null;
+  vendorId?: string | null;
+
+  status: ProductStatus;
+  stockStatus?: StockStatus;
+
+  weight?: number;
+  dimensions?: Record<string, any> | null;
+
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string[];
+
+  isFeatured?: boolean;
+  isNewArrival?: boolean;
+  isBestSeller?: boolean;
+  isReturnable?: boolean;
+  returnPeriodDays?: number;
+
+  viewCount?: number;
+  salesCount?: number;
+  avgRating?: number;
+  totalReviews?: number;
+
+  tags?: string[];
+  metadata?: Record<string, any> | null;
+  deletedAt?: Date | null;
+
+  publishedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }

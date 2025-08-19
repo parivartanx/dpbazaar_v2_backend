@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { config } from '../config/environment';
-import { User, UserRole, JwtPayload } from '../types/common';
+import { User, UserRole, JwtPayload, LoginUser } from '../types/common';
 import { IUserRepository } from '../repositories/interfaces/IUserRepository';
 
 interface RegisterData {
@@ -9,12 +9,13 @@ interface RegisterData {
   lastName: string;
   email: string;
   password: string;
-  role?: UserRole; // Optional role, defaults to CUSTOMER
+  role?: UserRole;
 }
 
 interface LoginData {
   email: string;
   password: string;
+  role?: UserRole;
 }
 
 interface AuthResult {
@@ -51,7 +52,7 @@ export class AuthService {
       lastName,
       email,
       role: role || UserRole.CUSTOMER,
-      isActive: true,
+      status: 'ACTIVE',
       emailVerified: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -66,8 +67,6 @@ export class AuthService {
     if (!savedUser) {
       throw new Error('User registration failed');
     }
-    // Log user creation
-    console.log(`User created: ${savedUser.password}`);
 
     // Generate tokens
     const { accessToken, refreshToken } = this.generateTokens(user);
@@ -79,7 +78,7 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        isActive: user.isActive,
+        status: user.status,
         emailVerified: user.emailVerified,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -90,35 +89,25 @@ export class AuthService {
   }
 
   public async login(data: LoginData): Promise<AuthResult> {
-    const { email } = data;
+    const { email, password, role } = data;
+    console.log(`auth services :- `, email, password, role);
 
     // Find user by email
-    // const user = await this.userRepository.findByEmail(email);
-    // if (!user) {
-    //   throw new Error('Invalid credentials');
-    // }
+    const user = await this.userRepository.findByEmail(email);
+    console.log(`user :- `, user);
 
-    // Mock user for demonstration
-    const user: User = {
-      id: 'temp-id',
-      firstName: 'Test',
-      lastName: 'User',
-      email,
-      role: UserRole.CUSTOMER,
-      isActive: true,
-      emailVerified: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    if (!user || user.role !== role) {
+      throw new Error('Invalid credentials');
+    }
 
     // Verify password
-    // const isPasswordValid = await bcrypt.compare(password, user.password);
-    // if (!isPasswordValid) {
-    //   throw new Error('Invalid credentials');
-    // }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new Error('Invalid credentials');
+    }
 
     // Check if user is active
-    if (!user.isActive) {
+    if (!user.status || user.status !== 'ACTIVE') {
       throw new Error('Account is deactivated');
     }
 
@@ -132,8 +121,8 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        isActive: user.isActive,
-        emailVerified: user.emailVerified,
+        status: user.status,
+        emailVerified: user.isEmailVerified,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -153,10 +142,10 @@ export class AuthService {
       ) as JwtPayload;
 
       // Find user
-      // const user = await this.userRepository.findById(decoded.userId);
-      // if (!user || !user.isActive) {
-      //   throw new Error('Invalid refresh token');
-      // }
+      const user = await this.userRepository.findById(decoded.userId);
+      if (!user || !user.status || user.status !== 'ACTIVE') {
+        throw new Error('Invalid refresh token');
+      }
 
       // Generate new access token
       const accessToken = jwt.sign(
@@ -177,11 +166,11 @@ export class AuthService {
 
   public async forgotPassword(email: string): Promise<void> {
     // Find user by email
-    // const user = await this.userRepository.findByEmail(email);
-    // if (!user) {
-    //   // Don't reveal if user exists or not
-    //   return;
-    // }
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      //   // Don't reveal if user exists or not
+      return;
+    }
 
     // Generate reset token
     jwt.sign({ email, type: 'password-reset' }, config.jwt.secret, {
@@ -208,23 +197,23 @@ export class AuthService {
       }
 
       // Find user by email
-      // const user = await this.userRepository.findByEmail(decoded.email);
-      // if (!user) {
-      //   throw new Error('User not found');
-      // }
+      const user = await this.userRepository.findByEmail(decoded.email);
+      if (!user) {
+        throw new Error('User not found');
+      }
 
       // Hash new password
       const saltRounds = config.security.bcryptRounds;
-      await bcrypt.hash(newPassword, saltRounds);
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
       // Update password and clear reset token
-      // await this.userRepository.updatePassword(user.id, hashedPassword);
+      await this.userRepository.updatePassword(user.id, hashedPassword);
     } catch (error) {
       throw new Error('Invalid or expired reset token');
     }
   }
 
-  private generateTokens(user: User): {
+  private generateTokens(user: LoginUser): {
     accessToken: string;
     refreshToken: string;
   } {

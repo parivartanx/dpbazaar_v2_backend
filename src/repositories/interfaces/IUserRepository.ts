@@ -10,3 +10,11 @@ export interface IUserRepository {
     role?: UserRole;
   }): Promise<User>;
 }
+
+export interface IUserRepository {
+  findById(id: string): Promise<User | null>;
+}
+
+export interface IUserRepository {
+  updatePassword(id: string, password: string): Promise<void>;
+}
