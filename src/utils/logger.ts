@@ -1,32 +1,56 @@
-interface LogLevel {
-  error: (message: string | object) => void;
-  warn: (message: string | object) => void;
-  info: (message: string | object) => void;
-  debug: (message: string | object) => void;
-}
+import winston from 'winston';
 
-const formatMessage = (level: string, message: string | object): string => {
-  const timestamp = new Date().toISOString();
-  const formattedMessage = typeof message === 'object' 
-    ? JSON.stringify(message, null, 2) 
-    : message;
-  
-  return `[${timestamp}] ${level.toUpperCase()}: ${formattedMessage}`;
+// Define log levels
+const levels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  debug: 4,
 };
 
-export const logger: LogLevel = {
-  error: (message: string | object) => {
-    console.error(formatMessage('error', message));
-  },
-  warn: (message: string | object) => {
-    console.warn(formatMessage('warn', message));
-  },
-  info: (message: string | object) => {
-    console.info(formatMessage('info', message));
-  },
-  debug: (message: string | object) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(formatMessage('debug', message));
-    }
-  }
-}; 
+// Define colors for each level
+const colors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
+};
+
+// Tell winston that you want to link the colors
+winston.addColors(colors);
+
+// Define which level to log based on environment
+const level = () => {
+  const env = process.env.NODE_ENV || 'development';
+  const isDevelopment = env === 'development';
+  return isDevelopment ? 'debug' : 'warn';
+};
+
+// Define format for logs
+const format = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+  winston.format.colorize({ all: true }),
+  winston.format.printf(
+    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+  ),
+);
+
+// Define transports
+const transports = [
+  new winston.transports.Console(),
+  new winston.transports.File({
+    filename: 'logs/error.log',
+    level: 'error',
+  }),
+  new winston.transports.File({ filename: 'logs/all.log' }),
+];
+
+// Create the logger
+export const logger = winston.createLogger({
+  level: level(),
+  levels,
+  format,
+  transports,
+}); 

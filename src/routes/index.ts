@@ -1,21 +1,15 @@
 import { Router } from 'express';
 import { authRoutes } from './auth.routes';
-import { userRoutes } from './user.routes';
 import { productRoutes } from './product.routes';
 
 const router = Router();
 
+// Mount routes
+router.use('/auth', authRoutes);
+router.use('/products', productRoutes);
+
 // API version prefix
-const API_PREFIX = '/api/v1';
+const apiRouter = Router();
+apiRouter.use('/v1', router);
 
-// Health check route
-router.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-// Mount route modules
-router.use(`${API_PREFIX}/auth`, authRoutes);
-router.use(`${API_PREFIX}/users`, userRoutes);
-router.use(`${API_PREFIX}/products`, productRoutes);
-
-export { router as routes }; 
+export { apiRouter as routes };

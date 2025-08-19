@@ -2,60 +2,78 @@ import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../types/common';
+import { UserRepository } from '../repositories/prisma/UserRepository';
 
 export class AuthController {
   private authService: AuthService;
 
   constructor() {
-    this.authService = new AuthService();
+    this.authService = new AuthService(new UserRepository());
   }
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, email, password } = req.body;
-      
-      const result = await this.authService.register({ name, email, password });
-      
+      const { firstName, lastName, email, password, role } = req.body;
+
+      const result = await this.authService.register({
+        firstName,
+        lastName,
+        email,
+        password,
+        role,
+      });
+
       const response: ApiResponse = {
         success: true,
         data: result,
-        message: 'User registered successfully'
+        message: 'User registered successfully',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(201).json(response);
     } catch (error) {
-      logger.error('Registration error:', error);
-      
+      logger.error(`Registration error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Registration failed'
+        error: error instanceof Error ? error.message : 'Registration failed',
+        message: 'Registration failed',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(400).json(response);
     }
   };
 
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, password } = req.body;
-      
-      const result = await this.authService.login({ email, password });
-      
+      const { email, password, role } = req.body;
+      console.log('Login request received:', req.body);
+
+      if (!email || !password || !role) {
+        throw new Error('Email, password and role are required');
+      }
+
+      const result = await this.authService.login({ email, password, role });
+
       const response: ApiResponse = {
         success: true,
         data: result,
-        message: 'Login successful'
+        message: 'Login successful',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Login error:', error);
-      
+      logger.error(`Login error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Login failed'
+        error: error instanceof Error ? error.message : 'Login failed',
+        message: 'Login failed',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(401).json(response);
     }
   };
@@ -65,67 +83,85 @@ export class AuthController {
       // Implementation for logout
       const response: ApiResponse = {
         success: true,
-        message: 'Logout successful'
+        message: 'Logout successful',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Logout error:', error);
-      
+      logger.error(`Logout error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: 'Logout failed'
+        error: 'Logout failed',
+        message: 'Logout failed',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(500).json(response);
     }
   };
 
   public refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { refreshToken } = req.body;
-      
+      const authheader = req.headers.authorization;
+      const refreshToken = authheader && authheader.split(' ')[1];
+
+      if (!refreshToken) {
+        throw new Error('Refresh token is missing');
+      }
+
       const result = await this.authService.refreshToken(refreshToken);
-      
+
       const response: ApiResponse = {
         success: true,
         data: result,
-        message: 'Token refreshed successfully'
+        message: 'Token refreshed successfully',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Token refresh error:', error);
-      
+      logger.error(`Token refresh error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Token refresh failed'
+        error: error instanceof Error ? error.message : 'Token refresh failed',
+        message: 'Token refresh failed',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(401).json(response);
     }
   };
 
-  public forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  public forgotPassword = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { email } = req.body;
-      
+
       await this.authService.forgotPassword(email);
-      
+
       const response: ApiResponse = {
         success: true,
-        message: 'Password reset email sent'
+        message: 'Password reset email sent',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Forgot password error:', error);
-      
+      logger.error(`Forgot password error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send reset email'
+        error:
+          error instanceof Error ? error.message : 'Failed to send reset email',
+        message: 'Failed to send reset email',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(400).json(response);
     }
   };
@@ -133,24 +169,27 @@ export class AuthController {
   public resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
       const { token, password } = req.body;
-      
+
       await this.authService.resetPassword(token, password);
-      
+
       const response: ApiResponse = {
         success: true,
-        message: 'Password reset successful'
+        message: 'Password reset successful',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
-      logger.error('Reset password error:', error);
-      
+      logger.error(`Reset password error: ${error}`);
+
       const response: ApiResponse = {
         success: false,
-        error: error instanceof Error ? error.message : 'Password reset failed'
+        error: error instanceof Error ? error.message : 'Password reset failed',
+        message: 'Password reset failed',
+        timestamp: new Date().toISOString(),
       };
-      
+
       res.status(400).json(response);
     }
   };
-} 
+}
