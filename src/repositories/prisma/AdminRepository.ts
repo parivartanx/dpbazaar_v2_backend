@@ -60,7 +60,10 @@ export class AdminRepository implements IAdminRepository {
   }
 
   async updateUserStatus(id: string, status: string) {
-    return prisma.user.update({ where: { id }, data: { status } });
+    return prisma.user.update({
+      where: { id },
+      data: { status: status as any },
+    });
   }
 
   async deleteUser(id: string) {
@@ -121,11 +124,17 @@ export class AdminRepository implements IAdminRepository {
   }
 
   async updateEmployee(id: string, data: Partial<Employee>) {
-    return prisma.employee.update({ where: { id }, data });
+    return prisma.employee.update({
+      where: { id },
+      data: data as import('@prisma/client').Prisma.EmployeeUpdateInput,
+    });
   }
 
   async updateEmployeeStatus(id: string, status: string) {
-    return prisma.employee.update({ where: { id }, data: { status } });
+    return prisma.employee.update({
+      where: { id },
+      data: { status: status as import('@prisma/client').EmployeeStatus },
+    });
   }
 
   async deleteEmployee(id: string) {
@@ -134,11 +143,20 @@ export class AdminRepository implements IAdminRepository {
 
   // ================== PERMISSIONS ==================
   async getEmployeePermissions(employeeId: string): Promise<Permission[]> {
-    const employee = await prisma.employee.findUnique({
+    const employeeWithPermissions = await prisma.employee.findUnique({
       where: { id: employeeId },
-      include: { permissions: true },
+      include: {
+        permissions: {
+          select: {
+            id: true,
+            action: true,
+            description: true,
+            createdAt: true,
+          },
+        },
+      },
     });
-    return employee?.permissions ?? [];
+    return employeeWithPermissions?.permissions ?? [];
   }
 
   async assignPermission(employeeId: string, permissionId: string) {
