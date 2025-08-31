@@ -188,7 +188,7 @@ router.get('/categories', categoryController.getAllCategories);
 router.get('/categories/:id', categoryController.getCategoryById);
 router.post(
   '/categories',
-  // isAccessAllowed('ADMIN'),
+  isAccessAllowed('ADMIN'),
   validateJoi(createCategorySchema),
   categoryController.createCategory
 );
