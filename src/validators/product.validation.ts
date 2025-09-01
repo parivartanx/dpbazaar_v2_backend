@@ -32,14 +32,17 @@ const createProductSchema = Joi.object({
     'string.guid': 'Category ID must be a valid UUID',
   }),
   stockStatus: Joi.string()
-    .valid('IN_STOCK', 'OUT_OF_STOCK')
+    .valid('IN_STOCK', 'OUT_OF_STOCK', 'LOW_STOCK', 'DISCONTINUED')
     .optional()
     .messages({
-      'any.only': 'Stock status must be either IN_STOCK or OUT_OF_STOCK',
+      'any.only': 'Stock status must be valid',
     }),
-  status: Joi.string().valid('ACTIVE', 'INACTIVE').optional().messages({
-    'any.only': 'Status must be either ACTIVE or INACTIVE',
-  }),
+  status: Joi.string()
+    .valid('ACTIVE', 'INACTIVE', 'ARCHIVED', 'DRAFT', 'DELETED')
+    .optional()
+    .messages({
+      'any.only': 'Status must be valid',
+    }),
   brandId: Joi.string().uuid().optional().messages({
     'string.guid': 'Brand ID must be a valid UUID',
   }),
@@ -63,17 +66,19 @@ const createProductSchema = Joi.object({
   weight: Joi.number().min(0).optional().messages({
     'number.min': 'Weight cannot be negative',
   }),
-  dimensions: Joi.object({
-    length: Joi.number().min(0).messages({
-      'number.min': 'Length cannot be negative',
-    }),
-    width: Joi.number().min(0).messages({
-      'number.min': 'Width cannot be negative',
-    }),
-    height: Joi.number().min(0).messages({
-      'number.min': 'Height cannot be negative',
-    }),
-  }).optional(),
+  dimensions: Joi
+    .object
+    // length: Joi.number().min(0).messages({
+    //   'number.min': 'Length cannot be negative',
+    // }),
+    // width: Joi.number().min(0).messages({
+    //   'number.min': 'Width cannot be negative',
+    // }),
+    // height: Joi.number().min(0).messages({
+    //   'number.min': 'Height cannot be negative',
+    // }),
+    ()
+    .optional(),
   metaTitle: Joi.string().optional(),
   metaDescription: Joi.string().optional(),
   metaKeywords: Joi.array().items(Joi.string()).optional().messages({
@@ -90,6 +95,7 @@ const createProductSchema = Joi.object({
     'array.base': 'Tags must be an array of strings',
   }),
   metadata: Joi.object().optional(),
+  publishedAt: Joi.date().optional(),
 });
 
 const updateProductSchema = createProductSchema.fork(
@@ -97,4 +103,71 @@ const updateProductSchema = createProductSchema.fork(
   field => field.optional()
 );
 
-export { createProductSchema, updateProductSchema };
+/**
+ * CREATE VARIANT SCHEMA
+ */
+const createVariantSchema = Joi.object({
+  variantSku: Joi.string().trim().max(50).required().messages({
+    'string.base': 'Variant SKU must be a string',
+    'string.empty': 'Variant SKU is required',
+    'string.max': 'Variant SKU must be at most {#limit} characters',
+    'any.required': 'Variant SKU is required',
+  }),
+  variantName: Joi.string().trim().min(2).max(100).required().messages({
+    'string.base': 'Variant name must be a string',
+    'string.empty': 'Variant name is required',
+    'string.min': 'Variant name must be at least {#limit} characters',
+    'string.max': 'Variant name must be at most {#limit} characters',
+    'any.required': 'Variant name is required',
+  }),
+
+  mrp: Joi.number().min(0).optional().messages({
+    'number.base': 'MRP must be a number',
+    'number.min': 'MRP cannot be negative',
+  }),
+  sellingPrice: Joi.number().min(0).optional().messages({
+    'number.base': 'Selling price must be a number',
+    'number.min': 'Selling price cannot be negative',
+  }),
+
+  attributes: Joi.object()
+    .pattern(Joi.string(), Joi.any())
+    .required()
+    .messages({
+      'object.base': 'Attributes must be a valid object',
+      'any.required': 'Attributes are required',
+    }),
+
+  weight: Joi.number().min(0).optional().messages({
+    'number.base': 'Weight must be a number',
+    'number.min': 'Weight cannot be negative',
+  }),
+  dimensions: Joi.object({
+    length: Joi.number().min(0).messages({
+      'number.min': 'Length cannot be negative',
+    }),
+    width: Joi.number().min(0).messages({
+      'number.min': 'Width cannot be negative',
+    }),
+    height: Joi.number().min(0).messages({
+      'number.min': 'Height cannot be negative',
+    }),
+  }).optional(),
+
+  isActive: Joi.boolean().optional(),
+});
+
+/**
+ * UPDATE VARIANT SCHEMA
+ */
+const updateVariantSchema = createVariantSchema.fork(
+  Object.keys(createVariantSchema.describe().keys),
+  field => field.optional()
+);
+
+export {
+  createProductSchema,
+  updateProductSchema,
+  createVariantSchema,
+  updateVariantSchema,
+};

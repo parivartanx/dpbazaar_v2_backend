@@ -1,25 +1,34 @@
-import { Product } from '../../types/common';
+import { Product, ProductImage } from '@prisma/client';
 
 export interface IProductRepository {
-  create(product: Product): Promise<Product>;
-  findById(id: string): Promise<Product | null>;
-  findByName(name: string): Promise<Product | null>;
-  findBySlug(slug: string): Promise<Product | null>;
-  findAll(): Promise<Product[]>;
-  update(id: string, productData: Partial<Product>): Promise<Product | null>;
-  delete(id: string): Promise<boolean>;
+  // Products
+  getAll(): Promise<Product[]>;
+  getById(id: string): Promise<Product | null>;
+  getBySlug(slug: string): Promise<Product | null>;
+  create(data: any): Promise<Product>;
+  update(id: string, data: any): Promise<Product>;
+  softDelete(id: string): Promise<Product>;
+  restore(id: string): Promise<Product>;
 
-  // Extra methods for ProductService
-  findByBrandId(brandId: string): Promise<Product[]>;
-  findFeatured(): Promise<Product[]>;
-  findNewArrivals(): Promise<Product[]>;
-  findBestSellers(): Promise<Product[]>;
-  createVariant(productId: string, data: any): Promise<any>;
-  updateVariant(variantId: string, data: any): Promise<any>;
-  deleteVariant(variantId: string): Promise<boolean>;
-  addImage(productId: string, data: any): Promise<any>;
-  deleteImage(imageId: string): Promise<boolean>;
-  addAttribute(productId: string, data: any): Promise<any>;
-  deleteAttribute(attributeId: string): Promise<boolean>;
-  findRelated(productId: string): Promise<Product[]>;
+  // Filters
+  getByCategory(categoryId: string): Promise<Product[]>;
+  getByBrand(brandId: string): Promise<Product[]>;
+
+  // Special Listings
+  getFeatured(): Promise<Product[]>;
+  getNewArrivals(): Promise<Product[]>;
+  getBestSellers(): Promise<Product[]>;
+
+  // Images
+  addProductImage(
+    productId: string,
+    url: string,
+    isPrimary?: boolean
+  ): Promise<ProductImage>;
+  addProductImagesBulk(
+    productId: string,
+    urls: string[]
+  ): Promise<ProductImage[]>;
+  deleteImage(id: string): Promise<void>;
+  setPrimaryImage(productId: string, imageId: string): Promise<void>;
 }
