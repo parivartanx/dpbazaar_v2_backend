@@ -3,6 +3,8 @@ import { DepartmentRepository } from '../repositories/prisma/DepartmentRepositor
 import { EmployeeRepository } from '../repositories/prisma/EmployeeRepository';
 import { EmployeePermissionRepository } from '../repositories/prisma/EmployeePermissionRepository';
 import { PermissionRepository } from '../repositories/prisma/PermissionRepository';
+import { logger } from '../utils/logger';
+import { ApiResponse } from '@/types/common';
 
 /**
  * ===========================
@@ -19,9 +21,17 @@ export class DepartmentController {
         success: true,
         message: 'Department created successfully',
         data: { department },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in creating department',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -32,9 +42,17 @@ export class DepartmentController {
         success: true,
         message: 'Departments fetched successfully',
         data: { departments },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching departments',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -42,19 +60,37 @@ export class DepartmentController {
     try {
       const { id } = req.params;
       if (!id)
-        return res.status(400).json({ error: 'Department ID is required' });
+        return res.status(400).json({
+          success: false,
+          message: 'Department ID is required',
+          timestamp: new Date().toISOString(),
+        });
 
       const department = await this.repo.findById(id);
       if (!department)
-        return res.status(404).json({ message: 'Department not found' });
+        return res
+          .status(404)
+          .json({
+            success: false,
+            message: 'Department not found',
+            timestamp: new Date().toISOString(),
+          });
 
       return res.status(200).json({
         success: true,
         message: 'Department fetched successfully',
         data: { department },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching department',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -62,16 +98,30 @@ export class DepartmentController {
     try {
       const { id } = req.params;
       if (!id)
-        return res.status(400).json({ error: 'Department ID is required' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Department ID is required',
+            timestamp: new Date().toISOString(),
+          });
 
       const department = await this.repo.update(id, req.body);
       return res.status(200).json({
         success: true,
         message: 'Department updated successfully',
         data: { department },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in updating department',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -79,12 +129,29 @@ export class DepartmentController {
     try {
       const { id } = req.params;
       if (!id)
-        return res.status(400).json({ error: 'Department ID is required' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Department ID is required',
+            timestamp: new Date().toISOString(),
+          });
 
       await this.repo.delete(id);
-      return res.status(204).send();
+      return res.status(200).json({
+        success: true,
+        message: 'department deleted',
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Deleting Department',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 }
@@ -104,11 +171,17 @@ export class EmployeeController {
         success: true,
         message: 'Employee created successfully',
         data: { employee },
+        timestamp: new Date().toISOString(),
       });
-    } catch (error: unknown) {
-      if (error instanceof Error)
-        return res.status(500).json({ error: error.message });
-      return res.status(500).json({ error: 'Unknown error' });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Creating Employee',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -119,64 +192,118 @@ export class EmployeeController {
         success: true,
         message: 'Employees fetched successfully',
         data: { employees },
+        timestamp: new Date().toISOString(),
       });
-    } catch (error: unknown) {
-      if (error instanceof Error)
-        return res.status(500).json({ error: error.message });
-      return res.status(500).json({ error: 'Unknown error' });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Fetching Employees',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
   getEmployeeById = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      if (!id) return res.status(400).json({ error: 'Id required' });
+      if (!id)
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Id required',
+            timestamp: new Date().toISOString(),
+          });
 
       const employee = await this.repo.findById(id);
       if (!employee)
-        return res.status(404).json({ error: 'Employee not found' });
+        return res
+          .status(404)
+          .json({
+            success: false,
+            message: 'Employee not found',
+            timestamp: new Date().toISOString(),
+          });
 
       return res.status(200).json({
         success: true,
         message: 'Employee fetched successfully',
         data: { employee },
+        timestamp: new Date().toISOString(),
       });
-    } catch (error: unknown) {
-      if (error instanceof Error)
-        return res.status(500).json({ error: error.message });
-      return res.status(500).json({ error: 'Unknown error' });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Fetching Employee',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
   updateEmployee = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      if (!id) return res.status(400).json({ error: 'Id required' });
+      if (!id)
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Id required',
+            timestamp: new Date().toISOString(),
+          });
 
       const updated = await this.repo.update(id, req.body);
       return res.status(200).json({
         success: true,
         message: 'Employee updated successfully',
         data: { updated },
+        timestamp: new Date().toISOString(),
       });
-    } catch (error: unknown) {
-      if (error instanceof Error)
-        return res.status(500).json({ error: error.message });
-      return res.status(500).json({ error: 'Unknown error' });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Updating Employee',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
   deleteEmployee = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      if (!id) return res.status(400).json({ error: 'Id required' });
+      if (!id)
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Id required',
+            timestamp: new Date().toISOString(),
+          });
 
       await this.repo.delete(id);
-      return res.status(204).send();
-    } catch (error: unknown) {
-      if (error instanceof Error)
-        return res.status(500).json({ error: error.message });
-      return res.status(500).json({ error: 'Unknown error' });
+      return res.status(200).json({
+        success: true,
+        message: 'employee deleted',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Deleting Employee',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -185,18 +312,30 @@ export class EmployeeController {
       const { id } = req.params;
       const { status } = req.body;
       if (!id || !status)
-        return res.status(400).json({ error: 'Id & status required' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Id & status required',
+            timestamp: new Date().toISOString(),
+          });
 
       const updated = await this.repo.updateStatus(id, status);
       return res.status(200).json({
         success: true,
         message: 'Employee status updated successfully',
         data: { updated },
+        timestamp: new Date().toISOString(),
       });
-    } catch (error: unknown) {
-      if (error instanceof Error)
-        return res.status(500).json({ error: error.message });
-      return res.status(500).json({ error: 'Unknown error' });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Updating Employee Status',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -205,18 +344,30 @@ export class EmployeeController {
       const { id } = req.params;
       const { departmentId } = req.body;
       if (!id || !departmentId)
-        return res.status(400).json({ error: 'Id & departmentId required' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Id & departmentId required',
+            timestamp: new Date().toISOString(),
+          });
 
       const updated = await this.repo.assignDepartment(id, departmentId);
       return res.status(200).json({
         success: true,
         message: 'Employee department assigned successfully',
         data: { updated },
+        timestamp: new Date().toISOString(),
       });
-    } catch (error: unknown) {
-      if (error instanceof Error)
-        return res.status(500).json({ error: error.message });
-      return res.status(500).json({ error: 'Unknown error' });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Assigning Department',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 }
@@ -236,9 +387,17 @@ export class EmployeePermissionController {
         success: true,
         message: 'Permission assigned successfully',
         data: { permission },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Assigning Permission',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -246,13 +405,30 @@ export class EmployeePermissionController {
     try {
       const { id } = req.params;
       if (!id) {
-        return res.status(400).json({ error: 'Permission ID is required' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Permission ID is required',
+            timestamp: new Date().toISOString(),
+          });
       }
 
       await this.repo.revoke(id as string);
-      return res.status(204).send();
+      return res.status(200).json({
+        success: true,
+        message: 'Permission Revoked',
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Revoking Permission',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -260,7 +436,13 @@ export class EmployeePermissionController {
     try {
       const { employeeId } = req.params;
       if (!employeeId) {
-        return res.status(400).json({ error: 'Employee ID is required' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Employee ID is required',
+            timestamp: new Date().toISOString(),
+          });
       }
 
       const permissions = await this.repo.findByEmployeeId(
@@ -270,9 +452,17 @@ export class EmployeePermissionController {
         success: true,
         message: 'Permissions fetched successfully',
         data: { permissions },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Fetching Employee Permission',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 }
@@ -292,22 +482,38 @@ export class PermissionController {
         success: true,
         message: 'Permission created successfully',
         data: { permission },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Creating Permission',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
-  getAllPermissions = async (_: Request, res: Response) => {
+  getAllPermissions = async (req: Request, res: Response) => {
     try {
       const permissions = await this.repo.findAll();
       return res.status(200).json({
         success: true,
         message: 'Permissions fetched successfully',
         data: { permissions },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Fetching Permission',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -315,20 +521,40 @@ export class PermissionController {
     try {
       const { id } = req.params;
       if (!id) {
-        return res.status(400).json({ error: 'Permission ID is required' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Permission ID is required',
+            timestamp: new Date().toISOString(),
+          });
       }
 
       const permission = await this.repo.findById(id as string);
       if (!permission) {
-        return res.status(404).json({ message: 'Permission not found' });
+        return res
+          .status(404)
+          .json({
+            success: false,
+            message: 'Permission not found',
+            timestamp: new Date().toISOString(),
+          });
       }
       return res.status(200).json({
         success: true,
         message: 'Permission fetched successfully',
         data: { permission },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Fetching Permission',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -344,9 +570,17 @@ export class PermissionController {
         success: true,
         message: 'Permission updated successfully',
         data: { permission },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Updating Permission',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 
@@ -354,13 +588,30 @@ export class PermissionController {
     try {
       const { id } = req.params;
       if (!id) {
-        return res.status(400).json({ error: 'Permission ID is required' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: 'Permission ID is required',
+            timestamp: new Date().toISOString(),
+          });
       }
 
       await this.repo.delete(id as string);
-      return res.status(204).send();
+      return res.status(200).json({
+        success: true,
+        message: 'Permission Deleted',
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Deleting Permission',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
     }
   };
 }
