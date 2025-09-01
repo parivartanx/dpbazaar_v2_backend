@@ -1,12 +1,22 @@
 import { Router } from 'express';
+import multer from 'multer';
 // import { AdminController } from '../controllers/admin.controller';
-import { DepartmentController } from '../controllers/employee.controller';
-import { EmployeeController } from '../controllers/employee.controller';
-import { PermissionController } from '../controllers/employee.controller';
-import { EmployeePermissionController } from '../controllers/employee.controller';
+import {
+  DepartmentController,
+  EmployeePermissionController,
+  PermissionController,
+  EmployeeController,
+} from '../controllers/employee.controller';
 import { BrandController } from '../controllers/brand.controller';
 import { CategoryController } from '../controllers/categoryController';
-import { ProductController } from '../controllers/product.controllers';
+import {
+  ProductController,
+  // ReportController,
+  VariantController,
+  AttributeController,
+  RelationController,
+  // ReviewController,
+} from '../controllers/product.controllers';
 import { isAccessAllowed } from '../middlewares/isAccessAllowed';
 import { validateJoi } from '../middlewares/validateJoi';
 import {
@@ -16,11 +26,20 @@ import {
 import {
   createProductSchema,
   updateProductSchema,
+  createVariantSchema,
+  updateVariantSchema,
 } from '../validators/product.validation';
 import {
   createBrandSchema,
   updateBrandSchema,
 } from '../validators/brand.validaton';
+import {
+  createAttributeSchema,
+  updateAttributeSchema,
+  addProductAttributeSchema,
+  assignCategoryAttributeSchema,
+} from '../validators/attribute.validaton';
+import { createRelationSchema } from '../validators/relation.validaton';
 import {
   createDepartmentSchema,
   updateDepartmentSchema,
@@ -32,6 +51,9 @@ import {
 } from '../validators/employee.validaton';
 
 const router = Router();
+const upload = multer();
+
+// Instantiate controllers
 // const adminController = new AdminController();
 const departmentController = new DepartmentController();
 const employeeController = new EmployeeController();
@@ -40,6 +62,11 @@ const employeePermissionController = new EmployeePermissionController();
 const brandController = new BrandController();
 const categoryController = new CategoryController();
 const productController = new ProductController();
+const variantController = new VariantController();
+const attributeController = new AttributeController();
+const relationController = new RelationController();
+// const reviewController = new ReviewController();
+// const reportController = new ReportController();
 
 /**
  * ADMIN DASHBOARD
@@ -218,10 +245,10 @@ router.patch(
  * PRODUCT MANAGEMENT
  */
 router.get('/products', productController.getAllProducts);
-router.get('/products/slug/:slug', productController.getProductBySlug);
+// router.get('/products/slug/:slug', productController.getProductBySlug);
 router.get('/products/:id', productController.getProductById);
 router.post(
-  '/',
+  '/products',
   isAccessAllowed('ADMIN'),
   validateJoi(createProductSchema),
   productController.createProduct
@@ -229,6 +256,7 @@ router.post(
 router.put(
   '/products/:id',
   isAccessAllowed('ADMIN'),
+  validateJoi(updateProductSchema),
   productController.updateProduct
 );
 router.delete(
@@ -242,12 +270,137 @@ router.patch(
   validateJoi(updateProductSchema),
   productController.restoreProduct
 );
-router.get('/products/category/:id', productController.getProductsByCategory);
-router.get('/products/brand/:id', productController.getProductsByBrand);
-router.get('/products/featured', productController.getFeaturedProducts);
-router.get('/products/new-arrivals', productController.getNewArrivals);
-router.get('/products/best-sellers', productController.getBestSellers);
-router.get('/products/:id/related', productController.getRelatedProducts);
+// router.get('/products/category/:id', productController.getProductsByCategory);
+// router.get('/products/brand/:id', productController.getProductsByBrand);
+// router.get('/products/featured', productController.getFeaturedProducts);
+// router.get('/products/new-arrivals', productController.getNewArrivals);
+// router.get('/products/best-sellers', productController.getBestSellers);
+// router.get('/products/:id/related', productController.getRelatedProducts);
+
+// Images
+router.post(
+  '/:productId/images',
+  upload.single('file'),
+  productController.addImage
+);
+router.post(
+  '/:productId/images/bulk',
+  upload.array('files'),
+  productController.addImagesBulk
+);
+router.delete('/images/:imageId', productController.deleteImage);
+router.patch(
+  '/:productId/images/:imageId/primary',
+  productController.setPrimaryImage
+);
+
+/**
+ * VARIANT ROUTES
+ */
+router.get('/:id/variants', variantController.getProductVariants);
+router.post(
+  '/:id/variants',
+  isAccessAllowed('ADMIN'),
+  validateJoi(createVariantSchema),
+  variantController.createVariant
+);
+router.put(
+  '/variants/:id',
+  isAccessAllowed('ADMIN'),
+  validateJoi(updateVariantSchema),
+  variantController.updateVariant
+);
+router.delete(
+  '/variants/:id',
+  isAccessAllowed('ADMIN'),
+  variantController.deleteVariant
+);
+router.patch(
+  '/variants/:id/toggle',
+  isAccessAllowed('ADMIN'),
+  variantController.toggleVariantActive
+);
+
+/**
+ * ATTRIBUTE ROUTES
+ */
+router.get('/attributes', attributeController.getAllAttributes);
+router.post(
+  '/attributes',
+  isAccessAllowed('ADMIN'),
+  validateJoi(createAttributeSchema),
+  attributeController.createAttribute
+);
+router.put(
+  '/attributes/:id',
+  isAccessAllowed('ADMIN'),
+  validateJoi(updateAttributeSchema),
+  attributeController.updateAttribute
+);
+router.delete(
+  '/attributes/:id',
+  isAccessAllowed('ADMIN'),
+  attributeController.deleteAttribute
+);
+
+// Product attributes
+router.post(
+  '/:id/attributes',
+  isAccessAllowed('ADMIN'),
+  validateJoi(addProductAttributeSchema),
+  attributeController.addToProduct
+);
+router.delete(
+  '/attributes/:attrId',
+  isAccessAllowed('ADMIN'),
+  attributeController.removeFromProduct
+);
+
+// Category attributes
+router.post(
+  '/categories/:id/attributes',
+  isAccessAllowed('ADMIN'),
+  validateJoi(assignCategoryAttributeSchema),
+  attributeController.assignToCategory
+);
+router.delete(
+  '/categories/:id/attributes/:attrId',
+  isAccessAllowed('ADMIN'),
+  attributeController.removeFromCategory
+);
+
+/**
+ * RELATION ROUTES
+ */
+router.get('/:id/relations', relationController.getProductRelations);
+router.post(
+  '/:id/relations',
+  isAccessAllowed('ADMIN'),
+  validateJoi(createRelationSchema),
+  relationController.createRelation
+);
+router.delete(
+  '/relations/:id',
+  isAccessAllowed('ADMIN'),
+  relationController.deleteRelation
+);
+
+// /**
+//  * REVIEW ROUTES
+//  */
+// router.get('/reviews', reviewController.getAllReviews);
+// router.patch('/reviews/:id/approve', reviewController.approveReview);
+// router.patch('/reviews/:id/reject', reviewController.rejectReview);
+// router.delete('/reviews/:id', reviewController.deleteReview);
+// router.post('/reviews/:id/reply', reviewController.replyToReview);
+
+// /**
+//  * REPORT ROUTES
+//  */
+// router.get('/reports/sales', reportController.getSalesReport);
+// router.get('/reports/best-sellers', reportController.getBestSellers);
+// router.get('/reports/category-sales', reportController.getCategorySales);
+// router.get('/reports/returns', reportController.getReturnsReport);
 
 /**
  * ORDER MANAGEMENT
@@ -277,67 +430,6 @@ router.get('/products/:id/related', productController.getRelatedProducts);
 // router.post('/banners', adminController.createBanner);
 // router.delete('/banners/:id', adminController.deleteBanner);
 export { router as adminRoutes };
-
-/**
- * ATTRIBUTE MANAGEMENT
- */
-
-// router.get("/attributes", attributeController.getAllAttributes);
-// router.get("/attributes/:id", attributeController.getAttributeById);
-// router.post(
-//   "/attributes",
-//   isAccessAllowed("ADMIN"),
-//   validateJoi(createAttributeSchema),
-//   attributeController.createAttribute
-// );
-// router.put(
-//   "/attributes/:id",
-//   isAccessAllowed("ADMIN"),
-//   validateJoi(updateAttributeSchema),
-//   attributeController.updateAttribute
-// );
-// router.delete(
-//   "/attributes/:id",
-//   isAccessAllowed("ADMIN"),
-//   attributeController.deleteAttribute
-// );
-// router.post(
-//   "/categories/:id/attributes",
-//   isAccessAllowed("ADMIN"),
-//   attributeController.assignToCategory
-// );
-// router.delete(
-//   "/categories/:id/attributes/:attrId",
-//   isAccessAllowed("ADMIN"),
-//   attributeController.removeFromCategory
-// );
-
-/**
- * VARIANT MANAGEMENT
- */
-// router.get("/products/:id/variants", variantController.getProductVariants);
-// router.post(
-//   "/products/:id/variants",
-//   isAccessAllowed("ADMIN"),
-//   validateJoi(createVariantSchema),
-//   variantController.createVariant
-// );
-// router.put(
-//   "/variants/:id",
-//   isAccessAllowed("ADMIN"),
-//   validateJoi(updateVariantSchema),
-//   variantController.updateVariant
-// );
-// router.delete(
-//   "/variants/:id",
-//   isAccessAllowed("ADMIN"),
-//   variantController.deleteVariant
-// );
-// router.patch(
-//   "/variants/:id/activate",
-//   isAccessAllowed("ADMIN"),
-//   variantController.toggleVariantActive
-// );
 
 /**
  * IMAGE MANAGEMENT
@@ -397,22 +489,6 @@ export { router as adminRoutes };
 // router.get("/reports/low-stock", reportController.getLowStockProducts);
 
 /**
- * PRODUCT RELATIONS
- */
-// router.get("/products/:id/relations", relationController.getProductRelations);
-// router.post(
-//   "/products/:id/relations",
-//   isAccessAllowed("ADMIN"),
-//   validateJoi(createRelationSchema),
-//   relationController.createRelation
-// );
-// router.delete(
-//   "/relations/:id",
-//   isAccessAllowed("ADMIN"),
-//   relationController.deleteRelation
-// );
-
-/**
  * REVIEWS MODERATION
  */
 // router.get("/reviews", reviewController.getAllReviews);
@@ -439,10 +515,9 @@ export { router as adminRoutes };
 //   reviewController.replyToReview
 // );
 
-/**
- * REPORTS
- */
-// router.get("/reports/sales", reportController.getSalesReport);
-// router.get("/reports/bestsellers", reportController.getBestSellers);
-// router.get("/reports/category-sales", reportController.getCategorySales);
-// router.get("/reports/returns", reportController.getReturnsReport);
+// // ========================
+// // RELATED PRODUCTS
+// // ========================
+// router.get("/:productId/related", controller.listRelations.bind(controller));
+// router.post("/:productId/related", isAccessAllowed("ADMIN"), controller.addRelation.bind(controller));
+// router.delete("/relations/:relationId", isAccessAllowed("ADMIN"), controller.deleteRelation.bind(controller));
