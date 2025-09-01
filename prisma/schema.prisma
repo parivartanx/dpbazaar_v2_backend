@@ -138,6 +138,18 @@ enum PermissionAction {
   REJECT
 }
 
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  INVITATION
+}
+
+enum CardStatus {
+  DELETED
+  INACTIVE
+  ACTIVE
+}
+
 // =====================================================
 // USER & AUTHENTICATION SYSTEM
 // =====================================================
@@ -1774,4 +1786,19 @@ model Address {
 
   @@index([customerId])
   @@index([postalCode])
+}
+
+model CardManagement {
+  id             String     @id @default(uuid())
+  name           String
+  validityDays   Int
+  benefitDays    String[]
+  benefitPercent Int
+  price          Float
+  image          String
+  visibility     Visibility
+  status         CardStatus
+  deletedAt      DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }
