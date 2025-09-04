@@ -1789,7 +1789,7 @@ model Address {
 }
 
 model CardManagement {
-  id             String     @id @default(uuid())
+  id             String     @id @default(cuid())
   name           String
   validityDays   Int
   benefitDays    String[]
