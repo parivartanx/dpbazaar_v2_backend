@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 // import { AdminController } from '../controllers/admin.controller';
+import { CardController } from '../controllers/card.contoller';
 import {
   DepartmentController,
   EmployeePermissionController,
@@ -17,6 +18,8 @@ import {
   RelationController,
   // ReviewController,
 } from '../controllers/product.controllers';
+import { CustomerController } from '../controllers/customer.controller';
+import { CustomerSegmentController } from '../controllers/customerSegment.controller';
 import { isAccessAllowed } from '../middlewares/isAccessAllowed';
 import { validateJoi } from '../middlewares/validateJoi';
 import {
@@ -39,6 +42,10 @@ import {
   addProductAttributeSchema,
   assignCategoryAttributeSchema,
 } from '../validators/attribute.validaton';
+import {
+  createCardSchema,
+  updateCardSchema,
+} from '../validators/card.validaton';
 import { createRelationSchema } from '../validators/relation.validaton';
 import {
   createDepartmentSchema,
@@ -49,6 +56,14 @@ import {
   updatePermissionSchema,
   employeePermissionSchema,
 } from '../validators/employee.validaton';
+import {
+  createCustomerSchema,
+  updateCustomerSchema,
+} from '../validators/customer.validaton';
+import {
+  createSegmentSchema,
+  updateSegmentSchema,
+} from '../validators/cuctomerSegment.validaton';
 
 const router = Router();
 const upload = multer();
@@ -65,6 +80,9 @@ const productController = new ProductController();
 const variantController = new VariantController();
 const attributeController = new AttributeController();
 const relationController = new RelationController();
+const cardController = new CardController();
+const customerCtrl = new CustomerController();
+const segmentCtrl = new CustomerSegmentController();
 // const reviewController = new ReviewController();
 // const reportController = new ReportController();
 
@@ -84,8 +102,16 @@ const relationController = new RelationController();
 /**
  * Department Routes
  */
-router.get('/department', departmentController.getAllDepartments);
-router.get('/department/:id', departmentController.getDepartmentById);
+router.get(
+  '/department',
+  isAccessAllowed('ADMIN'),
+  departmentController.getAllDepartments
+);
+router.get(
+  '/department/:id',
+  isAccessAllowed('ADMIN'),
+  departmentController.getDepartmentById
+);
 router.post(
   '/department',
   isAccessAllowed('ADMIN'),
@@ -108,11 +134,19 @@ router.delete(
  * Employees Routes
  */
 
-router.get('/employees', employeeController.getAllEmployees);
-router.get('/employees/:id', employeeController.getEmployeeById);
+router.get(
+  '/employees',
+  isAccessAllowed('ADMIN'),
+  employeeController.getAllEmployees
+);
+router.get(
+  '/employees/:id',
+  isAccessAllowed('ADMIN'),
+  employeeController.getEmployeeById
+);
 router.post(
   '/employees',
-  // isAccessAllowed('ADMIN'),
+  isAccessAllowed('ADMIN'),
   validateJoi(createEmployeeSchema),
   employeeController.createEmployee
 );
@@ -144,8 +178,16 @@ router.patch(
  * Permissions Routes
  */
 
-router.get('/permissions', permissionController.getAllPermissions);
-router.get('/permissions/:id', permissionController.getPermissionById);
+router.get(
+  '/permissions',
+  isAccessAllowed('ADMIN'),
+  permissionController.getAllPermissions
+);
+router.get(
+  '/permissions/:id',
+  isAccessAllowed('ADMIN'),
+  permissionController.getPermissionById
+);
 router.post(
   '/permissions',
   isAccessAllowed('ADMIN'),
@@ -194,8 +236,12 @@ router.post(
   validateJoi(createBrandSchema),
   brandController.createBrand
 );
-router.get('/brands', brandController.getAllBrands);
-router.get('/brands/:id', brandController.getBrandById);
+router.get('/brands', isAccessAllowed('ADMIN'), brandController.getAllBrands);
+router.get(
+  '/brands/:id',
+  isAccessAllowed('ADMIN'),
+  brandController.getBrandById
+);
 router.put(
   '/brands/:id',
   isAccessAllowed('ADMIN'),
@@ -211,8 +257,16 @@ router.delete(
 /**
  * CATEGORY MANAGEMENT
  */
-router.get('/categories', categoryController.getAllCategories);
-router.get('/categories/:id', categoryController.getCategoryById);
+router.get(
+  '/categories',
+  isAccessAllowed('ADMIN'),
+  categoryController.getAllCategories
+);
+router.get(
+  '/categories/:id',
+  isAccessAllowed('ADMIN'),
+  categoryController.getCategoryById
+);
 router.post(
   '/categories',
   isAccessAllowed('ADMIN'),
@@ -244,9 +298,17 @@ router.patch(
 /**
  * PRODUCT MANAGEMENT
  */
-router.get('/products', productController.getAllProducts);
+router.get(
+  '/products',
+  isAccessAllowed('ADMIN'),
+  productController.getAllProducts
+);
 // router.get('/products/slug/:slug', productController.getProductBySlug);
-router.get('/products/:id', productController.getProductById);
+router.get(
+  '/products/:id',
+  isAccessAllowed('ADMIN'),
+  productController.getProductById
+);
 router.post(
   '/products',
   isAccessAllowed('ADMIN'),
@@ -280,24 +342,35 @@ router.patch(
 // Images
 router.post(
   '/:productId/images',
+  isAccessAllowed('ADMIN'),
   upload.single('file'),
   productController.addImage
 );
 router.post(
   '/:productId/images/bulk',
+  isAccessAllowed('ADMIN'),
   upload.array('files'),
   productController.addImagesBulk
 );
-router.delete('/images/:imageId', productController.deleteImage);
+router.delete(
+  '/images/:imageId',
+  isAccessAllowed('ADMIN'),
+  productController.deleteImage
+);
 router.patch(
   '/:productId/images/:imageId/primary',
+  isAccessAllowed('ADMIN'),
   productController.setPrimaryImage
 );
 
 /**
  * VARIANT ROUTES
  */
-router.get('/:id/variants', variantController.getProductVariants);
+router.get(
+  '/:id/variants',
+  isAccessAllowed('ADMIN'),
+  variantController.getProductVariants
+);
 router.post(
   '/:id/variants',
   isAccessAllowed('ADMIN'),
@@ -324,7 +397,11 @@ router.patch(
 /**
  * ATTRIBUTE ROUTES
  */
-router.get('/attributes', attributeController.getAllAttributes);
+router.get(
+  '/attributes',
+  isAccessAllowed('ADMIN'),
+  attributeController.getAllAttributes
+);
 router.post(
   '/attributes',
   isAccessAllowed('ADMIN'),
@@ -372,7 +449,11 @@ router.delete(
 /**
  * RELATION ROUTES
  */
-router.get('/:id/relations', relationController.getProductRelations);
+router.get(
+  '/:id/relations',
+  isAccessAllowed('ADMIN'),
+  relationController.getProductRelations
+);
 router.post(
   '/:id/relations',
   isAccessAllowed('ADMIN'),
@@ -383,6 +464,83 @@ router.delete(
   '/relations/:id',
   isAccessAllowed('ADMIN'),
   relationController.deleteRelation
+);
+
+/** ----------- ADMIN ROUTES ----------- */
+router.get('/admin/cards', isAccessAllowed('ADMIN'), cardController.listCards);
+router.get(
+  '/admin/cards/:id',
+  isAccessAllowed('ADMIN'),
+  cardController.getCard
+);
+router.post(
+  '/admin/cards',
+  isAccessAllowed('ADMIN'),
+  validateJoi(createCardSchema),
+  cardController.createCard
+);
+router.put(
+  '/admin/cards/:id',
+  isAccessAllowed('ADMIN'),
+  validateJoi(updateCardSchema),
+  cardController.updateCard
+);
+router.delete(
+  '/admin/cards/:id',
+  isAccessAllowed('ADMIN'),
+  cardController.deleteCard
+);
+router.patch(
+  '/admin/cards/:id/restore',
+  isAccessAllowed('ADMIN'),
+  cardController.restoreCard
+);
+
+/** CUSTOMER ROUTES */
+// Admin
+router.get('/', isAccessAllowed('ADMIN'), customerCtrl.listCustomers);
+router.get('/:id', isAccessAllowed('ADMIN'), customerCtrl.getCustomer);
+router.post(
+  '/',
+  isAccessAllowed('ADMIN'),
+  validateJoi(createCustomerSchema),
+  customerCtrl.createCustomer
+); // ✅ add create route with validation
+router.put(
+  '/:id',
+  isAccessAllowed('ADMIN'),
+  validateJoi(updateCustomerSchema),
+  customerCtrl.updateCustomer
+);
+router.delete('/:id', isAccessAllowed('ADMIN'), customerCtrl.deleteCustomer);
+router.post(
+  '/:id/restore',
+  isAccessAllowed('ADMIN'),
+  customerCtrl.restoreCustomer
+);
+
+/** CUSTOMER SEGMENT ROUTES */
+router.get(
+  '/:customerId/segments',
+  isAccessAllowed('ADMIN'),
+  segmentCtrl.listByCustomer
+);
+router.post(
+  '/:customerId/segments',
+  isAccessAllowed('ADMIN'),
+  validateJoi(createSegmentSchema),
+  segmentCtrl.createSegment
+);
+router.put(
+  '/segments/:id',
+  isAccessAllowed('ADMIN'),
+  validateJoi(updateSegmentSchema),
+  segmentCtrl.updateSegment
+);
+router.delete(
+  '/segments/:id',
+  isAccessAllowed('ADMIN'),
+  segmentCtrl.deleteSegment
 );
 
 // /**
