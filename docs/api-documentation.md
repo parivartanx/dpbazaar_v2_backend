@@ -216,7 +216,7 @@ Refresh access token using refresh token.
 
 ---
 
-#### POST /auth/forgot-password
+<!-- #### POST /auth/forgot-password
 
 Request password reset email.
 
@@ -273,7 +273,7 @@ Reset password using reset token.
 **Status Codes:**
 - `200` - Password reset successful
 - `400` - Invalid token or validation error
-
+ -->
 ---
 
 ## Error Codes
