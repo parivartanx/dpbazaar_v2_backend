@@ -10,6 +10,7 @@ router.use('/auth', authRoutes);
 router.use('/products', productRoutes);
 router.use('/admin', adminRoutes);
 
+
 // API version prefix
 const apiRouter = Router();
 apiRouter.use('/v1', router);

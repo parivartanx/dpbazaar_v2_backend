@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
-// import { AdminController } from '../controllers/admin.controller';
+import { AdminController } from '../controllers/admin.controller';
+import { AnalyticsController } from '../controllers/analytics.contoller';
 import { CardController } from '../controllers/card.contoller';
 import {
   DepartmentController,
@@ -69,7 +70,8 @@ const router = Router();
 const upload = multer();
 
 // Instantiate controllers
-// const adminController = new AdminController();
+const adminController = new AdminController();
+const analyticsController = new AnalyticsController();
 const departmentController = new DepartmentController();
 const employeeController = new EmployeeController();
 const permissionController = new PermissionController();
@@ -89,7 +91,17 @@ const segmentCtrl = new CustomerSegmentController();
 /**
  * ADMIN DASHBOARD
  */
-// router.post('/dashboard', adminController.dashboard);
+router.get(
+  '/dashboard',
+  // isAccessAllowed('ADMIN'),
+  adminController.getDashboard
+);
+
+router.get(
+  '/analytics',
+  // isAccessAllowed('ADMIN'),
+  analyticsController.getAnalyticsDashboard
+);
 
 /**
  * USER MANAGEMENT
