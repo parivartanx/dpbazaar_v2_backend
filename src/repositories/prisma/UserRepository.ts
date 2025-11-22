@@ -1,17 +1,22 @@
 import { IUserRepository } from '../interfaces/IUserRepository';
 import { PrismaClient, User, UserRole, UserStatus } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
 
 const prisma = new PrismaClient();
 
 export class UserRepository implements IUserRepository {
+  /** Find user by email */
   async findByEmail(email: string) {
     return prisma.user.findUnique({ where: { email } });
   }
 
+  /** Find user by id */
   async findById(id: string): Promise<User | null> {
     return prisma.user.findUnique({ where: { id } });
   }
 
+  /** Create user */
   async create(data: {
     firstName: string;
     lastName: string;
@@ -19,17 +24,21 @@ export class UserRepository implements IUserRepository {
     password: string;
     role?: UserRole;
   }): Promise<User> {
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    
     return prisma.user.create({
       data: {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        password: data.password,
+        password: hashedPassword,
         role: data.role || UserRole.CUSTOMER,
       },
     });
   }
 
+  /** Update user */
   async update(
     id: string,
     data: Partial<{
@@ -45,6 +54,7 @@ export class UserRepository implements IUserRepository {
     return prisma.user.update({ where: { id }, data });
   }
 
+  /** Delete user */
   async delete(id: string): Promise<User> {
     return prisma.user.update({
       where: { id },
@@ -52,6 +62,7 @@ export class UserRepository implements IUserRepository {
     });
   }
 
+  /** Restore user */
   async restore(id: string): Promise<User> {
     return prisma.user.update({
       where: { id },
@@ -59,14 +70,24 @@ export class UserRepository implements IUserRepository {
     });
   }
 
+  /** Update user password */
   async updatePassword(id: string, password: string): Promise<void> {
-    await prisma.user.update({ where: { id }, data: { password } });
+    // Hash password before updating
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.user.update({ where: { id }, data: { password: hashedPassword } });
   }
 
+  /** Verify password - Compare plain text password with hashed password */
+  async verifyPassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+  /** Lock user */
   async lockUser(id: string, lockedUntil: Date): Promise<User> {
     return prisma.user.update({ where: { id }, data: { lockedUntil } });
   }
 
+  /** Unlock user */
   async unlockUser(id: string): Promise<User> {
     return prisma.user.update({
       where: { id },
@@ -74,6 +95,7 @@ export class UserRepository implements IUserRepository {
     });
   }
 
+  /** List users */
   async list(params?: {
     role?: UserRole;
     status?: UserStatus;
@@ -92,47 +114,43 @@ export class UserRepository implements IUserRepository {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+/** Count User */
+  async getUserCounts() {
+    const total = await prisma.user.count({ where: { deletedAt: null } });
+    const active = await prisma.user.count({ where: { status: 'ACTIVE', deletedAt: null } });
+    const inactive = await prisma.user.count({ where: { status: 'INACTIVE', deletedAt: null } });
+    const suspended = await prisma.user.count({ where: { status: 'SUSPENDED', deletedAt: null } });
+
+    return { total, active, inactive, suspended };
+  }
+
+/** Filter search */
+  async filterUsers(params: {
+    gender?: string;
+    status?: UserStatus;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const { gender, status, search, page = 1, limit = 20 } = params;
+
+    return prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        ...(gender && { gender }),
+        ...(status && { status }),
+        ...(search && {
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }
-
-// import { IUserRepository } from '../interfaces/IUserRepository';
-// import { PrismaClient, User, UserRole } from '@prisma/client';
-
-// const prisma = new PrismaClient();
-
-// export class UserRepository implements IUserRepository {
-//   async findByEmail(email: string) {
-//     return prisma.user.findUnique({
-//       where: { email },
-//     });
-//   }
-//   async create(data: {
-//     firstName: string;
-//     lastName: string;
-//     email: string;
-//     password: string;
-//     role?: UserRole;
-//   }) {
-//     return prisma.user.create({
-//       data: {
-//         email: data.email,
-//         firstName: data.firstName,
-//         lastName: data.lastName,
-//         password: data.password,
-//         role: data.role || UserRole.CUSTOMER,
-//       },
-//     });
-//   }
-
-//   async findById(id: string): Promise<User | null> {
-//     return await prisma.user.findUnique({
-//       where: { id },
-//     });
-//   }
-
-//   async updatePassword(id: string, password: string): Promise<void> {
-//     await prisma.user.update({
-//       where: { id },
-//       data: { password },
-//     });
-//   }
-// }
