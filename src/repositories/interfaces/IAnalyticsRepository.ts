@@ -4,11 +4,3 @@ export interface IAnalyticsRepository {
   getSalesByCategory(range: number): Promise<any[]>;
   getMonthlyPerformance(range: number): Promise<any[]>;
 }
-
-
-// export interface IAnalyticsRepository {
-//   getKPIs(): Promise<any>;
-//   getDailyRevenue(): Promise<any[]>;
-//   getSalesByCategory(): Promise<any[]>;
-//   getMonthlyPerformance(): Promise<any[]>;
-// }
