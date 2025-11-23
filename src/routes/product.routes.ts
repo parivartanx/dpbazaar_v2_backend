@@ -6,6 +6,20 @@ import { ProductController } from '../controllers/product.controllers';
 import { VariantController } from '../controllers/product.controllers';
 import { AttributeController } from '../controllers/product.controllers';
 import { RelationController } from '../controllers/product.controllers';
+import { validateJoi } from '../middlewares/validateJoi';
+import {
+  createProductSchema,
+  updateProductSchema,
+  createVariantSchema,
+  updateVariantSchema,
+} from '../validators/product.validation';
+import {
+  createAttributeSchema,
+  updateAttributeSchema,
+  addProductAttributeSchema,
+  assignCategoryAttributeSchema,
+} from '../validators/attribute.validaton';
+import { createRelationSchema } from '../validators/relation.validaton';
 // import { ReviewController } from '../controllers/product.controllers';
 // import { ReportController } from '../controllers/product.controllers';
 
@@ -25,8 +39,8 @@ const relationController = new RelationController();
  */
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
-router.post('/', productController.createProduct);
-router.put('/:id', productController.updateProduct);
+router.post('/', validateJoi(createProductSchema), productController.createProduct);
+router.put('/:id', validateJoi(updateProductSchema), productController.updateProduct);
 router.delete('/:id', productController.softDeleteProduct);
 router.patch('/:id/restore', productController.restoreProduct);
 
@@ -51,8 +65,8 @@ router.patch(
  * VARIANT ROUTES
  */
 router.get('/:id/variants', variantController.getProductVariants);
-router.post('/:id/variants', variantController.createVariant);
-router.put('/variants/:id', variantController.updateVariant);
+router.post('/:id/variants', validateJoi(createVariantSchema), variantController.createVariant);
+router.put('/variants/:id', validateJoi(updateVariantSchema), variantController.updateVariant);
 router.delete('/variants/:id', variantController.deleteVariant);
 router.patch('/variants/:id/toggle', variantController.toggleVariantActive);
 
@@ -60,16 +74,16 @@ router.patch('/variants/:id/toggle', variantController.toggleVariantActive);
  * ATTRIBUTE ROUTES
  */
 router.get('/attributes', attributeController.getAllAttributes);
-router.post('/attributes', attributeController.createAttribute);
-router.put('/attributes/:id', attributeController.updateAttribute);
+router.post('/attributes', validateJoi(createAttributeSchema), attributeController.createAttribute);
+router.put('/attributes/:id', validateJoi(updateAttributeSchema), attributeController.updateAttribute);
 router.delete('/attributes/:id', attributeController.deleteAttribute);
 
 // Product attributes
-router.post('/:id/attributes', attributeController.addToProduct);
+router.post('/:id/attributes', validateJoi(addProductAttributeSchema), attributeController.addToProduct);
 router.delete('/attributes/:attrId', attributeController.removeFromProduct);
 
 // Category attributes
-router.post('/categories/:id/attributes', attributeController.assignToCategory);
+router.post('/categories/:id/attributes', validateJoi(assignCategoryAttributeSchema), attributeController.assignToCategory);
 router.delete(
   '/categories/:id/attributes/:attrId',
   attributeController.removeFromCategory
@@ -79,7 +93,7 @@ router.delete(
  * RELATION ROUTES
  */
 router.get('/:id/relations', relationController.getProductRelations);
-router.post('/:id/relations', relationController.createRelation);
+router.post('/:id/relations', validateJoi(createRelationSchema), relationController.createRelation);
 router.delete('/relations/:id', relationController.deleteRelation);
 
 // /**

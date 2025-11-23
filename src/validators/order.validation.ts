@@ -5,53 +5,48 @@ import Joi from 'joi';
  */
 
 export const createOrderSchema = Joi.object({
-  customerId: Joi.string().required(),
-  vendorId: Joi.string().optional(),
+  customerId: Joi.string().trim().required().messages({
+    'string.empty': 'Customer ID is required',
+    'any.required': 'Customer ID is required',
+  }),
+  vendorId: Joi.string().trim().optional().allow(null, ''),
   items: Joi.array()
     .items(
       Joi.object({
-        productId: Joi.string().required(),
-        variantId: Joi.string().optional(),
-        quantity: Joi.number().integer().min(1).required(),
+        productId: Joi.string().trim().required().messages({
+          'string.empty': 'Product ID is required',
+          'any.required': 'Product ID is required',
+        }),
+        variantId: Joi.string().trim().optional().allow(null, ''),
+        quantity: Joi.number().integer().min(1).required().messages({
+          'number.base': 'Quantity must be a number',
+          'number.min': 'Quantity must be at least 1',
+          'any.required': 'Quantity is required',
+        }),
       })
     )
     .min(1)
-    .required(),
-  shippingAddress: Joi.object({
-    fullName: Joi.string().required(),
-    phone: Joi.string().required(),
-    alternatePhone: Joi.string().optional(),
-    addressLine1: Joi.string().required(),
-    addressLine2: Joi.string().optional(),
-    landmark: Joi.string().optional(),
-    city: Joi.string().required(),
-    state: Joi.string().required(),
-    country: Joi.string().required(),
-    postalCode: Joi.string().required(),
-    deliveryInstructions: Joi.string().optional(),
-  }).required(),
-  billingAddress: Joi.object({
-    fullName: Joi.string().required(),
-    phone: Joi.string().required(),
-    alternatePhone: Joi.string().optional(),
-    addressLine1: Joi.string().required(),
-    addressLine2: Joi.string().optional(),
-    landmark: Joi.string().optional(),
-    city: Joi.string().required(),
-    state: Joi.string().required(),
-    country: Joi.string().required(),
-    postalCode: Joi.string().required(),
-  }).required(),
-  customerName: Joi.string().required(),
-  customerEmail: Joi.string().email().required(),
-  customerPhone: Joi.string().required(),
-  customerNotes: Joi.string().optional(),
-  discountCode: Joi.string().optional(),
+    .required()
+    .messages({
+      'array.min': 'At least one item is required',
+      'any.required': 'Order items are required',
+    }),
+  shippingAddressId: Joi.string().trim().required().messages({
+    'string.empty': 'Shipping address ID is required',
+    'any.required': 'Shipping address ID is required',
+  }),
+  billingAddressId: Joi.string().trim().required().messages({
+    'string.empty': 'Billing address ID is required',
+    'any.required': 'Billing address ID is required',
+  }),
+  customerNotes: Joi.string().trim().optional().allow('', null),
+  discountCode: Joi.string().trim().optional().allow('', null),
   source: Joi.string()
+    .trim()
     .valid('WEBSITE', 'APP', 'POS', 'PHONE')
     .optional()
     .default('WEBSITE'),
-  deviceInfo: Joi.object().optional(),
+  deviceInfo: Joi.object().optional().allow(null),
 });
 
 export const updateOrderSchema = Joi.object({

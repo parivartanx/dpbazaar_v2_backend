@@ -5,35 +5,140 @@ const prisma = new PrismaClient();
 
 export class ProductRepository implements IProductRepository {
   async getAll(): Promise<Product[]> {
-    return prisma.product.findMany({ include: { images: true } });
+    return prisma.product.findMany({ 
+      include: { 
+        images: true,
+        categories: { include: { category: true } },
+        brand: true,
+        variants: true
+      } 
+    });
   }
 
   async getById(id: string): Promise<Product | null> {
     return prisma.product.findUnique({
       where: { id },
-      include: { images: true },
+      include: { 
+        images: true,
+        categories: { include: { category: true } },
+        brand: true,
+        variants: true,
+        attributes: { include: { attributeType: true } }
+      },
     });
   }
 
   async getBySlug(slug: string): Promise<Product | null> {
     return prisma.product.findUnique({
       where: { slug },
-      include: { images: true },
+      include: { 
+        images: true,
+        categories: { include: { category: true } },
+        brand: true,
+        variants: true
+      },
     });
   }
 
   async create(data: any): Promise<Product> {
-    return prisma.product.create({ data });
+    // Extract categoryId if present (for backward compatibility)
+    const { categoryId, ...productData } = data;
+    
+    // Build create input
+    const createData: any = {
+      ...productData,
+    };
+
+    // Handle category relation (many-to-many)
+    if (categoryId) {
+      createData.categories = {
+        create: {
+          categoryId,
+          isPrimary: true
+        }
+      };
+    }
+
+    // Handle brand relation
+    if (productData.brandId) {
+      createData.brand = {
+        connect: { id: productData.brandId }
+      };
+      delete createData.brandId;
+    }
+
+    // Handle vendor relation
+    if (productData.vendorId) {
+      createData.vendor = {
+        connect: { id: productData.vendorId }
+      };
+      delete createData.vendorId;
+    }
+
+    return prisma.product.create({ 
+      data: createData,
+      include: {
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      }
+    });
   }
 
   async update(id: string, data: any): Promise<Product> {
-    return prisma.product.update({ where: { id }, data });
+    // Extract categoryId if present
+    const { categoryId, ...productData } = data;
+    
+    const updateData: any = { ...productData };
+
+    // Handle brand relation
+    if (productData.brandId !== undefined) {
+      updateData.brand = productData.brandId ? { connect: { id: productData.brandId } } : { disconnect: true };
+      delete updateData.brandId;
+    }
+
+    // Handle vendor relation
+    if (productData.vendorId !== undefined) {
+      updateData.vendor = productData.vendorId ? { connect: { id: productData.vendorId } } : { disconnect: true };
+      delete updateData.vendorId;
+    }
+
+    // Handle category update separately if needed
+    if (categoryId !== undefined) {
+      // First, delete existing category relations
+      await prisma.productCategory.deleteMany({ where: { productId: id } });
+      
+      // Then create new one if categoryId is provided
+      if (categoryId) {
+        updateData.categories = {
+          create: {
+            categoryId,
+            isPrimary: true
+          }
+        };
+      }
+    }
+
+    return prisma.product.update({ 
+      where: { id }, 
+      data: updateData,
+      include: {
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      }
+    });
   }
 
   async softDelete(id: string): Promise<Product> {
     return prisma.product.update({
       where: { id },
       data: { deletedAt: new Date() },
+      include: {
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      }
     });
   }
 
@@ -41,41 +146,88 @@ export class ProductRepository implements IProductRepository {
     return prisma.product.update({
       where: { id },
       data: { deletedAt: null },
+      include: {
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      }
     });
   }
 
   async getByCategory(categoryId: string): Promise<Product[]> {
     return prisma.product.findMany({
-      where: { categories: { some: { categoryId } } },
-      include: { images: true },
+      where: { 
+        categories: { some: { categoryId } },
+        deletedAt: null
+      },
+      include: { 
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      },
     });
   }
 
   async getByBrand(brandId: string): Promise<Product[]> {
     return prisma.product.findMany({
-      where: { brandId },
-      include: { images: true },
+      where: { 
+        brandId,
+        deletedAt: null
+      },
+      include: { 
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      },
     });
   }
 
   async getFeatured(): Promise<Product[]> {
     return prisma.product.findMany({
-      where: { isFeatured: true },
-      include: { images: true },
+      where: { 
+        isFeatured: true,
+        deletedAt: null,
+        status: 'ACTIVE'
+      },
+      include: { 
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      },
     });
   }
 
   async getNewArrivals(): Promise<Product[]> {
     return prisma.product.findMany({
-      where: { isNewArrival: true },
-      include: { images: true },
+      where: { 
+        isNewArrival: true,
+        deletedAt: null,
+        status: 'ACTIVE'
+      },
+      include: { 
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20
     });
   }
 
   async getBestSellers(): Promise<Product[]> {
     return prisma.product.findMany({
-      where: { isBestSeller: true },
-      include: { images: true },
+      where: { 
+        isBestSeller: true,
+        deletedAt: null,
+        status: 'ACTIVE'
+      },
+      include: { 
+        images: true,
+        categories: { include: { category: true } },
+        brand: true
+      },
+      orderBy: { salesCount: 'desc' },
+      take: 20
     });
   }
 

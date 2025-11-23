@@ -25,14 +25,31 @@ export class OrderController {
       };
       res.status(201).json(response);
     } catch (error) {
-      logger.error(`error: ${error}`);
+      logger.error(`Order creation error: ${error}`);
+      
+      // Better error messages
+      const errorMessage = (error as Error).message;
       const response: ApiResponse = {
         success: false,
-        error: (error as Error).message,
-        message: 'Problem in creating order',
+        error: errorMessage,
+        message: errorMessage.includes('not found') || 
+                 errorMessage.includes('out of stock') ||
+                 errorMessage.includes('not active') ||
+                 errorMessage.includes('required')
+          ? errorMessage
+          : 'Problem in creating order',
         timestamp: new Date().toISOString(),
       };
-      res.status(500).json(response);
+      
+      // Return 400 for validation errors, 500 for server errors
+      const statusCode = errorMessage.includes('not found') || 
+                        errorMessage.includes('out of stock') ||
+                        errorMessage.includes('not active') ||
+                        errorMessage.includes('required')
+        ? 400
+        : 500;
+      
+      res.status(statusCode).json(response);
     }
   };
 

@@ -23,11 +23,8 @@ export interface CreateOrderData {
     variantId?: string;
     quantity: number;
   }>;
-  shippingAddress: any;
-  billingAddress: any;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+  shippingAddressId: string; // Required: Fetch from customer's saved addresses
+  billingAddressId: string; // Required: Fetch from customer's saved addresses
   customerNotes?: string;
   discountCode?: string;
   source?: string;

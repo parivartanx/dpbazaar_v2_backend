@@ -1,5 +1,12 @@
 import { Router } from 'express';
 import { OrderController } from '../controllers/order.controller';
+import { validateJoi } from '../middlewares/validateJoi';
+import {
+  createOrderSchema,
+  updateOrderSchema,
+  updateOrderStatusSchema,
+  cancelOrderSchema,
+} from '../validators/order.validation';
 
 const router = Router();
 
@@ -26,15 +33,23 @@ router.get('/vendor/:vendorId', orderController.getVendorOrders);
  */
 router.get('/', orderController.getAllOrders);
 router.get('/:id', orderController.getOrderById);
-router.post('/', orderController.createOrder);
-router.put('/:id', orderController.updateOrder);
+router.post('/', validateJoi(createOrderSchema), orderController.createOrder);
+router.put('/:id', validateJoi(updateOrderSchema), orderController.updateOrder);
 router.delete('/:id', orderController.deleteOrder);
 
 /**
  * ORDER STATUS MANAGEMENT ROUTES
  */
-router.patch('/:id/status', orderController.updateOrderStatus);
-router.patch('/:id/cancel', orderController.cancelOrder);
+router.patch(
+  '/:id/status',
+  validateJoi(updateOrderStatusSchema),
+  orderController.updateOrderStatus
+);
+router.patch(
+  '/:id/cancel',
+  validateJoi(cancelOrderSchema),
+  orderController.cancelOrder
+);
 router.patch('/:id/confirm', orderController.confirmOrder);
 router.patch('/:id/restore', orderController.restoreOrder);
 

@@ -21,6 +21,73 @@ const prisma = new PrismaClient();
 
 export class OrderRepository implements IOrderRepository {
   async createOrder(data: CreateOrderData): Promise<Order> {
+    // Fetch customer details with addresses
+    const customer = await prisma.customer.findUnique({
+      where: { id: data.customerId },
+      include: {
+        user: {
+          select: {
+            email: true,
+            phone: true,
+          },
+        },
+        addresses: {
+          where: { deletedAt: null },
+        },
+      },
+    });
+
+    if (!customer) {
+      throw new Error(`Customer with ID ${data.customerId} not found`);
+    }
+
+    // Extract customer info
+    const customerName = `${customer.firstName} ${customer.lastName}`.trim();
+    const customerEmail = customer.user.email || '';
+    const customerPhone = customer.user.phone || '';
+
+    // Fetch shipping address from customer's saved addresses
+    const shippingAddressRecord = customer.addresses.find(
+      a => a.id === data.shippingAddressId
+    );
+    if (!shippingAddressRecord) {
+      throw new Error(`Shipping address with ID ${data.shippingAddressId} not found for this customer`);
+    }
+
+    const shippingAddress = {
+      fullName: shippingAddressRecord.fullName,
+      phone: shippingAddressRecord.phone,
+      alternatePhone: shippingAddressRecord.alternatePhone,
+      addressLine1: shippingAddressRecord.addressLine1,
+      addressLine2: shippingAddressRecord.addressLine2,
+      landmark: shippingAddressRecord.landmark,
+      city: shippingAddressRecord.city,
+      state: shippingAddressRecord.state,
+      country: shippingAddressRecord.country,
+      postalCode: shippingAddressRecord.postalCode,
+      deliveryInstructions: shippingAddressRecord.deliveryInstructions,
+    };
+
+    // Fetch billing address from customer's saved addresses
+    const billingAddressRecord = customer.addresses.find(
+      a => a.id === data.billingAddressId
+    );
+    if (!billingAddressRecord) {
+      throw new Error(`Billing address with ID ${data.billingAddressId} not found for this customer`);
+    }
+
+    const billingAddress = {
+      fullName: billingAddressRecord.fullName,
+      phone: billingAddressRecord.phone,
+      alternatePhone: billingAddressRecord.alternatePhone,
+      addressLine1: billingAddressRecord.addressLine1,
+      addressLine2: billingAddressRecord.addressLine2,
+      landmark: billingAddressRecord.landmark,
+      city: billingAddressRecord.city,
+      state: billingAddressRecord.state,
+      country: billingAddressRecord.country,
+      postalCode: billingAddressRecord.postalCode,
+    };
     // Fetch product details for order items
     const itemsWithDetails = await Promise.all(
       data.items.map(async item => {
@@ -161,11 +228,11 @@ export class OrderRepository implements IOrderRepository {
         totalAmount,
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
-        shippingAddress: data.shippingAddress,
-        billingAddress: data.billingAddress,
-        customerName: data.customerName,
-        customerEmail: data.customerEmail,
-        customerPhone: data.customerPhone,
+        shippingAddress,
+        billingAddress,
+        customerName,
+        customerEmail,
+        customerPhone,
         customerNotes: data.customerNotes || null,
         source: data.source || 'WEBSITE',
         deviceInfo: data.deviceInfo || null,

@@ -232,7 +232,7 @@ router.post(
   validateJoi(createBrandSchema),
   brandController.createBrand
 );
-router.get('/brands', isAccessAllowed('ADMIN'), brandController.getAllBrands);
+router.get('/brands', brandController.getAllBrands);
 router.get(
   '/brands/:id',
   brandController.getBrandById
