@@ -1,175 +1,84 @@
-// import { PrismaClient, User, Employee, Permission } from '@prisma/client';
-// import {
-//   IAdminRepository,
-//   GetAllUsersParams,
-//   GetAllEmployeesParams,
-// } from '../interfaces/IAdminRepository';
-// import { PaginatedResponse } from '../../types/common';
+import { PrismaClient } from "@prisma/client";
+import { IAdminRepository } from "../interfaces/IAdminRepository";
 
-// const prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
-// export class AdminRepository implements IAdminRepository {
-//   // ================== USERS ==================
-//   async getAllUsers({
-//     page,
-//     limit,
-//     search,
-//     role,
-//     status,
-//     sortBy,
-//     sortOrder,
-//   }: GetAllUsersParams): Promise<PaginatedResponse<User>> {
-//     const where: any = {};
-//     if (search) {
-//       where.OR = [
-//         { firstName: { contains: search, mode: 'insensitive' } },
-//         { lastName: { contains: search, mode: 'insensitive' } },
-//         { email: { contains: search, mode: 'insensitive' } },
-//       ];
-//     }
-//     if (role) where.role = role;
-//     if (status) where.status = status;
+export class AdminRepository implements IAdminRepository {
+  
+  async getTotalRevenue(): Promise<number> {
+    const result = await prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: { status: "DELIVERED" }
+    });
 
-//     const orderBy = sortBy
-//       ? { [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc' }
-//       : { createdAt: 'desc' as const };
+    return result._sum.totalAmount ? Number(result._sum.totalAmount) : 0;
+  }
 
-//     const [data, total] = await Promise.all([
-//       prisma.user.findMany({
-//         where,
-//         skip: (page! - 1) * limit!,
-//         take: limit!,
-//         orderBy,
-//       }),
-//       prisma.user.count({ where }),
-//     ]);
+  async getTotalOrders(): Promise<number> {
+    return prisma.order.count();
+  }
 
-//     return {
-//       data,
-//       pagination: {
-//         page: page!,
-//         limit: limit!,
-//         total,
-//         totalPages: Math.ceil(total / limit!),
-//       },
-//     };
-//   }
+  async getTotalCustomers(): Promise<number> {
+    return prisma.user.count({
+      where: { role: "CUSTOMER" }
+    });
+  }
 
-//   async getUserById(id: string) {
-//     return prisma.user.findUnique({ where: { id } });
-//   }
+  async getWeeklySales(): Promise<any[]> {
+    const last7 = new Date();
+    last7.setDate(last7.getDate() - 7);
 
-//   async updateUserStatus(id: string, status: string) {
-//     return prisma.user.update({
-//       where: { id },
-//       data: { status: status as any },
-//     });
-//   }
+    const result = await prisma.order.groupBy({
+      by: ["createdAt"],
+      _sum: { totalAmount: true },
+      where: {
+        createdAt: { gte: last7 },
+        status: "DELIVERED",
+      },
+      orderBy: { createdAt: "asc" }
+    });
 
-//   async deleteUser(id: string) {
-//     await prisma.user.delete({ where: { id } });
-//   }
+    return result.map(r => ({
+      date: r.createdAt,
+      total: r._sum.totalAmount ? Number(r._sum.totalAmount) : 0,
+    }));
+  }
 
-//   // ================== EMPLOYEES ==================
-//   async createEmployee(data: Partial<Employee>) {
-//     return prisma.employee.create({ data: data as any });
-//   }
+    async getSalesByCategory(): Promise<any[]> {
+    const result = await prisma.productCategory.groupBy({
+        by: ["categoryId"],
+        _count: { productId: true },
+    });
 
-//   async getAllEmployees({
-//     page,
-//     limit,
-//     search,
-//     department,
-//     status,
-//     sortBy,
-//     sortOrder,
-//   }: GetAllEmployeesParams): Promise<PaginatedResponse<Employee>> {
-//     const where: any = {};
-//     if (search) {
-//       where.OR = [
-//         { name: { contains: search, mode: 'insensitive' } },
-//         { email: { contains: search, mode: 'insensitive' } },
-//       ];
-//     }
-//     if (department) where.department = department;
-//     if (status) where.status = status;
+    return Promise.all(
+        result.map(async (item) => {
+            const category = await prisma.category.findUnique({
+                where: { id: item.categoryId },
+                select: { name: true }
+            });
 
-//     const orderBy = sortBy
-//       ? { [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc' }
-//       : { createdAt: 'desc' as const };
+            return {
+                categoryId: item.categoryId,
+                categoryName: category?.name || "Unknown",
+                totalProducts: item._count.productId
+            };
+        })
+    );
+    }
 
-//     const [data, total] = await Promise.all([
-//       prisma.employee.findMany({
-//         where,
-//         skip: (page! - 1) * limit!,
-//         take: limit!,
-//         orderBy,
-//       }),
-//       prisma.employee.count({ where }),
-//     ]);
+  async getRecentOrders(): Promise<any[]> {
+    return prisma.order.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
 
-//     return {
-//       data,
-//       pagination: {
-//         page: page!,
-//         limit: limit!,
-//         total,
-//         totalPages: Math.ceil(total / limit!),
-//       },
-//     };
-//   }
-
-//   async getEmployeeById(id: string) {
-//     return prisma.employee.findUnique({ where: { id } });
-//   }
-
-//   async updateEmployee(id: string, data: Partial<Employee>) {
-//     return prisma.employee.update({
-//       where: { id },
-//       data: data as import('@prisma/client').Prisma.EmployeeUpdateInput,
-//     });
-//   }
-
-//   async updateEmployeeStatus(id: string, status: string) {
-//     return prisma.employee.update({
-//       where: { id },
-//       data: { status: status as import('@prisma/client').EmployeeStatus },
-//     });
-//   }
-
-//   async deleteEmployee(id: string) {
-//     await prisma.employee.delete({ where: { id } });
-//   }
-
-//   // ================== PERMISSIONS ==================
-//   async getEmployeePermissions(employeeId: string): Promise<Permission[]> {
-//     const employeeWithPermissions = await prisma.employee.findUnique({
-//       where: { id: employeeId },
-//       include: {
-//         permissions: {
-//           select: {
-//             id: true,
-//             action: true,
-//             description: true,
-//             createdAt: true,
-//           },
-//         },
-//       },
-//     });
-//     return employeeWithPermissions?.permissions ?? [];
-//   }
-
-//   async assignPermission(employeeId: string, permissionId: string) {
-//     await prisma.employee.update({
-//       where: { id: employeeId },
-//       data: { permissions: { connect: { id: permissionId } } },
-//     });
-//   }
-
-//   async revokePermission(employeeId: string, permissionId: string) {
-//     await prisma.employee.update({
-//       where: { id: employeeId },
-//       data: { permissions: { disconnect: { id: permissionId } } },
-//     });
-//   }
-// }
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: true
+          }
+        }
+      }
+    });
+  }
+}

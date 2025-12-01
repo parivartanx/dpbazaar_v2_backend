@@ -25,6 +25,7 @@ export interface IUserRepository {
   delete(id: string): Promise<User>;
   restore(id: string): Promise<User>;
   updatePassword(id: string, password: string): Promise<void>;
+  verifyPassword(plainPassword: string, hashedPassword: string): Promise<boolean>;
   lockUser(id: string, lockedUntil: Date): Promise<User>;
   unlockUser(id: string): Promise<User>;
   list(params?: {
@@ -34,24 +35,3 @@ export interface IUserRepository {
     limit?: number;
   }): Promise<User[]>;
 }
-
-// import { User, UserRole } from '@prisma/client';
-
-// export interface IUserRepository {
-//   findByEmail(email: string): Promise<User | null>;
-//   create(data: {
-//     firstName: string;
-//     lastName: string;
-//     email: string;
-//     password: string;
-//     role?: UserRole;
-//   }): Promise<User>;
-// }
-
-// export interface IUserRepository {
-//   findById(id: string): Promise<User | null>;
-// }
-
-// export interface IUserRepository {
-//   updatePassword(id: string, password: string): Promise<void>;
-// }

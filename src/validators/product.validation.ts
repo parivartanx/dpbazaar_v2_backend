@@ -1,5 +1,7 @@
 import Joi from 'joi';
 
+const cuidRegex = /^c[^\s-]{8,}$/;
+
 const createProductSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required().messages({
     'string.base': 'Name must be a string',
@@ -28,8 +30,8 @@ const createProductSchema = Joi.object({
     'number.base': 'Cost price must be a number',
     'number.min': 'Cost price cannot be negative',
   }),
-  categoryId: Joi.string().uuid().optional().allow(null).messages({
-    'string.guid': 'Category ID must be a valid UUID',
+  categoryId: Joi.string().pattern(cuidRegex).optional().allow(null, '').messages({
+    'string.pattern.base': 'Category ID must be a valid CUID',
   }),
   stockStatus: Joi.string()
     .valid('IN_STOCK', 'OUT_OF_STOCK', 'LOW_STOCK', 'DISCONTINUED')
@@ -43,11 +45,11 @@ const createProductSchema = Joi.object({
     .messages({
       'any.only': 'Status must be valid',
     }),
-  brandId: Joi.string().uuid().optional().messages({
-    'string.guid': 'Brand ID must be a valid UUID',
+  brandId: Joi.string().pattern(cuidRegex).optional().allow(null, '').messages({
+    'string.pattern.base': 'Brand ID must be a valid CUID',
   }),
-  vendorId: Joi.string().uuid().optional().messages({
-    'string.guid': 'Vendor ID must be a valid UUID',
+  vendorId: Joi.string().pattern(cuidRegex).optional().allow(null, '').messages({
+    'string.pattern.base': 'Vendor ID must be a valid CUID',
   }),
   shortDescription: Joi.string().max(255).optional().allow(null).messages({
     'string.max': 'Short description must be at most {#limit} characters',
@@ -66,19 +68,18 @@ const createProductSchema = Joi.object({
   weight: Joi.number().min(0).optional().messages({
     'number.min': 'Weight cannot be negative',
   }),
-  dimensions: Joi
-    .object
-    // length: Joi.number().min(0).messages({
-    //   'number.min': 'Length cannot be negative',
-    // }),
-    // width: Joi.number().min(0).messages({
-    //   'number.min': 'Width cannot be negative',
-    // }),
-    // height: Joi.number().min(0).messages({
-    //   'number.min': 'Height cannot be negative',
-    // }),
-    ()
-    .optional(),
+  dimensions: Joi.object({
+    length: Joi.number().min(0).optional().messages({
+      'number.min': 'Length cannot be negative',
+    }),
+    width: Joi.number().min(0).optional().messages({
+      'number.min': 'Width cannot be negative',
+    }),
+    height: Joi.number().min(0).optional().messages({
+      'number.min': 'Height cannot be negative',
+    }),
+    unit: Joi.string().optional()
+  }).optional(),
   metaTitle: Joi.string().optional(),
   metaDescription: Joi.string().optional(),
   metaKeywords: Joi.array().items(Joi.string()).optional().messages({
