@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { OrderController } from '../controllers/order.controller';
 import { validateJoi } from '../middlewares/validateJoi';
 import {
-  createOrderSchema,
+  // createOrderSchema,
   updateOrderSchema,
   updateOrderStatusSchema,
   cancelOrderSchema,
+  orderFilterSchema,
 } from '../validators/order.validation';
 
 const router = Router();
@@ -15,7 +16,6 @@ const orderController = new OrderController();
 
 /**
  * DASHBOARD & ANALYTICS ROUTES
- * Place before parameterized routes to avoid conflicts
  */
 router.get('/dashboard-stats', orderController.getDashboardStats);
 router.get('/monthly-stats', orderController.getMonthlyStats);
@@ -29,11 +29,18 @@ router.get('/customer/:customerId', orderController.getCustomerOrders);
 router.get('/vendor/:vendorId', orderController.getVendorOrders);
 
 /**
+ * ORDER FILTER & SEARCH ROUTES
+ */
+router.get('/filter', validateJoi(orderFilterSchema), orderController.filterOrders);
+
+/**
  * ORDER CRUD ROUTES
  */
-router.get('/', orderController.getAllOrders);
+router.get('/', validateJoi(orderFilterSchema), orderController.getAllOrders);
 router.get('/:id', orderController.getOrderById);
-router.post('/', validateJoi(createOrderSchema), orderController.createOrder);
+router.post('/',
+  //  validateJoi(createOrderSchema),
+   orderController.createOrder);
 router.put('/:id', validateJoi(updateOrderSchema), orderController.updateOrder);
 router.delete('/:id', orderController.deleteOrder);
 

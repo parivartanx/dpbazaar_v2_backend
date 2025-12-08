@@ -113,6 +113,49 @@ export class OrderController {
     }
   };
 
+  /** Filter and search orders */
+  filterOrders = async (req: Request, res: Response): Promise<void> => {
+    const { status, paymentStatus, search, page, limit } = req.query;
+
+    try {
+      const filters: any = {};
+      if (status) filters.status = status;
+      if (paymentStatus) filters.paymentStatus = paymentStatus;
+      if (search) filters.search = search as string;
+
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 10,
+      };
+
+      const result = await this.repo.getAllOrders(filters, pagination);
+
+      const response: ApiResponse = {
+        success: true,
+        message: "Filtered orders fetched successfully",
+        data: {
+          orders: result.orders,
+          total: result.total,
+          page: pagination.page,
+          limit: pagination.limit,
+          totalPages: Math.ceil(result.total / pagination.limit),
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error filtering orders: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem filtering orders',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
   getOrderById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
@@ -204,16 +247,6 @@ export class OrderController {
         return;
       }
 
-      if (!status) {
-        const response: ApiResponse = {
-          success: false,
-          message: 'Order status is required',
-          timestamp: new Date().toISOString(),
-        };
-        res.status(400).json(response);
-        return;
-      }
-
       const order = await this.repo.updateOrderStatus(id, status);
       const response: ApiResponse = {
         success: true,
@@ -251,7 +284,7 @@ export class OrderController {
       const response: ApiResponse = {
         success: true,
         data: { order },
-        message: 'Order cancelled successfully',
+        message: 'Order deleted successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -260,7 +293,7 @@ export class OrderController {
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in cancelling order',
+        message: 'Problem in deleting order',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -368,7 +401,7 @@ export class OrderController {
     }
   };
 
-  // Dashboard and Analytics APIs
+  // Analytics & Dashboard Methods
 
   getDashboardStats = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -395,12 +428,12 @@ export class OrderController {
   getMonthlyStats = async (req: Request, res: Response): Promise<void> => {
     try {
       const { months } = req.query;
-      const monthsCount = months ? parseInt(months as string) : 6;
-
-      const stats = await this.repo.getMonthlyOrderStats(monthsCount);
+      const monthlyStats = await this.repo.getMonthlyOrderStats(
+        months ? parseInt(months as string) : 6
+      );
       const response: ApiResponse = {
         success: true,
-        data: { stats },
+        data: { stats: monthlyStats },
         message: 'Monthly stats fetched successfully',
         timestamp: new Date().toISOString(),
       };
@@ -417,10 +450,7 @@ export class OrderController {
     }
   };
 
-  getOrderCountByStatus = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  getOrderCountByStatus = async (req: Request, res: Response): Promise<void> => {
     try {
       const stats = await this.repo.getOrderCountByStatus();
       const response: ApiResponse = {
@@ -445,11 +475,10 @@ export class OrderController {
   getRevenueStats = async (req: Request, res: Response): Promise<void> => {
     try {
       const { startDate, endDate } = req.query;
-
-      const start = startDate ? new Date(startDate as string) : undefined;
-      const end = endDate ? new Date(endDate as string) : undefined;
-
-      const stats = await this.repo.getRevenueStats(start, end);
+      const stats = await this.repo.getRevenueStats(
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
       const response: ApiResponse = {
         success: true,
         data: { stats },
@@ -469,9 +498,13 @@ export class OrderController {
     }
   };
 
+  // Customer & Vendor Specific Methods
+
   getCustomerOrders = async (req: Request, res: Response): Promise<void> => {
     try {
       const { customerId } = req.params;
+      const { page, limit } = req.query;
+
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -482,10 +515,25 @@ export class OrderController {
         return;
       }
 
-      const orders = await this.repo.getOrdersByCustomer(customerId);
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 10,
+      };
+
+      const result = await this.repo.getAllOrders(
+        { customerId },
+        pagination
+      );
+
       const response: ApiResponse = {
         success: true,
-        data: { orders },
+        data: {
+          orders: result.orders,
+          total: result.total,
+          page: pagination.page,
+          limit: pagination.limit,
+          totalPages: Math.ceil(result.total / pagination.limit),
+        },
         message: 'Customer orders fetched successfully',
         timestamp: new Date().toISOString(),
       };
@@ -505,6 +553,8 @@ export class OrderController {
   getVendorOrders = async (req: Request, res: Response): Promise<void> => {
     try {
       const { vendorId } = req.params;
+      const { page, limit } = req.query;
+
       if (!vendorId) {
         const response: ApiResponse = {
           success: false,
@@ -515,10 +565,25 @@ export class OrderController {
         return;
       }
 
-      const orders = await this.repo.getOrdersByVendor(vendorId);
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 10,
+      };
+
+      const result = await this.repo.getAllOrders(
+        { vendorId },
+        pagination
+      );
+
       const response: ApiResponse = {
         success: true,
-        data: { orders },
+        data: {
+          orders: result.orders,
+          total: result.total,
+          page: pagination.page,
+          limit: pagination.limit,
+          totalPages: Math.ceil(result.total / pagination.limit),
+        },
         message: 'Vendor orders fetched successfully',
         timestamp: new Date().toISOString(),
       };
