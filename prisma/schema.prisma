@@ -71,7 +71,7 @@ enum PaymentMethod {
   WALLET
   EMI
   COD
-  PAYPAL
+  CASH
   STRIPE
   RAZORPAY
 }
@@ -554,6 +554,9 @@ model Product {
   description      String  @db.Text
   shortDescription String?
 
+  //barcode
+  barcode          String? @unique
+
   // Pricing
   mrp          Decimal  @db.Decimal(12, 2)
   sellingPrice Decimal  @db.Decimal(12, 2)
@@ -621,6 +624,7 @@ model Product {
   reviews       Review[]
 
   @@index([sku])
+  @@index([barcode])
   @@index([slug])
   @@index([status, stockStatus])
   @@index([brandId])
