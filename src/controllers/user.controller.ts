@@ -40,18 +40,37 @@ export class UserController {
     const { gender, status, search, page, limit } = req.query;
 
     try {
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+      
+      // Get filtered users
       const users = await userRepo.filterUsers({
         gender: gender as string,
         status: status as any,
         search: search as string,
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
+      });
+      
+      // Get total count for pagination metadata
+      const total = await userRepo.countFilteredUsers({
+        gender: gender as string,
+        status: status as any,
+        search: search as string,
       });
 
       const response: ApiResponse = {
         success: true,
         message: "Filtered users fetched successfully",
-        data: { users },
+        data: { 
+          users,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            totalItems: total,
+            itemsPerPage: limitNum
+          }
+        },
         timestamp: new Date().toISOString(),
       };
 
