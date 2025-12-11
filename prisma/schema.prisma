@@ -150,6 +150,13 @@ enum CardStatus {
   ACTIVE
 }
 
+enum Source{
+  WEBSITE
+  APP
+  SYSTEM
+  POS
+}
+
 // =====================================================
 // USER & AUTHENTICATION SYSTEM
 // =====================================================
@@ -189,6 +196,7 @@ model User {
   sessions      Session[]
   auditLogs     AuditLog[]     @relation("UserAuditLogs")
   notifications Notification[]
+  createdOrders Order[]        @relation("CreatedOrders")
 
   @@index([email])
   @@index([phone])
@@ -1032,9 +1040,11 @@ model Order {
   deliveredAt       DateTime?
   cancelledAt       DateTime?
   returnRequestedAt DateTime?
+  createdBy         String?
+  creator           User?              @relation("CreatedOrders", fields: [createdBy], references: [id])
 
   // Source
-  source     String @default("WEBSITE") // WEBSITE, APP, POS, PHONE
+  source     Source @default(WEBSITE) // WEBSITE, APP, POS, SYSTEM
   deviceInfo Json?
 
   // Metadata
