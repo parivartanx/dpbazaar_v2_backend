@@ -34,4 +34,20 @@ export interface IUserRepository {
     page?: number;
     limit?: number;
   }): Promise<User[]>;
+  
+  /** Filter and search users with pagination */
+  filterUsers(params: {
+    gender?: string;
+    status?: UserStatus;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<User[]>;
+  
+  /** Count filtered users */
+  countFilteredUsers(params: {
+    gender?: string;
+    status?: UserStatus;
+    search?: string;
+  }): Promise<number>;
 }

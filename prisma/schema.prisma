@@ -71,7 +71,7 @@ enum PaymentMethod {
   WALLET
   EMI
   COD
-  PAYPAL
+  CASH
   STRIPE
   RAZORPAY
 }
@@ -150,6 +150,13 @@ enum CardStatus {
   ACTIVE
 }
 
+enum Source{
+  WEBSITE
+  APP
+  SYSTEM
+  POS
+}
+
 // =====================================================
 // USER & AUTHENTICATION SYSTEM
 // =====================================================
@@ -189,6 +196,7 @@ model User {
   sessions      Session[]
   auditLogs     AuditLog[]     @relation("UserAuditLogs")
   notifications Notification[]
+  createdOrders Order[]        @relation("CreatedOrders")
 
   @@index([email])
   @@index([phone])
@@ -554,6 +562,9 @@ model Product {
   description      String  @db.Text
   shortDescription String?
 
+  //barcode
+  barcode          String? @unique
+
   // Pricing
   mrp          Decimal  @db.Decimal(12, 2)
   sellingPrice Decimal  @db.Decimal(12, 2)
@@ -621,6 +632,7 @@ model Product {
   reviews       Review[]
 
   @@index([sku])
+  @@index([barcode])
   @@index([slug])
   @@index([status, stockStatus])
   @@index([brandId])
@@ -1028,9 +1040,11 @@ model Order {
   deliveredAt       DateTime?
   cancelledAt       DateTime?
   returnRequestedAt DateTime?
+  createdBy         String?
+  creator           User?              @relation("CreatedOrders", fields: [createdBy], references: [id])
 
   // Source
-  source     String @default("WEBSITE") // WEBSITE, APP, POS, PHONE
+  source     Source @default(WEBSITE) // WEBSITE, APP, POS, SYSTEM
   deviceInfo Json?
 
   // Metadata

@@ -153,4 +153,28 @@ export class UserRepository implements IUserRepository {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  /** Count filtered users */
+  async countFilteredUsers(params: {
+    gender?: string;
+    status?: UserStatus;
+    search?: string;
+  }) {
+    const { gender, status, search } = params;
+
+    return prisma.user.count({
+      where: {
+        deletedAt: null,
+        ...(gender && { gender }),
+        ...(status && { status }),
+        ...(search && {
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
+      },
+    });
+  }
 }
