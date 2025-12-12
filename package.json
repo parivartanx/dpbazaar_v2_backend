@@ -16,7 +16,8 @@
     "format": "prettier --write src/**/*.ts",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "vercel-build": "npm run build"
   },
   "keywords": [
     "nodejs",

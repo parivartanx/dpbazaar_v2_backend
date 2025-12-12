@@ -9,12 +9,10 @@ import { logger } from './utils/logger';
 import { errorHandler } from './middlewares/errorHandler';
 import { notFoundHandler } from './middlewares/notFoundHandler';
 import { routes } from './routes';
-import { config } from './config/environment';
 
 dotenv.config();
 
 const app = express();
-const PORT = config.port;
 
 // Security middleware
 app.use(helmet()); 
@@ -50,13 +48,5 @@ app.use(routes);
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
-
-// Start server only when running locally
-if (require.main === module) {
-  app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
-}
 
 export default app;
