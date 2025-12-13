@@ -76,14 +76,14 @@ export class AuthService {
 
   public async login(data: LoginData): Promise<AuthResult> {
     const { email, password, role } = data;
-    console.log(`auth services :- `, email, password, role);
+    // console.log(`auth services :- `, email, password, role);
 
     // Find user by email
     const user = await this.userRepository.findByEmail(email);
-    console.log(`user :- `, user);
+    // console.log(`user :- `, user);
 
     if (!user) {
-      console.log('User not found');
+      // console.log('User not found');
       throw new Error('Invalid credentials');
     }
 
@@ -91,9 +91,9 @@ export class AuthService {
     if (role) {
       console.log(`Checking role access: user role=${user.role}, requested role=${role}`);
       const hasAccess = this.hasRequiredRole(user.role as UserRole, role);
-      console.log(`Role access check result: ${hasAccess}`);
+      // console.log(`Role access check result: ${hasAccess}`);
       if (!hasAccess) {
-        console.log('User does not have required role access');
+        // console.log('User does not have required role access');
         throw new Error('Invalid credentials');
       }
     }
@@ -102,13 +102,13 @@ export class AuthService {
     const isPasswordValid = await this.userRepository.verifyPassword(password, user.password);
     console.log(`Password validation result: ${isPasswordValid}`);
     if (!isPasswordValid) {
-      console.log('Invalid password');
+      // console.log('Invalid password');
       throw new Error('Invalid credentials');
     }
 
     // Check if user is active
     if (!user.status || user.status !== 'ACTIVE') {
-      console.log('User account is not active');
+      // console.log('User account is not active');
       throw new Error('Account is deactivated');
     }
 
