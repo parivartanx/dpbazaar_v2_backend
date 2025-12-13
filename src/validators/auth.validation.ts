@@ -1,4 +1,5 @@
 import { body } from 'express-validator';
+import { UserRole } from '../types/common';
 
 /**
  * Validation schemas for authentication endpoints
@@ -38,6 +39,10 @@ export const authValidation = {
     body('password')
       .notEmpty()
       .withMessage('Password is required'),
+    body('role')
+      .optional()
+      .isIn(Object.values(UserRole))
+      .withMessage('Invalid role provided'),
   ],
 
   // Refresh token validation
@@ -68,4 +73,4 @@ export const authValidation = {
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
       .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
   ],
-}; 
+};

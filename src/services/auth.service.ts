@@ -76,24 +76,39 @@ export class AuthService {
 
   public async login(data: LoginData): Promise<AuthResult> {
     const { email, password, role } = data;
-    console.log(`auth services :- `, email, password, role);
+    // console.log(`auth services :- `, email, password, role);
 
     // Find user by email
     const user = await this.userRepository.findByEmail(email);
-    console.log(`user :- `, user);
+    // console.log(`user :- `, user);
 
-    if (!user || user.role !== role) {
+    if (!user) {
+      // console.log('User not found');
       throw new Error('Invalid credentials');
+    }
+
+    // If role is provided, check if user has that role or a higher role
+    if (role) {
+      console.log(`Checking role access: user role=${user.role}, requested role=${role}`);
+      const hasAccess = this.hasRequiredRole(user.role as UserRole, role);
+      // console.log(`Role access check result: ${hasAccess}`);
+      if (!hasAccess) {
+        // console.log('User does not have required role access');
+        throw new Error('Invalid credentials');
+      }
     }
 
     // Verify password using repository method
     const isPasswordValid = await this.userRepository.verifyPassword(password, user.password);
+    console.log(`Password validation result: ${isPasswordValid}`);
     if (!isPasswordValid) {
+      // console.log('Invalid password');
       throw new Error('Invalid credentials');
     }
 
     // Check if user is active
     if (!user.status || user.status !== 'ACTIVE') {
+      // console.log('User account is not active');
       throw new Error('Account is deactivated');
     }
 
@@ -106,7 +121,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        role: user.role,
+        role: user.role as UserRole,
         status: user.status,
         emailVerified: user.isEmailVerified,
         createdAt: user.createdAt,
@@ -115,6 +130,37 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  /**
+   * Check if user has required role or higher
+   * Role hierarchy: SUPER_ADMIN > ADMIN > MANAGER > EMPLOYEE > VENDOR > CUSTOMER
+   */
+  private hasRequiredRole(userRole: UserRole, requiredRole: UserRole): boolean {
+    const roleHierarchy = [
+      UserRole.SUPER_ADMIN,
+      UserRole.ADMIN,
+      UserRole.MANAGER,
+      UserRole.EMPLOYEE,
+      UserRole.VENDOR,
+      UserRole.CUSTOMER
+    ];
+
+    const userRoleIndex = roleHierarchy.indexOf(userRole);
+    const requiredRoleIndex = roleHierarchy.indexOf(requiredRole);
+
+    console.log(`Role hierarchy check - userRoleIndex: ${userRoleIndex}, requiredRoleIndex: ${requiredRoleIndex}`);
+
+    // If either role is not in hierarchy, do exact match
+    if (userRoleIndex === -1 || requiredRoleIndex === -1) {
+      console.log(`Exact role match: ${userRole === requiredRole}`);
+      return userRole === requiredRole;
+    }
+
+    // User can access if their role is equal or higher in hierarchy
+    const result = userRoleIndex <= requiredRoleIndex;
+    console.log(`Hierarchy role check result: ${result}`);
+    return result;
   }
 
   public async refreshToken(
@@ -202,7 +248,7 @@ export class AuthService {
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
-      role: user.role,
+      role: user.role as UserRole,
     };
 
     const accessToken = jwt.sign(payload, config.jwt.secret, {
