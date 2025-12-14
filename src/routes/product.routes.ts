@@ -37,29 +37,21 @@ const relationController = new RelationController();
 /**
  * PRODUCT ROUTES
  */
+router.get('/filtered', productController.getProductsFiltered);
+router.get('/dashboard-stats', productController.getDashboardStats);
 router.get('/', productController.getAllProducts);
-router.get('/:id', productController.getProductById);
+// More specific route pattern to avoid conflicts with static routes
+router.get('/:id([0-9a-fA-F-]+)', productController.getProductById);
 router.post('/', validateJoi(createProductSchema), productController.createProduct);
 router.put('/:id', validateJoi(updateProductSchema), productController.updateProduct);
 router.delete('/:id', productController.softDeleteProduct);
 router.patch('/:id/restore', productController.restoreProduct);
 
 // Images
-router.post(
-  '/:productId/images',
-  upload.single('file'),
-  productController.addImage
-);
-router.post(
-  '/:productId/images/bulk',
-  upload.array('files'),
-  productController.addImagesBulk
-);
+router.post('/:productId/images',upload.single('file'),productController.addImage);
+router.post('/:productId/images/bulk',upload.array('files'),productController.addImagesBulk);
 router.delete('/images/:imageId', productController.deleteImage);
-router.patch(
-  '/:productId/images/:imageId/primary',
-  productController.setPrimaryImage
-);
+router.patch('/:productId/images/:imageId/primary',productController.setPrimaryImage);
 
 /**
  * VARIANT ROUTES
@@ -84,10 +76,7 @@ router.delete('/attributes/:attrId', attributeController.removeFromProduct);
 
 // Category attributes
 router.post('/categories/:id/attributes', validateJoi(assignCategoryAttributeSchema), attributeController.assignToCategory);
-router.delete(
-  '/categories/:id/attributes/:attrId',
-  attributeController.removeFromCategory
-);
+router.delete('/categories/:id/attributes/:attrId',attributeController.removeFromCategory);
 
 /**
  * RELATION ROUTES
@@ -96,9 +85,9 @@ router.get('/:id/relations', relationController.getProductRelations);
 router.post('/:id/relations', validateJoi(createRelationSchema), relationController.createRelation);
 router.delete('/relations/:id', relationController.deleteRelation);
 
-// /**
-//  * REVIEW ROUTES
-//  */
+/**
+ * REVIEW ROUTES
+ */
 // router.get('/reviews', reviewController.getAllReviews);
 // router.patch('/reviews/:id/approve', reviewController.approveReview);
 // router.patch('/reviews/:id/reject', reviewController.rejectReview);

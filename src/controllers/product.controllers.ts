@@ -44,6 +44,124 @@ export class ProductController {
     }
   };
 
+  // Dashboard stats
+  getDashboardStats = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const stats = await this.repo.getDashboardStats();
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          productOverview: {
+            totalProducts: stats.totalProducts,
+            activeProducts: stats.activeProducts,
+            draftProducts: stats.draftProducts,
+            stockStatus: {
+              inStock: stats.inStockCount,
+              lowStock: stats.lowStockCount,
+              outOfStock: stats.outOfStockCount
+            },
+            featured: {
+              total: stats.featuredCount,
+              newArrivals: stats.newArrivalsCount,
+              bestSellers: stats.bestSellersCount
+            },
+            categories: {
+              total: stats.activeCategories
+            }
+          }
+        },
+        message: 'Dashboard stats retrieved successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching dashboard stats',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Paginated products with filters
+  getProductsFiltered = async (req: Request, res: Response): Promise<void> => {
+    try {
+      logger.info('getProductsFiltered called with query params:', req.query);
+      logger.info('Request URL:', req.url);
+      logger.info('Request method:', req.method);
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = req.query.search as string;
+      const category = req.query.category as string;
+      const brand = req.query.brand as string;
+      const status = req.query.status as string;
+      const stockStatus = req.query.stockStatus as string;
+      const isFeatured = req.query.isFeatured as string;
+      const isNewArrival = req.query.isNewArrival as string;
+      const isBestSeller = req.query.isBestSeller as string;
+
+      const filters: any = {
+        page,
+        limit,
+        search,
+        category,
+        brand,
+        status,
+        stockStatus
+      };
+
+      // Convert string booleans to actual booleans
+      if (isFeatured !== undefined) {
+        filters.isFeatured = isFeatured === 'true';
+      }
+      if (isNewArrival !== undefined) {
+        filters.isNewArrival = isNewArrival === 'true';
+      }
+      if (isBestSeller !== undefined) {
+        filters.isBestSeller = isBestSeller === 'true';
+      }
+
+      logger.info('Applying filters:', filters);
+      
+      const { products, totalCount } = await this.repo.getAllWithFilters(filters);
+      
+      logger.info(`Found ${totalCount} products, returning ${products.length} products`);
+      
+      const totalPages = Math.ceil(totalCount / limit);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          products,
+          pagination: {
+            currentPage: page,
+            totalPages,
+            totalCount,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+          }
+        },
+        message: 'Products retrieved successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`error in getProductsFiltered: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching products',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
   getProductById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;

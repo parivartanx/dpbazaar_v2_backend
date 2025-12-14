@@ -15,6 +15,224 @@ export class ProductRepository implements IProductRepository {
     });
   }
 
+  async getAllWithFilters(filters: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    brand?: string;
+    status?: string;
+    stockStatus?: string;
+    isFeatured?: boolean;
+    isNewArrival?: boolean;
+    isBestSeller?: boolean;
+  }): Promise<{ products: any[]; totalCount: number }> {
+    console.log('ProductRepository.getAllWithFilters called with filters:', filters);
+    
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      category,
+      brand,
+      status,
+      stockStatus,
+      isFeatured,
+      isNewArrival,
+      isBestSeller
+    } = filters;
+
+    const where: any = {
+      deletedAt: null
+    };
+
+    // Apply search filter
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    // Apply category filter
+    if (category) {
+      where.categories = {
+        some: {
+          categoryId: category
+        }
+      };
+    }
+
+    // Apply brand filter
+    if (brand) {
+      where.brandId = brand;
+    }
+
+    // Apply status filter
+    if (status) {
+      where.status = status;
+    }
+
+    // Apply stock status filter
+    if (stockStatus) {
+      where.stockStatus = stockStatus;
+    }
+
+    // Apply featured filter
+    if (isFeatured !== undefined) {
+      where.isFeatured = isFeatured;
+    }
+
+    // Apply new arrival filter
+    if (isNewArrival !== undefined) {
+      where.isNewArrival = isNewArrival;
+    }
+
+    // Apply best seller filter
+    if (isBestSeller !== undefined) {
+      where.isBestSeller = isBestSeller;
+    }
+
+    console.log('ProductRepository.getAllWithFilters - where clause:', JSON.stringify(where, null, 2));
+    
+    // Get products (temporarily excluding inventory until inventory management is implemented)
+    const [productsResult, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          images: true
+          // inventory: true // Commented out until inventory management is fully implemented
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.product.count({ where })
+    ]);
+
+    console.log(`ProductRepository.getAllWithFilters - found ${totalCount} products, returning ${productsResult.length} products`);
+    
+    // Transform products to include only required fields
+    const products = productsResult.map(product => {
+      // Get primary image or first image
+      const primaryImage = product.images && product.images.length > 0 
+        ? product.images.find(img => img.isPrimary) || product.images[0]
+        : null;
+      
+      // Set default stock quantity (0) until inventory management is implemented
+      const totalStockQuantity = 0; // product.inventory && product.inventory.length > 0 
+        // ? product.inventory.reduce((sum: number, inv: any) => sum + inv.availableQuantity, 0)
+        // : 0;
+      
+      return {
+        id: product.id,
+        name: product.name,
+        image: primaryImage?.url || null,
+        sku: product.sku,
+        price: product.sellingPrice,
+        stockStatus: product.stockStatus,
+        status: product.status,
+        stockQuantity: totalStockQuantity,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt
+      };
+    });
+
+    return { products, totalCount };
+  }
+
+  async getDashboardStats(): Promise<any> {
+    // Get total products count
+    const totalProducts = await prisma.product.count({
+      where: {
+        deletedAt: null
+      }
+    });
+
+    // Get active products count
+    const activeProducts = await prisma.product.count({
+      where: {
+        status: 'ACTIVE',
+        deletedAt: null
+      }
+    });
+
+    // Get draft products count
+    const draftProducts = await prisma.product.count({
+      where: {
+        status: 'DRAFT',
+        deletedAt: null
+      }
+    });
+
+    // Get stock status counts
+    const inStockCount = await prisma.product.count({
+      where: {
+        stockStatus: 'IN_STOCK',
+        deletedAt: null
+      }
+    });
+
+    const lowStockCount = await prisma.product.count({
+      where: {
+        stockStatus: 'LOW_STOCK',
+        deletedAt: null
+      }
+    });
+
+    const outOfStockCount = await prisma.product.count({
+      where: {
+        stockStatus: 'OUT_OF_STOCK',
+        deletedAt: null
+      }
+    });
+
+    // Get featured products counts
+    const featuredCount = await prisma.product.count({
+      where: {
+        isFeatured: true,
+        deletedAt: null
+      }
+    });
+
+    const newArrivalsCount = await prisma.product.count({
+      where: {
+        isNewArrival: true,
+        deletedAt: null
+      }
+    });
+
+    const bestSellersCount = await prisma.product.count({
+      where: {
+        isBestSeller: true,
+        deletedAt: null
+      }
+    });
+
+    // Get active categories count
+    const activeCategories = await prisma.category.count({
+      where: {
+        isActive: true
+      }
+    });
+
+    return {
+      totalProducts,
+      activeProducts,
+      draftProducts,
+      inStockCount,
+      lowStockCount,
+      outOfStockCount,
+      featuredCount,
+      newArrivalsCount,
+      bestSellersCount,
+      activeCategories
+    };
+  }
+
   async getById(id: string): Promise<Product | null> {
     return prisma.product.findUnique({
       where: { id },

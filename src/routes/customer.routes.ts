@@ -11,20 +11,25 @@ import {
   createSegmentSchema,
   updateSegmentSchema,
 } from '../validators/cuctomerSegment.validaton';
+// import {
+//   createAddressSchema,
+//   updateAddressSchema,
+// } from '../validators/address.validation';
 
 const router = Router();
 const customerCtrl = new CustomerController();
 const segmentCtrl = new CustomerSegmentController();
 
+// router.use(isAccessAllowed('CUSTOMER'));
+
 /** CUSTOMER ROUTES */
-// Admin
 router.get('/', customerCtrl.listCustomers);
 router.get('/:id', customerCtrl.getCustomer);
 router.post(
   '/',
   validateJoi(createCustomerSchema),
   customerCtrl.createCustomer
-); // ✅ add create route with validation
+);
 router.put(
   '/:id',
   validateJoi(updateCustomerSchema),
@@ -40,6 +45,20 @@ router.put(
   validateJoi(updateCustomerSchema),
   customerCtrl.updateMyProfile
 );
+
+// Address routes (customer self-service)
+// router.get('/me/addresses', customerCtrl.getMyAddresses);
+// router.post(
+//   '/me/addresses',
+//   validateJoi(createAddressSchema),
+//   customerCtrl.createMyAddress
+// );
+// router.put(
+//   '/me/addresses/:id',
+//   validateJoi(updateAddressSchema),
+//   customerCtrl.updateMyAddress
+// );
+// router.delete('/me/addresses/:id', customerCtrl.deleteMyAddress);
 
 /** CUSTOMER SEGMENT ROUTES */
 router.get('/:customerId/segments', segmentCtrl.listByCustomer);

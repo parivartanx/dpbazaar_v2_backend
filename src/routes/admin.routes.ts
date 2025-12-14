@@ -22,7 +22,7 @@ import {
 } from '../controllers/product.controllers';
 import { CustomerController } from '../controllers/customer.controller';
 import { CustomerSegmentController } from '../controllers/customerSegment.controller';
-import { isAccessAllowed } from '../middlewares/isAccessAllowed';
+// import { isAccessAllowed } from '../middlewares/isAccessAllowed';
 import { validateJoi } from '../middlewares/validateJoi';
 import {
   createCategorySchema,
@@ -90,6 +90,7 @@ const segmentCtrl = new CustomerSegmentController();
 // const reviewController = new ReviewController();
 // const reportController = new ReportController();
 
+/** Centralised Access Control Middleware */
 // router.use(isAccessAllowed('ADMIN'));
 
 /**
@@ -109,8 +110,8 @@ router.get(
 router.get("/users/counts", userController.getUserCounts);
 router.get("/users/filter", userController.filterUsers);
 router.get("/users", userController.listUsers);
-router.get("/users/:id", userController.getUser);
 router.post("/users", userController.createUser);
+router.get("/users/:id", userController.getUser);
 router.put("/users/:id", userController.updateUser);
 router.delete("/users/:id", userController.deleteUser);
 router.patch("/users/:id/restore", userController.restoreUser);
@@ -121,197 +122,70 @@ router.patch("/users/:id/reset-password", userController.resetPassword);
 /**
  * Department Routes
  */
-router.get(
-  '/department',
-  departmentController.getAllDepartments
-);
-router.get(
-  '/department/:id',
-  departmentController.getDepartmentById
-);
-router.post(
-  '/department',
-  validateJoi(createDepartmentSchema),
-  departmentController.createDepartment
-);
-router.put(
-  '/department/:id',
-  validateJoi(updateDepartmentSchema),
-  departmentController.updateDepartment
-);
-router.delete(
-  '/department/:id',
-  departmentController.deleteDepartment
-);
+router.get('/department',departmentController.getAllDepartments);
+router.get('/department/:id',departmentController.getDepartmentById);
+router.post('/department',validateJoi(createDepartmentSchema),departmentController.createDepartment);
+router.put('/department/:id',validateJoi(updateDepartmentSchema),departmentController.updateDepartment);
+router.delete('/department/:id',departmentController.deleteDepartment);
 
 /**
  * Employees Routes
  */
-
-router.get(
-  '/employees',
-  employeeController.getAllEmployees
-);
-router.get(
-  '/employees/:id',
-  employeeController.getEmployeeById
-);
-router.post(
-  '/employees',
-  validateJoi(createEmployeeSchema),
-  employeeController.createEmployee
-);
-router.put(
-  '/employees/:id',
-  validateJoi(updateEmployeeSchema),
-  employeeController.updateEmployee
-);
-router.delete(
-  '/employees/:id',
-  employeeController.deleteEmployee
-);
-router.patch(
-  '/employees/:id/status',
-  employeeController.updateEmployeeStatus
-);
-router.patch(
-  '/employees/:id/department',
-  employeeController.assignDepartment
-);
+router.get('/employees',employeeController.getAllEmployees);
+router.get('/employees/:id',employeeController.getEmployeeById);
+router.post('/employees',validateJoi(createEmployeeSchema),employeeController.createEmployee);
+router.put('/employees/:id',validateJoi(updateEmployeeSchema),employeeController.updateEmployee);
+router.delete('/employees/:id',employeeController.deleteEmployee);
+router.patch('/employees/:id/status',employeeController.updateEmployeeStatus);
+router.patch('/employees/:id/department',employeeController.assignDepartment);
 
 /**
  * Permissions Routes
  */
 
-router.get(
-  '/permissions',
-  permissionController.getAllPermissions
-);
-router.get(
-  '/permissions/:id',
-  permissionController.getPermissionById
-);
-router.post(
-  '/permissions',
-  validateJoi(createPermissionSchema),
-  permissionController.createPermission
-);
-router.put(
-  '/permissions/:id',
-  validateJoi(updatePermissionSchema),
-  permissionController.updatePermission
-);
-router.delete(
-  '/permissions/:id',
-  permissionController.deletePermission
-);
+router.get('/permissions',permissionController.getAllPermissions);
+router.get('/permissions/:id',permissionController.getPermissionById);
+router.post('/permissions',validateJoi(createPermissionSchema),permissionController.createPermission);
+router.put('/permissions/:id',validateJoi(updatePermissionSchema),permissionController.updatePermission);
+router.delete('/permissions/:id',permissionController.deletePermission);
 
 /**
  * EmployeePermission Routes
  */
-
-router.get(
-  '/employee/permissions/:employeeId',
-  employeePermissionController.getEmployeePermissions
-);
-router.post(
-  '/employee/permissions',
-  validateJoi(employeePermissionSchema),
-  employeePermissionController.assignPermission
-);
-router.delete(
-  '/employee/permissions/:id',
-  employeePermissionController.revokePermission
-);
+router.get('/employee/permissions/:employeeId',employeePermissionController.getEmployeePermissions);
+router.post('/employee/permissions',validateJoi(employeePermissionSchema),employeePermissionController.assignPermission);
+router.delete('/employee/permissions/:id',employeePermissionController.revokePermission);
 
 /**
  * BRAND MANAGEMENT (Admin Access)
  */
-router.post(
-  '/brands',
-  validateJoi(createBrandSchema),
-  brandController.createBrand
-);
+router.post('/brands',validateJoi(createBrandSchema),brandController.createBrand);
 router.get('/brands', brandController.getAllBrands);
-router.get(
-  '/brands/:id',
-  brandController.getBrandById
-);
-router.put(
-  '/brands/:id',
-  validateJoi(updateBrandSchema),
-  brandController.updateBrand
-);
-router.delete(
-  '/brands/:id',
-  brandController.deleteBrand
-);
+router.get('/brands/:id',brandController.getBrandById);
+router.put('/brands/:id',validateJoi(updateBrandSchema),brandController.updateBrand);
+router.delete('/brands/:id',brandController.deleteBrand);
 
 /**
  * CATEGORY MANAGEMENT
  */
-router.get(
-  '/categories',
-  categoryController.getAllCategories
-);
-router.get(
-  '/categories/:id',
-  categoryController.getCategoryById
-);
-router.post(
-  '/categories',
-  validateJoi(createCategorySchema),
-  categoryController.createCategory
-);
-router.put(
-  '/categories/:id',
-  validateJoi(updateCategorySchema),
-  categoryController.updateCategory
-);
-router.delete(
-  '/categories/:id',
-  categoryController.deleteCategory
-);
-router.patch(
-  '/categories/:id/feature',
-  categoryController.toggleFeature
-);
-router.patch(
-  '/categories/:id/activate',
-  categoryController.toggleActive
-);
+router.get('/categories',categoryController.getAllCategories);
+router.get('/categories/:id',categoryController.getCategoryById);
+router.post('/categories',validateJoi(createCategorySchema),categoryController.createCategory);
+router.put('/categories/:id',validateJoi(updateCategorySchema),categoryController.updateCategory);
+router.delete('/categories/:id',categoryController.deleteCategory);
+router.patch('/categories/:id/feature',categoryController.toggleFeature);
+router.patch('/categories/:id/activate',categoryController.toggleActive);
 
 /**
  * PRODUCT MANAGEMENT
  */
-router.get(
-  '/products',
-  productController.getAllProducts
-);
+router.get('/products',productController.getAllProducts);
 // router.get('/products/slug/:slug', productController.getProductBySlug);
-router.get(
-  '/products/:id',
-  productController.getProductById
-);
-router.post(
-  '/products',
-  validateJoi(createProductSchema),
-  productController.createProduct
-);
-router.put(
-  '/products/:id',
-  validateJoi(updateProductSchema),
-  productController.updateProduct
-);
-router.delete(
-  '/products/:id',
-  productController.softDeleteProduct
-);
-router.patch(
-  '/products/:id/restore',
-  validateJoi(updateProductSchema),
-  productController.restoreProduct
-);
+router.get('/products/:id',productController.getProductById);
+router.post('/products',validateJoi(createProductSchema),productController.createProduct);
+router.put('/products/:id',validateJoi(updateProductSchema),productController.updateProduct);
+router.delete('/products/:id',productController.softDeleteProduct);
+router.patch('/products/:id/restore',validateJoi(updateProductSchema),productController.restoreProduct);
 // router.get('/products/category/:id', productController.getProductsByCategory);
 // router.get('/products/brand/:id', productController.getProductsByBrand);
 // router.get('/products/featured', productController.getFeaturedProducts);
@@ -320,176 +194,65 @@ router.patch(
 // router.get('/products/:id/related', productController.getRelatedProducts);
 
 // Images
-router.post(
-  '/:productId/images',
-  upload.single('file'),
-  productController.addImage
-);
-router.post(
-  '/:productId/images/bulk',
-  upload.array('files'),
-  productController.addImagesBulk
-);
-router.delete(
-  '/images/:imageId',
-  productController.deleteImage
-);
-router.patch(
-  '/:productId/images/:imageId/primary',
-  productController.setPrimaryImage
-);
+router.post('/:productId/images',upload.single('file'),productController.addImage);
+router.post('/:productId/images/bulk',upload.array('files'),productController.addImagesBulk);
+router.delete('/images/:imageId',productController.deleteImage);
+router.patch('/:productId/images/:imageId/primary',productController.setPrimaryImage);
 
 /**
  * VARIANT ROUTES
  */
-router.get(
-  '/:id/variants',
-  variantController.getProductVariants
-);
-router.post(
-  '/:id/variants',
-  validateJoi(createVariantSchema),
-  variantController.createVariant
-);
-router.put(
-  '/variants/:id',
-  validateJoi(updateVariantSchema),
-  variantController.updateVariant
-);
-router.delete(
-  '/variants/:id',
-  variantController.deleteVariant
-);
-router.patch(
-  '/variants/:id/toggle',
-  variantController.toggleVariantActive
-);
+router.get('/:id/variants',variantController.getProductVariants);
+router.post('/:id/variants',validateJoi(createVariantSchema),variantController.createVariant);
+router.put('/variants/:id',validateJoi(updateVariantSchema),variantController.updateVariant);
+router.delete('/variants/:id',variantController.deleteVariant);
+router.patch('/variants/:id/toggle',variantController.toggleVariantActive);
 
 /**
  * ATTRIBUTE ROUTES
  */
-router.get(
-  '/attributes',
-  attributeController.getAllAttributes
-);
-router.post(
-  '/attributes',
-  validateJoi(createAttributeSchema),
-  attributeController.createAttribute
-);
-router.put(
-  '/attributes/:id',
-  validateJoi(updateAttributeSchema),
-  attributeController.updateAttribute
-);
-router.delete(
-  '/attributes/:id',
-  attributeController.deleteAttribute
-);
+router.get('/attributes',attributeController.getAllAttributes);
+router.post('/attributes',validateJoi(createAttributeSchema),attributeController.createAttribute);
+router.put('/attributes/:id',validateJoi(updateAttributeSchema),attributeController.updateAttribute);
+router.delete('/attributes/:id',attributeController.deleteAttribute);
 
 // Product attributes
-router.post(
-  '/:id/attributes',
-  validateJoi(addProductAttributeSchema),
-  attributeController.addToProduct
-);
-router.delete(
-  '/attributes/:attrId',
-  attributeController.removeFromProduct
-);
+router.post('/:id/attributes',validateJoi(addProductAttributeSchema),attributeController.addToProduct);
+router.delete('/attributes/:attrId',attributeController.removeFromProduct);
 
 // Category attributes
-router.post(
-  '/categories/:id/attributes',
-  validateJoi(assignCategoryAttributeSchema),
-  attributeController.assignToCategory
-);
-router.delete(
-  '/categories/:id/attributes/:attrId',
-  attributeController.removeFromCategory
-);
+router.post('/categories/:id/attributes',validateJoi(assignCategoryAttributeSchema),attributeController.assignToCategory);
+router.delete('/categories/:id/attributes/:attrId',attributeController.removeFromCategory);
 
 /**
  * RELATION ROUTES
  */
-router.get(
-  '/:id/relations',
-  relationController.getProductRelations
-);
-router.post(
-  '/:id/relations',
-  validateJoi(createRelationSchema),
-  relationController.createRelation
-);
-router.delete(
-  '/relations/:id',
-  relationController.deleteRelation
-);
+router.get('/:id/relations',relationController.getProductRelations);
+router.post('/:id/relations',validateJoi(createRelationSchema),relationController.createRelation);
+router.delete('/relations/:id',relationController.deleteRelation);
 
 /** ----------- ADMIN ROUTES ----------- */
-router.get('/admin/cards', isAccessAllowed('ADMIN'), cardController.listCards);
-router.get(
-  '/admin/cards/:id',
-  cardController.getCard
-);
-router.post(
-  '/admin/cards',
-  validateJoi(createCardSchema),
-  cardController.createCard
-);
-router.put(
-  '/admin/cards/:id',
-  validateJoi(updateCardSchema),
-  cardController.updateCard
-);
-router.delete(
-  '/admin/cards/:id',
-  cardController.deleteCard
-);
-router.patch(
-  '/admin/cards/:id/restore',
-  cardController.restoreCard
-);
+router.get('/admin/cards', cardController.listCards);
+router.get('/admin/cards/:id',cardController.getCard);
+router.post('/admin/cards',validateJoi(createCardSchema),cardController.createCard);
+router.put('/admin/cards/:id',validateJoi(updateCardSchema),cardController.updateCard);
+router.delete('/admin/cards/:id',cardController.deleteCard);
+router.patch('/admin/cards/:id/restore',cardController.restoreCard);
 
 /** CUSTOMER ROUTES */
 // Admin
-router.get('/', isAccessAllowed('ADMIN'), customerCtrl.listCustomers);
-router.get('/:id', isAccessAllowed('ADMIN'), customerCtrl.getCustomer);
-router.post(
-  '/',
-  validateJoi(createCustomerSchema),
-  customerCtrl.createCustomer
-); // ✅ add create route with validation
-router.put(
-  '/:id',
-  validateJoi(updateCustomerSchema),
-  customerCtrl.updateCustomer
-);
-router.delete('/:id', isAccessAllowed('ADMIN'), customerCtrl.deleteCustomer);
-router.post(
-  '/:id/restore',
-  customerCtrl.restoreCustomer
-);
+router.get('/',  customerCtrl.listCustomers);
+router.get('/:id',  customerCtrl.getCustomer);
+router.post('/',validateJoi(createCustomerSchema),customerCtrl.createCustomer);
+router.put('/:id',validateJoi(updateCustomerSchema),customerCtrl.updateCustomer);
+router.delete('/:id',  customerCtrl.deleteCustomer);
+router.post('/:id/restore',customerCtrl.restoreCustomer);
 
 /** CUSTOMER SEGMENT ROUTES */
-router.get(
-  '/:customerId/segments',
-  segmentCtrl.listByCustomer
-);
-router.post(
-  '/:customerId/segments',
-  validateJoi(createSegmentSchema),
-  segmentCtrl.createSegment
-);
-router.put(
-  '/segments/:id',
-  validateJoi(updateSegmentSchema),
-  segmentCtrl.updateSegment
-);
-router.delete(
-  '/segments/:id',
-  segmentCtrl.deleteSegment
-);
+router.get('/:customerId/segments',segmentCtrl.listByCustomer);
+router.post('/:customerId/segments',validateJoi(createSegmentSchema),segmentCtrl.createSegment);
+router.put('/segments/:id',validateJoi(updateSegmentSchema),segmentCtrl.updateSegment);
+router.delete('/segments/:id',segmentCtrl.deleteSegment);
 
 // /**
 //  * REVIEW ROUTES
@@ -507,14 +270,6 @@ router.delete(
 // router.get('/reports/best-sellers', reportController.getBestSellers);
 // router.get('/reports/category-sales', reportController.getCategorySales);
 // router.get('/reports/returns', reportController.getReturnsReport);
-
-/**
- * ORDER MANAGEMENT
- */
-// router.get('/orders', adminController.getAllOrders);
-// router.get('/orders/:id', adminController.getOrderById);
-// router.put('/orders/:id', adminController.updateOrder);
-// router.delete('/orders/:id', adminController.deleteOrder);
 
 /**
  * PAYMNET MANAGEMENT

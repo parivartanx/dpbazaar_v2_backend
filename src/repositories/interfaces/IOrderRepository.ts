@@ -8,6 +8,8 @@ export interface OrderFilters {
   search?: string;
   customerId?: string;
   vendorId?: string;
+  createdBy?: string;  // Added for desktop app
+  source?: string;     // Added for desktop app (using string instead of enum)
 }
 
 export interface PaginationParams {

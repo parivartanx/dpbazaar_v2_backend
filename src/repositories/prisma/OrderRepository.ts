@@ -286,6 +286,15 @@ export class OrderRepository implements IOrderRepository {
       where.vendorId = filters.vendorId;
     }
 
+    // New filters for desktop app
+    if (filters?.createdBy) {
+      (where as any).createdBy = filters.createdBy;
+    }
+
+    if (filters?.source) {
+      where.source = filters.source as any; // Cast to any to match enum
+    }
+
     if (filters?.startDate || filters?.endDate) {
       where.createdAt = {};
       if (filters.startDate) {
