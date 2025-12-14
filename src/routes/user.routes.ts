@@ -56,4 +56,4 @@ router.patch(
   userController.resetPassword
 );
 
-export default router;
+export { router as userRoutes };
