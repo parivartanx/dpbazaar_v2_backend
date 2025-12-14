@@ -234,7 +234,7 @@ export class OrderRepository implements IOrderRepository {
         customerEmail,
         customerPhone,
         customerNotes: data.customerNotes || null,
-        source: data.source || 'WEBSITE',
+        source: data.source || 'WEBSITE' as any,
         deviceInfo: data.deviceInfo || null,
         items: {
           create: itemsWithDetails,
@@ -291,6 +291,15 @@ export class OrderRepository implements IOrderRepository {
 
     if (filters?.vendorId) {
       where.vendorId = filters.vendorId;
+    }
+
+    // New filters for desktop app
+    if (filters?.createdBy) {
+      (where as any).createdBy = filters.createdBy;
+    }
+
+    if (filters?.source) {
+      where.source = filters.source as any; // Cast to any to match enum
     }
 
     if (filters?.startDate || filters?.endDate) {
