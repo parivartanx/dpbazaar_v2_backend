@@ -1,10 +1,4 @@
-import {
-  PrismaClient,
-  Order,
-  OrderStatus,
-  PaymentStatus,
-  Prisma,
-} from '@prisma/client';
+import { PrismaClient, Order, OrderStatus, PaymentStatus, Prisma, $Enums } from '@prisma/client';
 import {
   IOrderRepository,
   CreateOrderData,
@@ -219,12 +213,11 @@ export class OrderRepository implements IOrderRepository {
       data: {
         orderNumber,
         customerId: data.customerId,
-        vendorId: data.vendorId || null,
+        vendorId: data.vendorId ?? null,
         itemsTotal,
         taxAmount,
         shippingCharges,
-        codCharges,
-        discount: discountAmount,
+        discount,
         totalAmount,
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
@@ -234,7 +227,7 @@ export class OrderRepository implements IOrderRepository {
         customerEmail,
         customerPhone,
         customerNotes: data.customerNotes || null,
-        source: data.source || 'WEBSITE' as any,
+        source: data.source || $Enums.Source.WEBSITE,
         deviceInfo: data.deviceInfo || null,
         items: {
           create: itemsWithDetails,

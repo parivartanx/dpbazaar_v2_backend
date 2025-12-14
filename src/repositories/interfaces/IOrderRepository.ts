@@ -1,4 +1,4 @@
-import { Order, OrderItem, OrderStatus, PaymentStatus } from '@prisma/client';
+import { Order, OrderStatus, PaymentStatus, $Enums } from '@prisma/client';
 
 export interface OrderFilters {
   status?: OrderStatus;
@@ -29,7 +29,7 @@ export interface CreateOrderData {
   billingAddressId: string; // Required: Fetch from customer's saved addresses
   customerNotes?: string;
   discountCode?: string;
-  source?: string;
+  source?: $Enums.Source;
   deviceInfo?: any;
 }
 
