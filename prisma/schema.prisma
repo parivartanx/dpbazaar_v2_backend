@@ -150,11 +150,52 @@ enum CardStatus {
   ACTIVE
 }
 
-enum Source{
+enum Source {
   WEBSITE
   APP
   SYSTEM
   POS
+}
+
+enum WalletType {
+  SHOPPING
+  WITHDRAWABLE
+  LOCKED
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionReason {
+  PURCHASE
+  REWARD
+  REFUND
+  WITHDRAWAL
+  ADJUSTMENT
+  SUBSCRIPTION_REFERRAL
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REVERSED
+}
+
+enum CardSubscriptionStatus {
+  UPCOMING
+  ACTIVE
+  EXPIRED
+  PAUSED
+}
+
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+  REWARDED
+  EXPIRED
 }
 
 // =====================================================
@@ -377,14 +418,20 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user      User              @relation(fields: [userId], references: [id])
-  addresses Address[]
-  orders    Order[]
-  cart      Cart?
-  wishlists Wishlist[]
-  reviews   Review[]
-  searches  SearchHistory[]
-  segments  CustomerSegment[]
+  user               User                   @relation(fields: [userId], references: [id])
+  addresses          Address[]
+  orders             Order[]
+  cart               Cart?
+  wishlists          Wishlist[]
+  reviews            Review[]
+  searches           SearchHistory[]
+  segments           CustomerSegment[]
+  wallets            Wallet[]
+  subscriptionCards  UserSubscriptionCard[]
+  referralCodes      ReferralCode[]
+  referralsGiven     ReferralHistory[]      @relation("Referrer")
+  referralsReceived  ReferralHistory[]      @relation("Referred")
+  walletTransactions WalletTransaction[]
 
   @@index([customerCode])
   @@index([tier])
@@ -563,7 +610,7 @@ model Product {
   shortDescription String?
 
   //barcode
-  barcode          String? @unique
+  barcode String? @unique
 
   // Pricing
   mrp          Decimal  @db.Decimal(12, 2)
@@ -1041,7 +1088,7 @@ model Order {
   cancelledAt       DateTime?
   returnRequestedAt DateTime?
   createdBy         String?
-  creator           User?              @relation("CreatedOrders", fields: [createdBy], references: [id])
+  creator           User?     @relation("CreatedOrders", fields: [createdBy], references: [id])
 
   // Source
   source     Source @default(WEBSITE) // WEBSITE, APP, POS, SYSTEM
@@ -1802,17 +1849,149 @@ model Address {
   @@index([postalCode])
 }
 
-model CardManagement {
-  id             String     @id @default(cuid())
-  name           String
-  validityDays   Int
-  benefitDays    String[]
-  benefitPercent Int
-  price          Float
-  image          String
-  visibility     Visibility
-  status         CardStatus
-  deletedAt      DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+// =====================================================
+// CARD SUBSCRIPTION & WALLET MANAGEMENT
+// =====================================================
+
+model Wallet {
+  id         String     @id @default(cuid())
+  customerId String
+  type       WalletType
+
+  balance Decimal @default(0) @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer          Customer            @relation(fields: [customerId], references: [id])
+  WalletTransaction WalletTransaction[]
+
+  @@unique([customerId, type])
+}
+
+model SubscriptionCard {
+  id   String @id @default(cuid())
+  name String
+
+  price Decimal @db.Decimal(12, 2)
+
+  // AUTHORITATIVE RULES
+  targetAmount  Decimal  @db.Decimal(12, 2)
+  rewardPercent Decimal  @db.Decimal(5, 2)
+  capPercentage Int
+  benefitDays   String[] // ["MON","TUE","WED"]
+
+  // REFERRAL (CARD-SPECIFIC)
+  referralRewardPercent Decimal? @db.Decimal(5, 2)
+  referralRewardAmount  Decimal? @db.Decimal(12, 2)
+
+  validityDays Int
+
+  status     CardStatus
+  visibility Visibility
+
+  images String[]
+
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  UserSubscriptionCard UserSubscriptionCard[]
+}
+
+model UserSubscriptionCard {
+  id         String @id @default(cuid())
+  customerId String
+  cardId     String
+
+  status CardSubscriptionStatus
+
+  startDate DateTime
+  endDate   DateTime
+
+  purchasedAt DateTime  @default(now())
+  activatedAt DateTime?
+  expiredAt   DateTime?
+
+  customer Customer         @relation(fields: [customerId], references: [id])
+  card     SubscriptionCard @relation(fields: [cardId], references: [id])
+
+  referralCode ReferralCode?
+
+  @@unique([customerId, status], map: "one_active_subscription_per_user")
+  @@index([customerId, status])
+}
+
+model ReferralCode {
+  id String @id @default(cuid())
+
+  code     String  @unique
+  isActive Boolean @default(true)
+
+  customerId         String
+  userSubscriptionId String @unique
+
+  createdAt     DateTime  @default(now())
+  deactivatedAt DateTime?
+
+  customer     Customer             @relation(fields: [customerId], references: [id])
+  subscription UserSubscriptionCard @relation(fields: [userSubscriptionId], references: [id])
+}
+
+model ReferralHistory {
+  id String @id @default(cuid())
+
+  referralCodeId String
+  referrerId     String
+  referredUserId String
+
+  referrerSubscriptionId String
+  triggeredCardId        String
+
+  status ReferralStatus
+
+  rewardAmount Decimal?  @db.Decimal(12, 2)
+  rewardedAt   DateTime?
+  expiredAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  referrer     Customer @relation("Referrer", fields: [referrerId], references: [id])
+  referredUser Customer @relation("Referred", fields: [referredUserId], references: [id])
+
+  @@unique([referredUserId]) // user can be referred only once
+}
+
+model WalletTransaction {
+  id String @id @default(cuid())
+
+  walletId   String
+  customerId String
+
+  type   TransactionType
+  reason TransactionReason
+  status TransactionStatus
+
+  amount Decimal @db.Decimal(12, 2)
+
+  balanceBefore Decimal @db.Decimal(12, 2)
+  balanceAfter  Decimal @db.Decimal(12, 2)
+
+  // CARD & REFERRAL SNAPSHOT
+  cardId         String?
+  subscriptionId String?
+  referralId     String?
+
+  rewardPercent Decimal? @db.Decimal(5, 2)
+  targetAmount  Decimal? @db.Decimal(12, 2)
+  capPercentage Int?
+
+  idempotencyKey String? @unique
+  metadata       Json?
+
+  createdAt DateTime @default(now())
+
+  wallet   Wallet   @relation(fields: [walletId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([walletId, createdAt])
+  @@index([customerId, createdAt])
 }
