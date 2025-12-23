@@ -9,7 +9,6 @@ interface RegisterData {
   lastName: string;
   email: string;
   password: string;
-  role?: UserRole;
 }
 
 interface LoginData {
@@ -33,7 +32,7 @@ export class AuthService {
   }
 
   public async register(data: RegisterData): Promise<AuthResult> {
-    const { firstName, lastName, email, password, role } = data;
+    const { firstName, lastName, email, password } = data;
 
     // Check if user already exists
     const existingUser = await this.userRepository.findByEmail(email);
@@ -47,7 +46,7 @@ export class AuthService {
       lastName,
       email,
       password, // Repository handles hashing
-      role: role || UserRole.CUSTOMER,
+      role: UserRole.CUSTOMER, // Always assign CUSTOMER role during registration
     });
 
     if (!savedUser) {

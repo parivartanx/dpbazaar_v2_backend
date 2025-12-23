@@ -31,24 +31,20 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
       where: { id },
       include: {
         customer: true,
-        card: true,
-        referralCode: true
+        card: true
       }
     });
   }
 
   async findByCustomerIdAndStatus(customerId: string, status: CardSubscriptionStatus): Promise<UserSubscriptionCard | null> {
-    return prisma.userSubscriptionCard.findUnique({ 
+    return prisma.userSubscriptionCard.findFirst({ 
       where: { 
-        customerId_status: {
-          customerId,
-          status
-        }
+        customerId,
+        status
       },
       include: {
         customer: true,
-        card: true,
-        referralCode: true
+        card: true
       }
     });
   }
@@ -60,8 +56,7 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
       data,
       include: {
         customer: true,
-        card: true,
-        referralCode: true
+        card: true
       }
     });
   }
@@ -77,8 +72,7 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
       data,
       include: {
         customer: true,
-        card: true,
-        referralCode: true
+        card: true
       }
     });
   }
@@ -88,8 +82,7 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
       where: { id },
       include: {
         customer: true,
-        card: true,
-        referralCode: true
+        card: true
       }
     });
   }

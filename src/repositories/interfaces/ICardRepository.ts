@@ -1,5 +1,5 @@
 // src/interfaces/ICardRepository.ts
-import { CardManagement } from '@prisma/client';
+import { SubscriptionCard } from '@prisma/client';
 
 export interface ICardRepository {
   list(params?: {
@@ -8,22 +8,22 @@ export interface ICardRepository {
     search?: string;
     status?: string;
     visibility?: string;
-  }): Promise<CardManagement[]>;
+  }): Promise<SubscriptionCard[]>;
 
-  findById(id: string): Promise<CardManagement | null>;
+  findById(id: string): Promise<SubscriptionCard | null>;
 
   create(
-    data: Omit<CardManagement, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
-  ): Promise<CardManagement>;
+    data: Omit<SubscriptionCard, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<SubscriptionCard>;
 
   update(
     id: string,
     data: Partial<
-      Omit<CardManagement, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
+      Omit<SubscriptionCard, 'id' | 'createdAt' | 'updatedAt'>
     >
-  ): Promise<CardManagement>;
+  ): Promise<SubscriptionCard>;
 
-  softDelete(id: string): Promise<CardManagement>;
+  softDelete(id: string): Promise<SubscriptionCard>;
 
-  restore(id: string): Promise<CardManagement>;
+  restore(id: string): Promise<SubscriptionCard>;
 }

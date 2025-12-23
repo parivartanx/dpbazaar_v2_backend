@@ -30,8 +30,7 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.findUnique({ 
       where: { id },
       include: {
-        customer: true,
-        subscription: true
+        customer: true
       }
     });
   }
@@ -40,18 +39,16 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.findUnique({ 
       where: { code },
       include: {
-        customer: true,
-        subscription: true
+        customer: true
       }
     });
   }
 
   async findByCustomerId(customerId: string): Promise<ReferralCode | null> {
-    return prisma.referralCode.findUnique({ 
+    return prisma.referralCode.findFirst({ 
       where: { customerId },
       include: {
-        customer: true,
-        subscription: true
+        customer: true
       }
     });
   }
@@ -62,8 +59,7 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.create({ 
       data,
       include: {
-        customer: true,
-        subscription: true
+        customer: true
       }
     });
   }
@@ -78,8 +74,7 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
       where: { id },
       data,
       include: {
-        customer: true,
-        subscription: true
+        customer: true
       }
     });
   }
@@ -88,8 +83,7 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.delete({
       where: { id },
       include: {
-        customer: true,
-        subscription: true
+        customer: true
       }
     });
   }
@@ -102,8 +96,7 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
         deactivatedAt: new Date()
       },
       include: {
-        customer: true,
-        subscription: true
+        customer: true
       }
     });
   }
