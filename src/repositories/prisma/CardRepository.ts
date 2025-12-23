@@ -1,5 +1,5 @@
 // src/repositories/prisma/CardRepository.ts
-import { PrismaClient, CardManagement } from '@prisma/client';
+import { PrismaClient, SubscriptionCard } from '@prisma/client';
 import { ICardRepository } from '../interfaces/ICardRepository';
 
 const prisma = new PrismaClient();
@@ -11,7 +11,7 @@ export class CardRepository implements ICardRepository {
     search?: string;
     status?: string;
     visibility?: string;
-  }): Promise<CardManagement[]> {
+  }): Promise<SubscriptionCard[]> {
     const { page = 1, limit = 20, search, status, visibility } = params || {};
 
     const where: any = { deletedAt: null };
@@ -22,7 +22,7 @@ export class CardRepository implements ICardRepository {
     if (status) where.status = status;
     if (visibility) where.visibility = visibility;
 
-    return prisma.cardManagement.findMany({
+    return prisma.subscriptionCard.findMany({
       where,
       skip: (page - 1) * limit,
       take: limit,
@@ -30,39 +30,39 @@ export class CardRepository implements ICardRepository {
     });
   }
 
-  async findById(id: string): Promise<CardManagement | null> {
-    return prisma.cardManagement.findUnique({ where: { id } });
+  async findById(id: string): Promise<SubscriptionCard | null> {
+    return prisma.subscriptionCard.findUnique({ where: { id } });
   }
 
   async create(
-    data: Omit<CardManagement, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
-  ): Promise<CardManagement> {
-    return prisma.cardManagement.create({ data });
+    data: Omit<SubscriptionCard, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<SubscriptionCard> {
+    return prisma.subscriptionCard.create({ data });
   }
 
   async update(
     id: string,
     data: Partial<
-      Omit<CardManagement, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
+      Omit<SubscriptionCard, 'id' | 'createdAt' | 'updatedAt'>
     >
-  ): Promise<CardManagement> {
-    return prisma.cardManagement.update({
+  ): Promise<SubscriptionCard> {
+    return prisma.subscriptionCard.update({
       where: { id },
       data,
     });
   }
 
-  async softDelete(id: string): Promise<CardManagement> {
-    return prisma.cardManagement.update({
+  async softDelete(id: string): Promise<SubscriptionCard> {
+    return prisma.subscriptionCard.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: { status: 'DELETED' },
     });
   }
 
-  async restore(id: string): Promise<CardManagement> {
-    return prisma.cardManagement.update({
+  async restore(id: string): Promise<SubscriptionCard> {
+    return prisma.subscriptionCard.update({
       where: { id },
-      data: { deletedAt: null },
+      data: { status: 'ACTIVE' },
     });
   }
 }

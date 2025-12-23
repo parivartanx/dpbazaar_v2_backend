@@ -12,12 +12,18 @@ export class ReferralCodeController {
   listReferralCodes = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, customerId, isActive } = req.query;
-      const referralCodes = await referralCodeRepo.list({
+      
+      const params: any = {
         page: Number(page) || 1,
         limit: Number(limit) || 20,
         customerId: customerId as string,
-        isActive: isActive !== undefined ? isActive === 'true' : undefined,
-      });
+      };
+      
+      if (isActive !== undefined) {
+        params.isActive = isActive === 'true';
+      }
+      
+      const referralCodes = await referralCodeRepo.list(params);
 
       const response: ApiResponse = {
         success: true,

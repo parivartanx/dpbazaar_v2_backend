@@ -14,7 +14,7 @@ export class SubscriptionCardRepository implements ISubscriptionCardRepository {
   }): Promise<SubscriptionCard[]> {
     const { page = 1, limit = 20, search, status, visibility } = params || {};
 
-    const where: any = { deletedAt: null };
+    const where: any = { status: { not: 'DELETED' } };
 
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };
@@ -55,14 +55,14 @@ export class SubscriptionCardRepository implements ISubscriptionCardRepository {
   async softDelete(id: string): Promise<SubscriptionCard> {
     return prisma.subscriptionCard.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: { status: 'DELETED' },
     });
   }
 
   async restore(id: string): Promise<SubscriptionCard> {
     return prisma.subscriptionCard.update({
       where: { id },
-      data: { deletedAt: null },
+      data: { status: 'ACTIVE' },
     });
   }
 }

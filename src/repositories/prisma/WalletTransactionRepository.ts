@@ -50,7 +50,7 @@ export class WalletTransactionRepository implements IWalletTransactionRepository
     data: Omit<WalletTransaction, 'id' | 'createdAt'>
   ): Promise<WalletTransaction> {
     return prisma.walletTransaction.create({ 
-      data,
+      data: data as any,
       include: {
         wallet: true,
         customer: true
@@ -64,9 +64,11 @@ export class WalletTransactionRepository implements IWalletTransactionRepository
       Omit<WalletTransaction, 'id' | 'createdAt'>
     >
   ): Promise<WalletTransaction> {
+    // Exclude walletId and customerId from update as they are foreign keys
+    const { walletId, customerId, ...updateData } = data;
     return prisma.walletTransaction.update({
       where: { id },
-      data,
+      data: updateData as any,
       include: {
         wallet: true,
         customer: true

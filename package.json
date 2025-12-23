@@ -17,7 +17,8 @@
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "postinstall": "prisma generate",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "create-admin": "ts-node scripts/create-admin.ts"
   },
   "keywords": [
     "nodejs",

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { AdminController } from '../controllers/admin.controller';
+import { validateRequest } from '../middlewares/validateRequest';
+import { authValidation } from '../validators/auth.validation';
 import { AnalyticsController } from '../controllers/analytics.contoller';
 import { UserController } from '../controllers/user.controller';
 import { CardController } from '../controllers/card.contoller';
@@ -74,6 +76,11 @@ const upload = multer();
 const adminController = new AdminController();
 const analyticsController = new AnalyticsController();
 const userController = new UserController();
+
+/**
+ * ADMIN LOGIN
+ */
+router.post('/login', validateRequest(authValidation.login), adminController.adminLogin);
 const departmentController = new DepartmentController();
 const employeeController = new EmployeeController();
 const permissionController = new PermissionController();

@@ -13,14 +13,13 @@ export class AuthController {
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { firstName, lastName, email, password, role } = req.body;
+      const { firstName, lastName, email, password } = req.body;
 
       const result = await this.authService.register({
         firstName,
         lastName,
         email,
         password,
-        role,
       });
 
       const response: ApiResponse = {
