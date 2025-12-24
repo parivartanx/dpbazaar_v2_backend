@@ -10,7 +10,8 @@ import { errorHandler } from './middlewares/errorHandler';
 import { notFoundHandler } from './middlewares/notFoundHandler';
 import { routes } from './routes';
 import { config } from './config/environment';
-
+// Import cron jobs
+import { initializeCronJobs } from './cronjobs';
 dotenv.config();
 
 const app = express();
@@ -50,6 +51,9 @@ app.use(routes);
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// Initialize cron jobs
+initializeCronJobs();
 
 // Start server only when running locally
 if (require.main === module) {

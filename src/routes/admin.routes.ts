@@ -77,10 +77,7 @@ const adminController = new AdminController();
 const analyticsController = new AnalyticsController();
 const userController = new UserController();
 
-/**
- * ADMIN LOGIN
- */
-router.post('/login', validateRequest(authValidation.login), adminController.adminLogin);
+
 const departmentController = new DepartmentController();
 const employeeController = new EmployeeController();
 const permissionController = new PermissionController();
@@ -99,6 +96,11 @@ const segmentCtrl = new CustomerSegmentController();
 
 /** Centralised Access Control Middleware */
 // router.use(isAccessAllowed('ADMIN'));
+
+/**
+ * ADMIN LOGIN
+ */
+router.post('/login', validateRequest(authValidation.login), adminController.adminLogin);
 
 /**
  * ADMIN DASHBOARD
@@ -149,7 +151,6 @@ router.patch('/employees/:id/department',employeeController.assignDepartment);
 /**
  * Permissions Routes
  */
-
 router.get('/permissions',permissionController.getAllPermissions);
 router.get('/permissions/:id',permissionController.getPermissionById);
 router.post('/permissions',validateJoi(createPermissionSchema),permissionController.createPermission);
@@ -193,12 +194,6 @@ router.post('/products',validateJoi(createProductSchema),productController.creat
 router.put('/products/:id',validateJoi(updateProductSchema),productController.updateProduct);
 router.delete('/products/:id',productController.softDeleteProduct);
 router.patch('/products/:id/restore',validateJoi(updateProductSchema),productController.restoreProduct);
-// router.get('/products/category/:id', productController.getProductsByCategory);
-// router.get('/products/brand/:id', productController.getProductsByBrand);
-// router.get('/products/featured', productController.getFeaturedProducts);
-// router.get('/products/new-arrivals', productController.getNewArrivals);
-// router.get('/products/best-sellers', productController.getBestSellers);
-// router.get('/products/:id/related', productController.getRelatedProducts);
 
 // Images
 router.post('/:productId/images',upload.single('file'),productController.addImage);
