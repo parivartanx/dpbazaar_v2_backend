@@ -18,7 +18,8 @@
     "prebuild": "npm run clean",
     "postinstall": "prisma generate",
     "vercel-build": "npm run build",
-    "create-admin": "ts-node scripts/create-admin.ts"
+    "create-users": "ts-node scripts/create-users.ts",
+    "create-products": "ts-node scripts/create-products.ts"
   },
   "keywords": [
     "nodejs",
@@ -46,6 +47,7 @@
     "mongoose": "^8.0.3",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "prisma": "^5.7.1",
     "winston": "^3.17.0"
   },
