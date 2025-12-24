@@ -378,6 +378,55 @@ export class DesktopController {
     }
   };
 
+  // Get bill by order number API
+  getBillByOrderNumber = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { orderNumber } = req.params;
+
+      if (!orderNumber) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Order number is required',
+          message: 'Order number parameter is missing',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const order = await this.orderRepo.getOrderByOrderNumber(orderNumber);
+
+      if (!order) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Order not found',
+          message: 'No order found with the provided order number',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      const response: ApiResponse = {
+        success: true,
+        data: { bill: order },
+        message: 'Bill retrieved successfully',
+        timestamp: new Date().toISOString(),
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in getBillByOrderNumber: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching bill by order number',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
   // Monthly trend API
   getMonthlyTrend = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -407,6 +456,79 @@ export class DesktopController {
         success: false,
         error: (error as Error).message,
         message: 'Problem in fetching monthly trend data',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Create order API for desktop sales
+  createOrder = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { customerId, items, shippingAddressId, billingAddressId, customerNotes, discountCode } = req.body;
+
+      // Validate required fields
+      if (!customerId || !items || !Array.isArray(items) || items.length === 0 || !shippingAddressId || !billingAddressId) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Missing required fields',
+          message: 'customerId, items, shippingAddressId, and billingAddressId are required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      // Validate item structure
+      for (const item of items) {
+        if (!item.productId || !item.quantity || item.quantity <= 0) {
+          const response: ApiResponse = {
+            success: false,
+            error: 'Invalid item structure',
+            message: 'Each item must have a valid productId and quantity',
+            timestamp: new Date().toISOString(),
+          };
+          res.status(400).json(response);
+          return;
+        }
+      }
+
+      // Get the user who is creating the order (from authentication middleware)
+      const createdBy = (req as any).user?.userId || null;
+
+      // Prepare order data
+      const orderData = {
+        customerId,
+        items,
+        shippingAddressId,
+        billingAddressId,
+        customerNotes,
+        discountCode,
+        source: 'SYSTEM' as const, // Set source as SYSTEM for desktop orders
+        deviceInfo: {
+          platform: 'desktop',
+          userAgent: req.get('User-Agent'),
+        },
+        ...(createdBy && { createdBy }), // Add createdBy if user is authenticated
+      };
+
+      // Create the order
+      const order = await this.orderRepo.createOrder(orderData);
+
+      const response: ApiResponse = {
+        success: true,
+        data: { order },
+        message: 'Order created successfully',
+        timestamp: new Date().toISOString(),
+      };
+
+      res.status(201).json(response);
+    } catch (error) {
+      logger.error(`Error in createOrder: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in creating order',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);

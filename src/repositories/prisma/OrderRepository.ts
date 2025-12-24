@@ -229,6 +229,7 @@ export class OrderRepository implements IOrderRepository {
         customerNotes: data.customerNotes || null,
         source: data.source || $Enums.Source.WEBSITE,
         deviceInfo: data.deviceInfo || null,
+        createdBy: data.createdBy || null,
         items: {
           create: itemsWithDetails,
         },
@@ -353,6 +354,42 @@ export class OrderRepository implements IOrderRepository {
   async getOrderById(id: string): Promise<Order | null> {
     return prisma.order.findUnique({
       where: { id },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+            variant: true,
+          },
+        },
+        customer: {
+          include: {
+            user: true,
+            addresses: true,
+          },
+        },
+        payments: true,
+        discounts: {
+          include: {
+            discount: true,
+          },
+        },
+        statusHistory: {
+          orderBy: { createdAt: 'desc' },
+        },
+        delivery: true,
+        returns: true,
+        invoices: true,
+      },
+    });
+  }
+
+  async getOrderByOrderNumber(orderNumber: string): Promise<Order | null> {
+    return prisma.order.findUnique({
+      where: { orderNumber },
       include: {
         items: {
           include: {
