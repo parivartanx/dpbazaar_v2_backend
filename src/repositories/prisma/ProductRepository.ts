@@ -101,8 +101,8 @@ export class ProductRepository implements IProductRepository {
       prisma.product.findMany({
         where,
         include: {
-          images: true
-          // inventory: true // Commented out until inventory management is fully implemented
+          images: true,
+          inventory: true 
         },
         orderBy: {
           createdAt: 'desc'
@@ -122,10 +122,10 @@ export class ProductRepository implements IProductRepository {
         ? product.images.find(img => img.isPrimary) || product.images[0]
         : null;
       
-      // Set default stock quantity (0) until inventory management is implemented
-      const totalStockQuantity = 0; // product.inventory && product.inventory.length > 0 
-        // ? product.inventory.reduce((sum: number, inv: any) => sum + inv.availableQuantity, 0)
-        // : 0;
+      // Calculate total stock quantity from all inventory records
+      const totalStockQuantity = product.inventory && product.inventory.length > 0 
+        ? product.inventory.reduce((sum: number, inv: any) => sum + inv.availableQuantity, 0)
+        : 0;
       
       return {
         id: product.id,

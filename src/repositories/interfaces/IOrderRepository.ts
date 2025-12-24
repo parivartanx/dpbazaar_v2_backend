@@ -31,6 +31,7 @@ export interface CreateOrderData {
   discountCode?: string;
   source?: $Enums.Source;
   deviceInfo?: any;
+  createdBy?: string;
 }
 
 export interface UpdateOrderData {
@@ -85,6 +86,7 @@ export interface IOrderRepository {
     pagination?: PaginationParams
   ): Promise<{ orders: Order[]; total: number }>;
   getOrderById(id: string): Promise<Order | null>;
+  getOrderByOrderNumber(orderNumber: string): Promise<Order | null>;
   updateOrder(id: string, data: UpdateOrderData): Promise<Order>;
   updateOrderStatus(id: string, status: OrderStatus): Promise<Order>;
   deleteOrder(id: string): Promise<Order>;
