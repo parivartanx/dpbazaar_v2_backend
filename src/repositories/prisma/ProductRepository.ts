@@ -126,13 +126,13 @@ export class ProductRepository implements IProductRepository {
       const totalStockQuantity = product.inventory && product.inventory.length > 0 
         ? product.inventory.reduce((sum: number, inv: any) => sum + inv.availableQuantity, 0)
         : 0;
-      
+        
       return {
         id: product.id,
         name: product.name,
         image: primaryImage?.url || null,
         sku: product.sku,
-        price: product.sellingPrice,
+        price: Number(product.sellingPrice),
         stockStatus: product.stockStatus,
         status: product.status,
         stockQuantity: totalStockQuantity,
