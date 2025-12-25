@@ -40,48 +40,83 @@ export class OrderRepository implements IOrderRepository {
     const customerEmail = customer.user.email || '';
     const customerPhone = customer.user.phone || '';
 
-    // Fetch shipping address from customer's saved addresses
-    const shippingAddressRecord = customer.addresses.find(
-      a => a.id === data.shippingAddressId
-    );
-    if (!shippingAddressRecord) {
-      throw new Error(`Shipping address with ID ${data.shippingAddressId} not found for this customer`);
+    let shippingAddress: any;
+    if (data.shippingAddressId) {
+      // Fetch shipping address from customer's saved addresses
+      const shippingAddressRecord = customer.addresses.find(
+        a => a.id === data.shippingAddressId
+      );
+      if (!shippingAddressRecord) {
+        throw new Error(`Shipping address with ID ${data.shippingAddressId} not found for this customer`);
+      }
+
+      shippingAddress = {
+        fullName: shippingAddressRecord.fullName,
+        phone: shippingAddressRecord.phone,
+        alternatePhone: shippingAddressRecord.alternatePhone,
+        addressLine1: shippingAddressRecord.addressLine1,
+        addressLine2: shippingAddressRecord.addressLine2,
+        landmark: shippingAddressRecord.landmark,
+        city: shippingAddressRecord.city,
+        state: shippingAddressRecord.state,
+        country: shippingAddressRecord.country,
+        postalCode: shippingAddressRecord.postalCode,
+        deliveryInstructions: shippingAddressRecord.deliveryInstructions,
+      };
+    } else {
+      // For SYSTEM orders (desktop), use a default address or customer's details
+      shippingAddress = {
+        fullName: customerName,
+        phone: customerPhone,
+        alternatePhone: null,
+        addressLine1: 'Counter Sale',
+        addressLine2: 'In-Store Purchase',
+        landmark: 'Store Location',
+        city: 'N/A',
+        state: 'N/A',
+        country: 'INR',
+        postalCode: '000000',
+        deliveryInstructions: 'Counter pickup',
+      };
     }
 
-    const shippingAddress = {
-      fullName: shippingAddressRecord.fullName,
-      phone: shippingAddressRecord.phone,
-      alternatePhone: shippingAddressRecord.alternatePhone,
-      addressLine1: shippingAddressRecord.addressLine1,
-      addressLine2: shippingAddressRecord.addressLine2,
-      landmark: shippingAddressRecord.landmark,
-      city: shippingAddressRecord.city,
-      state: shippingAddressRecord.state,
-      country: shippingAddressRecord.country,
-      postalCode: shippingAddressRecord.postalCode,
-      deliveryInstructions: shippingAddressRecord.deliveryInstructions,
-    };
+    let billingAddress: any;
+    if (data.billingAddressId) {
+      // Fetch billing address from customer's saved addresses
+      const billingAddressRecord = customer.addresses.find(
+        a => a.id === data.billingAddressId
+      );
+      if (!billingAddressRecord) {
+        throw new Error(`Billing address with ID ${data.billingAddressId} not found for this customer`);
+      }
 
-    // Fetch billing address from customer's saved addresses
-    const billingAddressRecord = customer.addresses.find(
-      a => a.id === data.billingAddressId
-    );
-    if (!billingAddressRecord) {
-      throw new Error(`Billing address with ID ${data.billingAddressId} not found for this customer`);
+      billingAddress = {
+        fullName: billingAddressRecord.fullName,
+        phone: billingAddressRecord.phone,
+        alternatePhone: billingAddressRecord.alternatePhone,
+        addressLine1: billingAddressRecord.addressLine1,
+        addressLine2: billingAddressRecord.addressLine2,
+        landmark: billingAddressRecord.landmark,
+        city: billingAddressRecord.city,
+        state: billingAddressRecord.state,
+        country: billingAddressRecord.country,
+        postalCode: billingAddressRecord.postalCode,
+      };
+    } else {
+      // For SYSTEM orders (desktop), use the same as shipping or a default address
+      billingAddress = {
+        fullName: customerName,
+        phone: customerPhone,
+        alternatePhone: null,
+        addressLine1: 'Counter Sale',
+        addressLine2: 'In-Store Purchase',
+        landmark: 'Store Location',
+        city: 'N/A',
+        state: 'N/A',
+        country: 'INR',
+        postalCode: '000000',
+      };
     }
-
-    const billingAddress = {
-      fullName: billingAddressRecord.fullName,
-      phone: billingAddressRecord.phone,
-      alternatePhone: billingAddressRecord.alternatePhone,
-      addressLine1: billingAddressRecord.addressLine1,
-      addressLine2: billingAddressRecord.addressLine2,
-      landmark: billingAddressRecord.landmark,
-      city: billingAddressRecord.city,
-      state: billingAddressRecord.state,
-      country: billingAddressRecord.country,
-      postalCode: billingAddressRecord.postalCode,
-    };
     // Fetch product details for order items
     const itemsWithDetails = await Promise.all(
       data.items.map(async item => {
@@ -322,10 +357,15 @@ export class OrderRepository implements IOrderRepository {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
+          // For desktop bill history, include only minimal details
           items: {
-            include: {
-              product: true,
-              variant: true,
+            select: {
+              id: true,
+              productName: true,
+              productSku: true,
+              quantity: true,
+              sellingPrice: true,
+              totalAmount: true,
             },
           },
           customer: {
@@ -333,16 +373,9 @@ export class OrderRepository implements IOrderRepository {
               id: true,
               firstName: true,
               lastName: true,
-              user: {
-                select: {
-                  email: true,
-                  phone: true,
-                },
-              },
+              customerCode: true,
             },
           },
-          payments: true,
-          discounts: true,
         },
       }),
       prisma.order.count({ where }),

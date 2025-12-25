@@ -66,6 +66,7 @@ enum PaymentMethod {
   NET_BANKING
   UPI
   WALLET
+  SPLIT
   EMI
   COD
   CASH
@@ -1199,10 +1200,12 @@ model Payment {
   id      String @id @default(cuid())
   orderId String
 
-  amount   Decimal       @db.Decimal(12, 2)
-  currency String        @default("INR")
+  amount   Decimal        @db.Decimal(12, 2)
+  cash     Decimal?       @db.Decimal(12, 2)
+  online   Decimal?       @db.Decimal(12, 2)
+  currency String         @default("INR")
   method   PaymentMethod
-  status   PaymentStatus @default(PENDING)
+  status   PaymentStatus  @default(PENDING)
 
   // Gateway info
   gatewayName      String // razorpay, stripe, paypal
