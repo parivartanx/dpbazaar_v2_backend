@@ -5,6 +5,10 @@ import { ProductRepository } from '../repositories/prisma/ProductRepository';
 import { OrderRepository } from '../repositories/prisma/OrderRepository';
 import { UserRepository } from '../repositories/prisma/UserRepository';
 import { AuthService } from '../services/auth.service';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
+const prisma = new PrismaClient();
 
 export class DesktopController {
   private productRepo = new ProductRepository();
@@ -120,10 +124,45 @@ export class DesktopController {
 
       const result = await this.orderRepo.getAllOrders(filters, pagination);
 
+      // Transform orders to include only essential fields for desktop bill history
+      const simplifiedBills = result.orders.map(order => {
+        // Type assertion to handle the limited fields from the repository
+        const typedOrder: any = order;
+        
+        // Calculate item count from the items array
+        const itemCount = Array.isArray(typedOrder.items) ? typedOrder.items.length : 0;
+        
+        // Try to determine payment method from the order data
+        // Since we don't have direct payment method in the limited order, 
+        // we can infer it from the source (SYSTEM orders are typically cash)
+        const paymentMethod = typedOrder.source === 'SYSTEM' ? 'CASH' : 'OTHER';
+        
+        return {
+          id: typedOrder.id,
+          orderNumber: typedOrder.orderNumber,
+          customerId: typedOrder.customerId,
+          customerName: typedOrder.customerName,
+          customerPhone: typedOrder.customerPhone,
+          itemsTotal: typedOrder.itemsTotal,
+          taxAmount: typedOrder.taxAmount,
+          shippingCharges: typedOrder.shippingCharges,
+          discount: typedOrder.discount,
+          totalAmount: typedOrder.totalAmount,
+          status: typedOrder.status,
+          paymentStatus: typedOrder.paymentStatus,
+          paymentMethod: paymentMethod, // Add payment method
+          source: typedOrder.source,
+          createdAt: typedOrder.createdAt,
+          updatedAt: typedOrder.updatedAt,
+          itemCount: itemCount, // Just the count instead of full items array
+          // Remove the nested customer object since we already have the details at the main level
+        };
+      });
+
       const response: ApiResponse = {
         success: true,
         data: {
-          bills: result.orders,
+          bills: simplifiedBills,
           pagination: {
             currentPage: pagination.page,
             totalPages: Math.ceil(result.total / pagination.limit),
@@ -465,14 +504,20 @@ export class DesktopController {
   // Create order API for desktop sales
   createOrder = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { customerId, items, shippingAddressId, billingAddressId, customerNotes, discountCode } = req.body;
+      const { customerId, items, shippingAddressId, billingAddressId, customerNotes, discountCode, paymentMethod, paymentDetails, customerName, customerPhone } = req.body;
+
+      // Counter sale: if no customerId provided, create customer based on phone number
+      let finalCustomerId = customerId;
+      if (!customerId && customerPhone) {
+        finalCustomerId = await this.createOrGetCustomer(customerPhone, customerName);
+      }
 
       // Validate required fields
-      if (!customerId || !items || !Array.isArray(items) || items.length === 0 || !shippingAddressId || !billingAddressId) {
+      if (!finalCustomerId || !items || !Array.isArray(items) || items.length === 0) {
         const response: ApiResponse = {
           success: false,
           error: 'Missing required fields',
-          message: 'customerId, items, shippingAddressId, and billingAddressId are required',
+          message: 'customerId (or customerPhone) and items are required',
           timestamp: new Date().toISOString(),
         };
         res.status(400).json(response);
@@ -498,10 +543,10 @@ export class DesktopController {
 
       // Prepare order data
       const orderData = {
-        customerId,
+        customerId: finalCustomerId,
         items,
-        shippingAddressId,
-        billingAddressId,
+        shippingAddressId: shippingAddressId || undefined, // Optional for SYSTEM orders
+        billingAddressId: billingAddressId || undefined, // Optional for SYSTEM orders
         customerNotes,
         discountCode,
         source: 'SYSTEM' as const, // Set source as SYSTEM for desktop orders
@@ -514,6 +559,11 @@ export class DesktopController {
 
       // Create the order
       const order = await this.orderRepo.createOrder(orderData);
+      
+      // Create payment record if payment method is provided
+      if (paymentMethod) {
+        await this.createPayment(order.id, order.totalAmount, paymentMethod, paymentDetails);
+      }
 
       const response: ApiResponse = {
         success: true,
@@ -534,7 +584,81 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-
+  
+  // Helper method to create or get customer by phone number
+  private async createOrGetCustomer(phone: string, name?: string): Promise<string> {
+    // Try to find existing customer by phone
+    const existingUsers = await prisma.user.findMany({
+      where: { phone },
+      include: { customer: true }
+    });
+    
+    const existingCustomer = existingUsers.find(user => user.customer);
+    
+    if (existingCustomer && existingCustomer.customer) {
+      return existingCustomer.customer.id;
+    }
+    
+    // If customer doesn't exist, create a new counter customer
+    const counterCustomerName = name || `CounterUser${Date.now()}`;
+    
+    // Create a new user
+    const newUser = await prisma.user.create({
+      data: {
+        firstName: counterCustomerName,
+        lastName: '',
+        email: `counteruser${Date.now()}@example.com`,
+        phone,
+        password: await bcrypt.hash('defaultPassword123', 10),
+        role: 'CUSTOMER',
+      }
+    });
+    
+    // Create customer record
+    const customer = await prisma.customer.create({
+      data: {
+        userId: newUser.id,
+        customerCode: `CUST${Date.now()}`,
+        firstName: counterCustomerName,
+        lastName: '',
+      }
+    });
+    
+    return customer.id;
+  }
+  
+  // Helper method to create payment record
+  private async createPayment(orderId: string, amount: any, method: string, details?: any): Promise<void> {
+    // Verify that the order exists before creating payment
+    const order = await prisma.order.findUnique({
+      where: { id: orderId }
+    });
+    
+    if (!order) {
+      throw new Error(`Order with ID ${orderId} does not exist when creating payment`);
+    }
+    
+    await prisma.payment.create({
+      data: {
+        order: {
+          connect: { id: orderId }
+        },
+        amount: Number(amount),
+        cash: Number(details?.cash) || 0,
+        online: Number(details?.online) || 0,
+        method: method as any, // Type assertion for payment method
+        status: 'SUCCESS',
+        gatewayName: details?.gatewayName || 'CASH',
+        gatewayPaymentId: details?.gatewayPaymentId || null,
+        currency: 'INR',
+        paidAt: new Date(),
+      }
+    });
+    
+    // Update order payment status
+    await this.orderRepo.updateOrderStatus(orderId, 'CONFIRMED');
+  }
+  
   // Top selling products API
   getTopSellingProducts = async (req: Request, res: Response): Promise<void> => {
     try {

@@ -31,13 +31,11 @@ export const createOrderSchema = Joi.object({
       'array.min': 'At least one item is required',
       'any.required': 'Order items are required',
     }),
-  shippingAddressId: Joi.string().trim().required().messages({
+  shippingAddressId: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Shipping address ID is required',
-    'any.required': 'Shipping address ID is required',
   }),
-  billingAddressId: Joi.string().trim().required().messages({
+  billingAddressId: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Billing address ID is required',
-    'any.required': 'Billing address ID is required',
   }),
   customerNotes: Joi.string().trim().optional().allow('', null),
   discountCode: Joi.string().trim().optional().allow('', null),

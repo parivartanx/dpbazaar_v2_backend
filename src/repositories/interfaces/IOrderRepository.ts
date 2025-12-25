@@ -12,6 +12,28 @@ export interface OrderFilters {
   source?: string;     // Added for desktop app (using string instead of enum)
 }
 
+// Interface for simplified order data for desktop bill history
+export interface SimplifiedOrder {
+  id: string;
+  orderNumber: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  itemsTotal: number | string; // Prisma returns Decimal which can be cast to number
+  taxAmount: number | string;
+  shippingCharges: number | string;
+  discount: number | string;
+  totalAmount: number | string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: string; // Add payment method field
+  source: $Enums.Source;
+  createdAt: Date;
+  updatedAt: Date;
+  itemCount: number; // Instead of full items array, just return count
+  // Remove customer object since details are already at main level
+}
+
 export interface PaginationParams {
   page?: number;
   limit?: number;
@@ -25,8 +47,8 @@ export interface CreateOrderData {
     variantId?: string;
     quantity: number;
   }>;
-  shippingAddressId: string; // Required: Fetch from customer's saved addresses
-  billingAddressId: string; // Required: Fetch from customer's saved addresses
+  shippingAddressId?: string; // Optional: Fetch from customer's saved addresses, defaults to counter sale for SYSTEM orders
+  billingAddressId?: string; // Optional: Fetch from customer's saved addresses, defaults to counter sale for SYSTEM orders
   customerNotes?: string;
   discountCode?: string;
   source?: $Enums.Source;
