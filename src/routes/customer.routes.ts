@@ -1,77 +1,60 @@
 import { Router } from 'express';
 import { CustomerController } from '../controllers/customer.controller';
-import { CustomerSegmentController } from '../controllers/customerSegment.controller';
-// import { isAccessAllowed } from '../middlewares/isAccessAllowed';
+import { AddressController } from '../controllers/address.controller';
+import { OrderController } from '../controllers/order.controller';
+import { WalletController } from '../controllers/wallet.controller';
+import { UserSubscriptionCardController } from '../controllers/userSubscriptionCard.controller';
+import { CartController } from '../controllers/cart.controller';
 import { validateJoi } from '../middlewares/validateJoi';
 import {
-  createCustomerSchema,
   updateCustomerSchema,
 } from '../validators/customer.validaton';
-import {
-  createSegmentSchema,
-  updateSegmentSchema,
-} from '../validators/cuctomerSegment.validaton';
-// import {
-//   createAddressSchema,
-//   updateAddressSchema,
-// } from '../validators/address.validation';
 
 const router = Router();
 const customerCtrl = new CustomerController();
-const segmentCtrl = new CustomerSegmentController();
+const addressCtrl = new AddressController();
+const orderCtrl = new OrderController();
+const walletCtrl = new WalletController();
+const userSubCardCtrl = new UserSubscriptionCardController();
+const cartCtrl = new CartController();
 
-// router.use(isAccessAllowed('CUSTOMER'));
-
-/** CUSTOMER ROUTES */
-router.get('/', customerCtrl.listCustomers);
-router.get('/:id', customerCtrl.getCustomer);
-router.post(
-  '/',
-  validateJoi(createCustomerSchema),
-  customerCtrl.createCustomer
-);
-router.put(
-  '/:id',
-  validateJoi(updateCustomerSchema),
-  customerCtrl.updateCustomer
-);
-router.delete('/:id', customerCtrl.deleteCustomer);
-router.post('/:id/restore', customerCtrl.restoreCustomer);
-
-// Customer (self-service)
+// Customer Profile Management
 router.get('/me/profile', customerCtrl.getMyProfile);
-router.put(
-  '/me/profile',
-  validateJoi(updateCustomerSchema),
-  customerCtrl.updateMyProfile
-);
+router.put('/me/profile', validateJoi(updateCustomerSchema), customerCtrl.updateMyProfile);
 
-// Address routes (customer self-service)
-// router.get('/me/addresses', customerCtrl.getMyAddresses);
-// router.post(
-//   '/me/addresses',
-//   validateJoi(createAddressSchema),
-//   customerCtrl.createMyAddress
-// );
-// router.put(
-//   '/me/addresses/:id',
-//   validateJoi(updateAddressSchema),
-//   customerCtrl.updateMyAddress
-// );
-// router.delete('/me/addresses/:id', customerCtrl.deleteMyAddress);
+// Customer Address Management
+router.get('/me/addresses', addressCtrl.getMyAddresses);
+router.post('/me/addresses', addressCtrl.createMyAddress);
+router.put('/me/addresses/:id', addressCtrl.updateMyAddress);
+router.delete('/me/addresses/:id', addressCtrl.deleteMyAddress);
 
-/** CUSTOMER SEGMENT ROUTES */
-router.get('/:customerId/segments', segmentCtrl.listByCustomer);
-router.post(
-  '/:customerId/segments',
-  validateJoi(createSegmentSchema),
-  segmentCtrl.createSegment
-);
-router.put(
-  '/segments/:id',
-  validateJoi(updateSegmentSchema),
-  segmentCtrl.updateSegment
-);
-router.delete('/segments/:id', segmentCtrl.deleteSegment);
+
+// Customer Wallet
+router.get('/me/wallets', walletCtrl.getCustomerWallets);
+
+// Customer Subscription Cards
+router.get('/me/subscription-cards', userSubCardCtrl.getCustomerCards);
+
+// Customer Cart
+router.get('/me/cart', cartCtrl.getCustomerCart);
+router.post('/me/cart', cartCtrl.addToCart);
+router.put('/me/cart', cartCtrl.updateCart);
+router.delete('/me/cart', cartCtrl.clearCart);
+router.delete('/me/cart/items/:productId/:variantId?', cartCtrl.removeFromCart);
+// Customer Buy Products from Cart
+router.post('/me/cart/buy', cartCtrl.buyProductsFromCart);
+
+// Customer Buy Products (Create Order)
+router.post('/me/buy-products', orderCtrl.createCustomerOrder);
+
+// Customer Order History
+router.get('/me/orders', orderCtrl.getCustomerOrders);
+router.get('/me/orders/:id', orderCtrl.getCustomerOrderById);
+
+// Customer Referral History
+// router.get('/me/referrals', referralHistoryCtrl.getCustomerReferrals);
+
+// Customer Search History
+// router.get('/me/search-history', searchHistoryCtrl.getCustomerSearchHistory);
 
 export { router as customerRouter };
