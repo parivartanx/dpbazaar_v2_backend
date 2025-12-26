@@ -26,6 +26,7 @@ export class ProductRepository implements IProductRepository {
     isFeatured?: boolean;
     isNewArrival?: boolean;
     isBestSeller?: boolean;
+    barcode?: string;
   }): Promise<{ products: any[]; totalCount: number }> {
     console.log('ProductRepository.getAllWithFilters called with filters:', filters);
     
@@ -39,7 +40,8 @@ export class ProductRepository implements IProductRepository {
       stockStatus,
       isFeatured,
       isNewArrival,
-      isBestSeller
+      isBestSeller,
+      barcode
     } = filters;
 
     const where: any = {
@@ -92,6 +94,10 @@ export class ProductRepository implements IProductRepository {
     // Apply best seller filter
     if (isBestSeller !== undefined) {
       where.isBestSeller = isBestSeller;
+    }
+
+    if (barcode) {
+      where.barcode = filters.barcode;
     }
 
     console.log('ProductRepository.getAllWithFilters - where clause:', JSON.stringify(where, null, 2));
