@@ -47,7 +47,7 @@ export class DesktopController {
       // Add barcode search if provided
       if (barcode) {
         // For barcode search, we'll search in the barcode field specifically
-        filters.search = barcode as string;
+        filters.barcode = barcode as string;
       }
 
       const { products, totalCount } = await this.productRepo.getAllWithFilters(filters);

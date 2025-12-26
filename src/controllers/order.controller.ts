@@ -2,15 +2,18 @@ import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { OrderRepository } from '../repositories/prisma/OrderRepository';
+import { PaymentService } from '../services/payment.service';
+import { PaymentMethod } from '@prisma/client';
 // import { OrderStatus } from '@prisma/client';
 
-/**
- * Shared param types
- */
-// type IdParam = { id: string };
+// ✅ Extend Request type to include `user`
+interface AuthRequest extends Request {
+  user?: { id: string };
+}
 
 export class OrderController {
   private repo = new OrderRepository();
+  private paymentService = new PaymentService();
 
   // CRUD Operations
 
@@ -177,6 +180,75 @@ export class OrderController {
           timestamp: new Date().toISOString(),
         };
         res.status(404).json(response);
+        return;
+      }
+
+      const response: ApiResponse = {
+        success: true,
+        data: { order },
+        message: 'Order found',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching order',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Customer-specific method to get order by ID
+  getCustomerOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const customerId = req.user?.id;
+      
+      if (!id) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Order ID is required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      if (!customerId) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Customer not authenticated',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      // Get the order and verify it belongs to the customer
+      const order = await this.repo.getOrderById(id);
+      
+      if (!order) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Order not found',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      // Check if the order belongs to the authenticated customer
+      if (order.customerId !== customerId) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Unauthorized: This order does not belong to you',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(403).json(response);
         return;
       }
 
@@ -497,6 +569,74 @@ export class OrderController {
       res.status(500).json(response);
     }
   };
+
+  // Customer-specific method to buy products (create order with payment)
+  createCustomerOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const customerId = req.user?.id;
+      
+      if (!customerId) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Customer not authenticated',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      // Prepare order data with customer ID
+      const orderData = {
+        ...req.body,
+        customerId, // Ensure the order is linked to the authenticated customer
+      };
+
+      // Create the order
+      const order = await this.repo.createOrder(orderData);
+      
+      // Process payment if payment information is provided
+      const { paymentMethod, paymentDetails } = req.body;
+      if (paymentMethod) {
+        await this.createPayment(order.id, order.totalAmount, paymentMethod as PaymentMethod, {
+          ...paymentDetails,
+          customerId
+        });
+      }
+      
+      const response: ApiResponse = {
+        success: true,
+        data: { order },
+        message: 'Order created successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(201).json(response);
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in creating order',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Helper method to create payment record
+  private async createPayment(orderId: string, amount: any, method: PaymentMethod, details?: any): Promise<void> {
+    // Use the PaymentService to process the payment
+    const paymentRequest = {
+      orderId,
+      amount: Number(amount),
+      paymentMethod: method,
+      customerId: details?.customerId,
+      razorpayPaymentId: details?.razorpayPaymentId,
+      razorpayOrderId: details?.razorpayOrderId,
+      razorpaySignature: details?.razorpaySignature,
+    };
+    
+    await this.paymentService.processPayment(paymentRequest);
+  }
 
   // Customer & Vendor Specific Methods
 
