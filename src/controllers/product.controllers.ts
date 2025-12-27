@@ -198,7 +198,48 @@ export class ProductController {
         success: false,
         error: (error as Error).message,
         message: 'Problem in fetching Product',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
 
+  getProductBySlug = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { slug } = req.params;
+      if (!slug) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Product slug is required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const product = await this.repo.getBySlug(slug);
+      if (!product) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Product not found',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Product Found',
+        data: { product },
+        timeStamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching Product by slug',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -998,4 +1039,3 @@ export class RelationController {
 //     const report = await this.repo.getReturnsReport();
 //     res.json(report);
 //   };
-// }

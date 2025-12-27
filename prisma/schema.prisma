@@ -173,6 +173,7 @@ enum TransactionReason {
   WITHDRAWAL
   ADJUSTMENT
   SUBSCRIPTION_REFERRAL
+  TRANSFER
 }
 
 enum TransactionStatus {
@@ -1890,6 +1891,7 @@ model Wallet {
 model SubscriptionCard {
   id                    String                 @id @default(cuid())
   name                  String
+  slug                  String                 @unique
   price                 Decimal                @db.Decimal(12, 2)
   targetAmount          Decimal                @db.Decimal(12, 2)
   rewardPercent         Decimal                @db.Decimal(5, 2)

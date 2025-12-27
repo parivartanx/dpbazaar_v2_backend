@@ -47,6 +47,20 @@ export const createUserSubscriptionCardSchema = Joi.object({
 });
 
 /**
+ * PURCHASE SUBSCRIPTION CARD SCHEMA
+ */
+export const purchaseSubscriptionCardSchema = Joi.object({
+  cardId: Joi.string().required().messages({
+    'string.empty': 'Card ID is required',
+    'any.required': 'Card ID is required',
+  }),
+
+  referralCode: Joi.string().optional().allow(null, '').messages({
+    'string.empty': 'Referral code cannot be empty',
+  }),
+});
+
+/**
  * UPDATE USER SUBSCRIPTION CARD SCHEMA
  */
 export const updateUserSubscriptionCardSchema = Joi.object({
