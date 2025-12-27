@@ -6,6 +6,7 @@ import { authValidation } from '../validators/auth.validation';
 import { AnalyticsController } from '../controllers/analytics.contoller';
 import { UserController } from '../controllers/user.controller';
 import { CardController } from '../controllers/card.contoller';
+import { SubscriptionCardController } from '../controllers/subscriptionCard.controller';
 import {
   DepartmentController,
   EmployeePermissionController,
@@ -24,6 +25,8 @@ import {
 } from '../controllers/product.controllers';
 import { CustomerController } from '../controllers/customer.controller';
 import { CustomerSegmentController } from '../controllers/customerSegment.controller';
+import { WalletController } from '../controllers/wallet.controller';
+import { WalletTransactionController } from '../controllers/walletTransaction.controller';
 // import { isAccessAllowed } from '../middlewares/isAccessAllowed';
 import { validateJoi } from '../middlewares/validateJoi';
 import {
@@ -50,6 +53,10 @@ import {
   createCardSchema,
   updateCardSchema,
 } from '../validators/card.validaton';
+import {
+  createSubscriptionCardSchema,
+  updateSubscriptionCardSchema,
+} from '../validators/subscriptionCard.validation';
 import { createRelationSchema } from '../validators/relation.validaton';
 import {
   createDepartmentSchema,
@@ -68,6 +75,16 @@ import {
   createSegmentSchema,
   updateSegmentSchema,
 } from '../validators/cuctomerSegment.validaton';
+import { UserSubscriptionCardController } from '../controllers/userSubscriptionCard.controller';
+import { createUserSubscriptionCardSchema, updateUserSubscriptionCardSchema } from '../validators/userSubscriptionCard.validation';
+import {
+  createWalletSchema,
+  updateWalletSchema,
+} from '../validators/wallet.validation';
+import {
+  createWalletTransactionSchema,
+  updateWalletTransactionSchema,
+} from '../validators/walletTransaction.validation';
 
 const router = Router();
 const upload = multer();
@@ -89,8 +106,12 @@ const variantController = new VariantController();
 const attributeController = new AttributeController();
 const relationController = new RelationController();
 const cardController = new CardController();
+const subscriptionCardController = new SubscriptionCardController();
+const userSubscriptionCardController = new UserSubscriptionCardController();
 const customerCtrl = new CustomerController();
 const segmentCtrl = new CustomerSegmentController();
+const walletController = new WalletController();
+const walletTransactionController = new WalletTransactionController();
 // const reviewController = new ReviewController();
 // const reportController = new ReportController();
 
@@ -241,6 +262,24 @@ router.put('/admin/cards/:id',validateJoi(updateCardSchema),cardController.updat
 router.delete('/admin/cards/:id',cardController.deleteCard);
 router.patch('/admin/cards/:id/restore',cardController.restoreCard);
 
+/** SUBSCRIPTION CARD MANAGEMENT */
+router.get('/admin/subscription-cards', subscriptionCardController.listCards);
+router.get('/admin/subscription-cards/:id', subscriptionCardController.getCard);
+router.post('/admin/subscription-cards', validateJoi(createSubscriptionCardSchema), subscriptionCardController.createCard);
+router.put('/admin/subscription-cards/:id', validateJoi(updateSubscriptionCardSchema), subscriptionCardController.updateCard);
+router.delete('/admin/subscription-cards/:id', subscriptionCardController.deleteCard);
+router.patch('/admin/subscription-cards/:id/restore', subscriptionCardController.restoreCard);
+
+/* USER SUBSCRIPTION CARD MANAGEMENT ROUTES */
+
+// Admin routes
+router.get('/admin/user-subscription-cards', userSubscriptionCardController.listUserCards);
+router.get('/admin/user-subscription-cards/:id', userSubscriptionCardController.getUserCard);
+router.post('/admin/user-subscription-cards', validateJoi(createUserSubscriptionCardSchema), userSubscriptionCardController.createUserCard);
+router.put('/admin/user-subscription-cards/:id', validateJoi(updateUserSubscriptionCardSchema), userSubscriptionCardController.updateUserCard);
+router.delete('/admin/user-subscription-cards/:id', userSubscriptionCardController.deleteUserCard);
+
+
 /** CUSTOMER ROUTES */
 // Admin
 router.get('/',  customerCtrl.listCustomers);
@@ -255,6 +294,24 @@ router.get('/:customerId/segments',segmentCtrl.listByCustomer);
 router.post('/:customerId/segments',validateJoi(createSegmentSchema),segmentCtrl.createSegment);
 router.put('/segments/:id',validateJoi(updateSegmentSchema),segmentCtrl.updateSegment);
 router.delete('/segments/:id',segmentCtrl.deleteSegment);
+
+/** WALLET MANAGEMENT ROUTES */
+
+// Admin routes
+router.get('/admin/wallets', walletController.listWallets);
+router.get('/admin/wallets/:id', walletController.getWallet);
+router.post('/admin/wallets', validateJoi(createWalletSchema), walletController.createWallet);
+router.put('/admin/wallets/:id', validateJoi(updateWalletSchema), walletController.updateWallet);
+router.delete('/admin/wallets/:id', walletController.deleteWallet);
+
+/** WALLET TRANSACTION MANAGEMENT ROUTES */
+
+// Admin routes
+router.get('/admin/wallet-transactions', walletTransactionController.listTransactions);
+router.get('/admin/wallet-transactions/:id', walletTransactionController.getTransaction);
+router.post('/admin/wallet-transactions', validateJoi(createWalletTransactionSchema), walletTransactionController.createTransaction);
+router.put('/admin/wallet-transactions/:id', validateJoi(updateWalletTransactionSchema), walletTransactionController.updateTransaction);
+router.delete('/admin/wallet-transactions/:id', walletTransactionController.deleteTransaction);
 
 // /**
 //  * REVIEW ROUTES

@@ -1,10 +1,14 @@
 // src/controllers/WalletController.ts
 import { Request, Response } from 'express';
 import { WalletRepository } from '../repositories/prisma/WalletRepository';
+import { WalletTransactionRepository } from '../repositories/prisma/WalletTransactionRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 const walletRepo = new WalletRepository();
+const walletTransactionRepo = new WalletTransactionRepository();
 
 export class WalletController {
   /** ----------------- ADMIN END ----------------- */
@@ -184,6 +188,194 @@ export class WalletController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch customer wallets',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  getCustomerWalletTransactions = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const customerId = req.params.customerId as string;
+      if (!customerId) {
+        res.status(400).json({
+          success: false,
+          message: 'Customer ID is required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const { page, limit } = req.query;
+      const transactions = await walletTransactionRepo.list({
+        customerId,
+        page: Number(page) || 1,
+        limit: Number(limit) || 20,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Customer wallet transactions fetched successfully',
+        data: { transactions },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`Error fetching customer wallet transactions: ${error}`);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch customer wallet transactions',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  transferBetweenWallets = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const customerId = req.params.customerId as string;
+      if (!customerId) {
+        res.status(400).json({
+          success: false,
+          message: 'Customer ID is required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const { fromWalletType, toWalletType, amount, description } = req.body;
+
+      if (!fromWalletType || !toWalletType || !amount) {
+        res.status(400).json({
+          success: false,
+          message: 'fromWalletType, toWalletType, and amount are required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Only allow transfers from WITHDRAWABLE to SHOPPING
+      if (fromWalletType !== 'WITHDRAWABLE' || toWalletType !== 'SHOPPING') {
+        res.status(400).json({
+          success: false,
+          message: 'Only transfers from WITHDRAWABLE to SHOPPING wallets are allowed',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Get both wallets
+      const fromWallet = await walletRepo.findByCustomerIdAndType(customerId, fromWalletType as any);
+      const toWallet = await walletRepo.findByCustomerIdAndType(customerId, toWalletType as any);
+
+      if (!fromWallet) {
+        res.status(404).json({
+          success: false,
+          message: `Source wallet of type ${fromWalletType} not found`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      if (!toWallet) {
+        res.status(404).json({
+          success: false,
+          message: `Destination wallet of type ${toWalletType} not found`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if source wallet has sufficient balance
+      if (Number(fromWallet.balance) < Number(amount)) {
+        res.status(400).json({
+          success: false,
+          message: 'Insufficient balance in source wallet',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Perform the transfer in a transaction
+      const result = await prisma.$transaction(async (tx) => {
+        // Deduct from source wallet
+        const updatedFromWallet = await tx.wallet.update({
+          where: { id: fromWallet.id },
+          data: {
+            balance: {
+              decrement: Number(amount)
+            }
+          }
+        });
+
+        // Add to destination wallet
+        const updatedToWallet = await tx.wallet.update({
+          where: { id: toWallet.id },
+          data: {
+            balance: {
+              increment: Number(amount)
+            }
+          }
+        });
+
+        // Create transaction records for both wallets
+        const fromTransaction = await tx.walletTransaction.create({
+          data: {
+            walletId: fromWallet.id,
+            customerId,
+            type: 'DEBIT',
+            amount: Number(amount),
+            reason: 'TRANSFER',
+            status: 'SUCCESS',
+            balanceBefore: Number(fromWallet.balance),
+            balanceAfter: Number(updatedFromWallet.balance),
+            metadata: {
+              description: description || `Transfer to ${toWalletType} wallet`,
+              toWalletType,
+              fromWalletType,
+            },
+          }
+        });
+
+        const toTransaction = await tx.walletTransaction.create({
+          data: {
+            walletId: toWallet.id,
+            customerId,
+            type: 'CREDIT',
+            amount: Number(amount),
+            reason: 'TRANSFER',
+            status: 'SUCCESS',
+            balanceBefore: Number(toWallet.balance),
+            balanceAfter: Number(updatedToWallet.balance),
+            metadata: {
+              description: description || `Transfer from ${fromWalletType} wallet`,
+              toWalletType,
+              fromWalletType,
+            },
+          }
+        });
+
+        return {
+          fromWallet: updatedFromWallet,
+          toWallet: updatedToWallet,
+          fromTransaction,
+          toTransaction
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Transfer completed successfully',
+        data: {
+          fromWallet: result.fromWallet,
+          toWallet: result.toWallet,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`Error transferring between wallets: ${error}`);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to transfer between wallets',
         error: (error as Error).message,
         timestamp: new Date().toISOString(),
       });
