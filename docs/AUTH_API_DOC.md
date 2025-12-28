@@ -164,7 +164,8 @@ This document provides comprehensive documentation for the authentication API en
       "firstName": "string",
       "lastName": "string",
       "role": "string"
-    }
+    },
+    "newRegistration": true
   },
   "message": "Login successful",
   "timestamp": "2023-12-25T10:30:00.000Z"
@@ -207,7 +208,8 @@ This document provides comprehensive documentation for the authentication API en
       "firstName": "string",
       "lastName": "string",
       "role": "string"
-    }
+    },
+    "newRegistration": true
   },
   "message": "Google login successful",
   "timestamp": "2023-12-25T10:30:00.000Z"
