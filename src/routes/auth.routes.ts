@@ -12,6 +12,13 @@ router.post('/register',
   authController.register
 );
 
+// Mobile OTP login
+router.post('/login-mobile-otp', authController.sendMobileOtp);
+router.post('/verify-mobile-otp', authController.verifyMobileOtp);
+
+// Google/Firebase login
+router.post('/login-google', authController.loginWithGoogle);
+
 router.post('/login', 
   validateRequest(authValidation.login),
   authController.login

@@ -23,6 +23,7 @@ export class UserRepository implements IUserRepository {
     email: string;
     password: string;
     role?: UserRole;
+    isEmailVerified?: boolean;
   }): Promise<User> {
     // Hash password before storing
     const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -34,6 +35,7 @@ export class UserRepository implements IUserRepository {
         email: data.email,
         password: hashedPassword,
         role: data.role || UserRole.CUSTOMER,
+        isEmailVerified: data.isEmailVerified ?? false,
       },
     });
   }
@@ -49,6 +51,7 @@ export class UserRepository implements IUserRepository {
       status: UserStatus;
       isEmailVerified: boolean;
       isPhoneVerified: boolean;
+      phone?: string;
     }>
   ): Promise<User> {
     return prisma.user.update({ where: { id }, data });
@@ -175,6 +178,28 @@ export class UserRepository implements IUserRepository {
           ],
         }),
       },
+    });
+  }
+  
+  async findFirst(params: {
+    where: any;
+  }): Promise<User | null> {
+    return prisma.user.findFirst(params);
+  }
+  
+  async createCustomer(data: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    customerCode: string;
+  }) {
+    return prisma.customer.create({
+      data: {
+        userId: data.userId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        customerCode: data.customerCode,
+      }
     });
   }
 }

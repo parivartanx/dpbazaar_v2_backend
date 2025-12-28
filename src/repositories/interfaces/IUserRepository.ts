@@ -9,6 +9,7 @@ export interface IUserRepository {
     email: string;
     password: string;
     role?: UserRole;
+    isEmailVerified?: boolean;
   }): Promise<User>;
   update(
     id: string,
@@ -20,6 +21,7 @@ export interface IUserRepository {
       status: UserStatus;
       isEmailVerified: boolean;
       isPhoneVerified: boolean;
+      phone?: string;
     }>
   ): Promise<User>;
   delete(id: string): Promise<User>;
@@ -50,4 +52,15 @@ export interface IUserRepository {
     status?: UserStatus;
     search?: string;
   }): Promise<number>;
+  
+  findFirst(params: {
+    where: any;
+  }): Promise<User | null>;
+  
+  createCustomer(data: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    customerCode: string;
+  }): Promise<any>;
 }
