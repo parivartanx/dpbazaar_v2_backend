@@ -1144,6 +1144,8 @@ model OrderItem {
 
   // Status
   status String @default("PENDING")
+  refundedQuantity Int @default(0)
+  isReturned Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1247,6 +1249,7 @@ model Payment {
 model Refund {
   id        String @id @default(cuid())
   paymentId String
+  returnId  String?
 
   amount Decimal @db.Decimal(12, 2)
   reason String
@@ -1261,10 +1264,13 @@ model Refund {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
   payment Payment @relation(fields: [paymentId], references: [id])
-
+  return  Return? @relation(fields: [returnId], references: [id])
+  
   @@index([paymentId])
   @@index([status])
+  @@index([returnId])
 }
 
 // =====================================================
@@ -1488,10 +1494,13 @@ model Return {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  source     Source @default(WEBSITE) // WEBSITE, APP, POS, SYSTEM
+  createdBy  String? // User ID of the employee who processed the return
 
   // Relations
-  order Order        @relation(fields: [orderId], references: [id])
-  items ReturnItem[]
+  order   Order        @relation(fields: [orderId], references: [id])
+  items   ReturnItem[]
+  refunds Refund[]
 
   @@index([returnNumber])
   @@index([orderId])
@@ -1787,6 +1796,29 @@ model JobExecution {
 }
 
 // =====================================================
+// OTP MANAGEMENT SYSTEM
+// =====================================================
+
+model Otp {
+  id         String   @id @default(cuid())
+  phone      String   // Phone number for OTP
+  email      String?  // Email for OTP (optional)
+  otp        String   // The OTP code
+  type       String   // LOGIN, PAYMENT, FORGOT_PASSWORD, etc
+  status     String   @default("PENDING") // PENDING, VERIFIED, EXPIRED, FAILED
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([phone])
+  @@index([email])
+  @@index([type])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+// =====================================================
 // FINANCIAL SYSTEM
 // =====================================================
 
@@ -1890,7 +1922,7 @@ model Wallet {
 model SubscriptionCard {
   id                    String                 @id @default(cuid())
   name                  String
-  slug                  String                 @unique
+  slug                  String?                @unique
   price                 Decimal                @db.Decimal(12, 2)
   targetAmount          Decimal                @db.Decimal(12, 2)
   rewardPercent         Decimal                @db.Decimal(5, 2)

@@ -638,6 +638,194 @@ export class OrderController {
     await this.paymentService.processPayment(paymentRequest);
   }
 
+  // Return Management Methods
+
+  createReturnRequest = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const returnData = req.body;
+      
+      // Validate required fields
+      if (!returnData.orderId || !returnData.type || !returnData.reason) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Order ID, type, and reason are required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Generate return number
+      const returnNumber = `RET-${Date.now()}`;
+      
+      // Create return with the generated return number
+      const returnRequest = await this.repo.createReturn({
+        ...returnData,
+        returnNumber,
+      });
+      
+      const response: ApiResponse = {
+        success: true,
+        data: { return: returnRequest },
+        message: 'Return request created successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(201).json(response);
+    } catch (error) {
+      logger.error(`Return creation error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in creating return request',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  getReturnById = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { returnId } = req.params;
+      
+      if (!returnId) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Return ID is required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const returnRequest = await this.repo.getReturnById(returnId);
+      
+      if (!returnRequest) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Return request not found',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      const response: ApiResponse = {
+        success: true,
+        data: { return: returnRequest },
+        message: 'Return request found',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Return fetch error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching return request',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  getAllReturns = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {
+        status,
+        orderId,
+        type,
+        page,
+        limit,
+      } = req.query;
+
+      const filters: any = {};
+      if (status) filters.status = status;
+      if (orderId) filters.orderId = orderId as string;
+      if (type) filters.type = type as string;
+
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 10,
+      };
+
+      const result = await this.repo.getAllReturns(filters, pagination);
+
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          returns: result.returns,
+          total: result.total,
+          page: pagination.page,
+          limit: pagination.limit,
+          totalPages: Math.ceil(result.total / pagination.limit),
+        },
+        message: 'Returns fetched successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Returns fetch error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching returns',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  updateReturnStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { returnId } = req.params;
+      const { status, inspectionNotes, refundAmount, refundMethod } = req.body;
+
+      if (!returnId) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Return ID is required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      if (!status) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Status is required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const returnRequest = await this.repo.updateReturnStatus(returnId, {
+        status,
+        inspectionNotes,
+        refundAmount,
+        refundMethod,
+      });
+
+      const response: ApiResponse = {
+        success: true,
+        data: { return: returnRequest },
+        message: 'Return status updated successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Return status update error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in updating return status',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
   // Customer & Vendor Specific Methods
 
   getCustomerOrders = async (req: Request, res: Response): Promise<void> => {

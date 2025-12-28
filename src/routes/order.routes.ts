@@ -7,6 +7,8 @@ import {
   updateOrderStatusSchema,
   cancelOrderSchema,
   orderFilterSchema,
+  createReturnSchema,
+  updateReturnStatusSchema,
 } from '../validators/order.validation';
 
 const router = Router();
@@ -59,5 +61,13 @@ router.patch(
 );
 router.patch('/:id/confirm', orderController.confirmOrder);
 router.patch('/:id/restore', orderController.restoreOrder);
+
+/**
+ * RETURN MANAGEMENT ROUTES
+ */
+router.post('/returns', validateJoi(createReturnSchema), orderController.createReturnRequest);
+router.get('/returns/:returnId', orderController.getReturnById);
+router.get('/returns', orderController.getAllReturns);
+router.patch('/returns/:returnId/status', validateJoi(updateReturnStatusSchema), orderController.updateReturnStatus);
 
 export { router as orderRoutes };

@@ -124,3 +124,67 @@ export const revenueStatsSchema = Joi.object({
   startDate: Joi.date().optional(),
   endDate: Joi.date().optional(),
 });
+
+/**
+ * RETURN VALIDATION SCHEMAS
+ */
+
+export const createReturnSchema = Joi.object({
+  orderId: Joi.string().trim().required().messages({
+    'string.empty': 'Order ID is required',
+    'any.required': 'Order ID is required',
+  }),
+  type: Joi.string()
+    .valid('RETURN', 'EXCHANGE', 'REPLACEMENT')
+    .required()
+    .messages({
+      'any.required': 'Return type is required',
+      'any.only': 'Return type must be RETURN, EXCHANGE, or REPLACEMENT',
+    }),
+  reason: Joi.string().trim().required().messages({
+    'string.empty': 'Return reason is required',
+    'any.required': 'Return reason is required',
+  }),
+  detailedReason: Joi.string().trim().optional().allow('', null),
+  customerComments: Joi.string().trim().optional().allow('', null),
+  images: Joi.array().items(Joi.string().uri()).optional(),
+  pickupAddress: Joi.object().optional(),
+  pickupScheduledDate: Joi.date().optional(),
+  items: Joi.array().items(
+    Joi.object({
+      orderItemId: Joi.string().trim().required().messages({
+        'string.empty': 'Order item ID is required',
+        'any.required': 'Order item ID is required',
+      }),
+      quantity: Joi.number().integer().min(1).required().messages({
+        'number.base': 'Quantity must be a number',
+        'number.min': 'Quantity must be at least 1',
+        'any.required': 'Quantity is required',
+      }),
+      condition: Joi.string().trim().valid('NEW', 'USED', 'DAMAGED').optional().default('USED'),
+    })
+  ).optional(),
+  refundMethod: Joi.string().trim().valid('ORIGINAL_PAYMENT', 'STORE_CREDIT', 'BANK_TRANSFER', 'CASH', 'WALLET').optional().default('CASH'),
+});
+
+export const updateReturnStatusSchema = Joi.object({
+  status: Joi.string()
+    .valid(
+      'REQUESTED',
+      'APPROVED',
+      'REJECTED',
+      'PICKED_UP',
+      'RECEIVED',
+      'PROCESSING',
+      'REFUNDED',
+      'REPLACED'
+    )
+    .required()
+    .messages({
+      'any.required': 'Return status is required',
+      'any.only': 'Return status must be one of the allowed values',
+    }),
+  inspectionNotes: Joi.string().trim().optional().allow('', null),
+  refundAmount: Joi.number().positive().optional(),
+  refundMethod: Joi.string().trim().valid('ORIGINAL_PAYMENT', 'STORE_CREDIT', 'BANK_TRANSFER').optional(),
+});
