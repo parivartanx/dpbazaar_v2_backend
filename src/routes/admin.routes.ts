@@ -350,35 +350,3 @@ router.delete('/admin/wallet-transactions/:id', walletTransactionController.dele
 // router.post('/banners', adminController.createBanner);
 // router.delete('/banners/:id', adminController.deleteBanner);
 export { router as adminRoutes };
-
-/**
- * INVENTORY MANAGEMENT
- */
-// router.get(
-//   "/products/:id/inventory",
-//   inventoryController.getProductInventory
-// );
-// router.post(
-//   "/inventory",
-//   isAccessAllowed("ADMIN"),
-//   validateJoi(updateInventorySchema),
-//   inventoryController.addInventory
-// );
-// router.patch(
-//   "/inventory/:id",
-//   isAccessAllowed("ADMIN"),
-//   validateJoi(updateInventorySchema),
-//   inventoryController.updateInventory
-// );
-// router.get(
-//   "/products/:id/price-history",
-//   inventoryController.getProductPriceHistory
-// );
-// router.get("/reports/low-stock", reportController.getLowStockProducts);
-
-// // ========================
-// // RELATED PRODUCTS
-// // ========================
-// router.get("/:productId/related", controller.listRelations.bind(controller));
-// router.post("/:productId/related", isAccessAllowed("ADMIN"), controller.addRelation.bind(controller));
-// router.delete("/relations/:relationId", isAccessAllowed("ADMIN"), controller.deleteRelation.bind(controller));

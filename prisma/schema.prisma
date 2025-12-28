@@ -965,10 +965,9 @@ model Discount {
   validUntil DateTime
 
   // Applicability
-  applicableCategories String[]
-  applicableProducts   String[]
-  applicableBrands     String[]
-  customerSegments     String[]
+  applicableCategories String[] @default([])
+  applicableProducts   String[] @default([])
+  applicableBrands     String[] @default([])
 
   isActive Boolean @default(true)
 
