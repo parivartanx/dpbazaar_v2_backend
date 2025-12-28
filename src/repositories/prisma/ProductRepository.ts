@@ -109,7 +109,10 @@ export class ProductRepository implements IProductRepository {
         where,
         include: {
           images: true,
-          inventory: true 
+          inventory: true,
+          categories: { include: { category: true } },
+          brand: true,
+          variants: true
         },
         orderBy: {
           createdAt: 'desc'
@@ -134,13 +137,24 @@ export class ProductRepository implements IProductRepository {
         ? product.inventory.reduce((sum: number, inv: any) => sum + inv.availableQuantity, 0)
         : 0;
         
+      // Calculate discount information
+      const mrp = Number(product.mrp);
+      const sellingPrice = Number(product.sellingPrice);
+      const discountAmount = mrp - sellingPrice;
+      const discountPercent = mrp > 0 ? ((discountAmount / mrp) * 100) : 0;
+      
       return {
         id: product.id,
         name: product.name,
         image: primaryImage?.url || null,
         sku: product.sku,
-        price: Number(product.sellingPrice),
-        mrp: Number(product.mrp),
+        price: sellingPrice,
+        mrp: mrp,
+        discount: {
+          amount: discountAmount,
+          percent: parseFloat(discountPercent.toFixed(2))
+        },
+        category: product.categories.map((category: any) => category.category.name),
         barcode: product.barcode,
         taxRate: Number(product.taxRate),
         hsnCode: product.hsnCode,

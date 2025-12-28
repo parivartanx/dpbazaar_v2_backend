@@ -15,6 +15,9 @@ router.get('/dashboard', desktopController.getDashboardData);
 // Product search API
 router.get('/products', desktopController.searchProducts);
 
+// Discount APIs
+router.get('/discounts', desktopController.getAllDiscounts);
+
 // Order creation API for desktop sales
 router.post('/generate-bill', desktopController.createOrder);
 
