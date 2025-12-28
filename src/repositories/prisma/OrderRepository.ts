@@ -904,4 +904,643 @@ export class OrderRepository implements IOrderRepository {
   async confirmOrder(id: string): Promise<Order> {
     return this.updateOrderStatus(id, OrderStatus.CONFIRMED);
   }
+
+  // Return Management Methods
+  async createReturn(data: any): Promise<any> {
+    return prisma.$transaction(async (tx) => {
+      // Build the return data object conditionally to avoid type issues
+      const returnData: any = {
+        orderId: data.orderId,
+        returnNumber: data.returnNumber,
+        type: data.type,
+        reason: data.reason,
+        detailedReason: data.detailedReason,
+        status: data.status || 'REQUESTED',
+        customerComments: data.customerComments,
+        images: data.images || [],
+        pickupAddress: data.pickupAddress || null,
+        pickupScheduledDate: data.pickupScheduledDate || null,
+        pickupCompletedAt: data.pickupCompletedAt,
+        inspectionNotes: data.inspectionNotes,
+        inspectionCompletedAt: data.inspectionCompletedAt,
+        inspectedBy: data.inspectedBy,
+        approvedAt: data.approvedAt,
+        rejectedAt: data.rejectedAt,
+        processedAt: data.processedAt,
+        // Handle return items if provided
+        items: data.items ? {
+          create: data.items.map((item: any) => ({
+            orderItemId: item.orderItemId,
+            quantity: item.quantity,
+            condition: item.condition || 'USED',
+          }))
+        } : undefined,
+      };
+
+      // Add optional fields only if they exist in the data
+      if (data.source !== undefined) returnData.source = data.source;
+      else returnData.source = 'SYSTEM';
+      
+      if (data.refundAmount !== undefined) returnData.refundAmount = data.refundAmount;
+      if (data.refundMethod !== undefined) returnData.refundMethod = data.refundMethod;
+      if (data.exchangeOrderId !== undefined) returnData.exchangeOrderId = data.exchangeOrderId;
+      if (data.createdBy !== undefined) returnData.createdBy = data.createdBy;
+
+      // Create the return record
+      const returnRecord = await tx.return.create({
+        data: returnData,
+      });
+      
+      // Update the related order status based on return status
+      // For immediate approval returns (like counter returns), update order status right away
+      if (data.status === 'APPROVED') {
+        // Check if all items in the order are returned to determine if the entire order is returned
+        const order = await tx.order.findUnique({
+          where: { id: data.orderId },
+          include: { items: true, returns: { include: { items: true } }, payments: true }
+        });
+        
+        if (order) {
+          // Calculate total items in order vs total items returned
+          const totalOrderItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+          
+          // Get total quantity of items already returned for this order
+          let totalReturnedItems = 0;
+          if (order.returns && Array.isArray(order.returns)) {
+            order.returns.forEach((returnRecord: any) => {
+              if (returnRecord.items && Array.isArray(returnRecord.items)) {
+                returnRecord.items.forEach((returnItem: any) => {
+                  totalReturnedItems += returnItem.quantity;
+                });
+              }
+            });
+          }
+          
+          // Add the current return items to the total and handle inventory adjustment
+          if (data.items) {
+            for (const item of data.items) {
+              totalReturnedItems += item.quantity;
+              
+              // Get the original order item to find product/variant info
+              const originalOrderItem = await tx.orderItem.findUnique({
+                where: { id: item.orderItemId }
+              });
+              
+              if (originalOrderItem) {
+                // Find the corresponding inventory record
+                const inventory = await tx.inventory.findFirst({
+                  where: {
+                    productId: originalOrderItem.productId,
+                    variantId: originalOrderItem.variantId || null,
+                  },
+                });
+                
+                if (inventory) {
+                  // Update inventory: increase available quantity
+                  await tx.inventory.update({
+                    where: { id: inventory.id },
+                    data: {
+                      availableQuantity: {
+                        increment: item.quantity
+                      },
+                      updatedAt: new Date(),
+                    },
+                  });
+                  
+                  // Create stock movement record for the return
+                  await tx.stockMovement.create({
+                    data: {
+                      inventoryId: inventory.id,
+                      warehouseId: inventory.warehouseId,
+                      type: 'RETURN',
+                      quantity: item.quantity,
+                      referenceType: 'RETURN',
+                      referenceId: returnRecord.id,
+                      reason: 'Customer return',
+                      notes: `Return of order item ${originalOrderItem.id}`,
+                      performedAt: new Date(),
+                    },
+                  });
+                }
+                
+                // Update the order item to reflect the refunded quantity and return status
+                await tx.orderItem.update({
+                  where: { id: originalOrderItem.id },
+                  data: {
+                    refundedQuantity: {
+                      increment: item.quantity
+                    },
+                    isReturned: true,
+                    updatedAt: new Date(),
+                  },
+                });
+              }
+            }
+            
+            // Process refund for the returned items
+            if (data.refundAmount > 0 && order.payments && order.payments.length > 0) {
+              // Use the first payment for refund processing
+              const payment = order.payments[0];
+              
+              if (payment) {
+                // Create a refund record linked to both the payment and the return
+                await tx.refund.create({
+                  data: {
+                    paymentId: payment.id,
+                    returnId: returnRecord.id,
+                    amount: data.refundAmount,
+                    reason: data.reason || 'Return',
+                    status: 'PENDING', // Initially pending, will be updated based on payment gateway response
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                });
+                
+                // Update the payment's refunded amount
+                await tx.payment.update({
+                  where: { id: payment.id },
+                  data: {
+                    refundedAmount: {
+                      increment: data.refundAmount
+                    },
+                    updatedAt: new Date(),
+                  },
+                });
+              }
+            }
+          }
+          
+          // If all items are returned, mark order as RETURNED; otherwise keep as DELIVERED (for partial returns)
+          const newOrderStatus = totalReturnedItems >= totalOrderItems ? 'RETURNED' : 'DELIVERED';
+          
+          await tx.order.update({
+            where: { id: data.orderId },
+            data: { status: newOrderStatus },
+          });
+        }
+      }
+      
+      return returnRecord;
+    });
+  }
+
+  async getReturnById(returnId: string): Promise<any> {
+    return prisma.return.findUnique({
+      where: { id: returnId },
+      include: {
+        order: {
+          include: {
+            customer: true,
+            items: true,
+          },
+        },
+        items: {
+          include: {
+            orderItem: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getAllReturns(filters: any, pagination: any): Promise<{ returns: any[]; total: number }> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ReturnWhereInput = {};
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.orderId) {
+      where.orderId = filters.orderId;
+    }
+
+    if (filters?.type) {
+      where.type = filters.type;
+    }
+
+    const [returns, total] = await Promise.all([
+      prisma.return.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          order: {
+            include: {
+              customer: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  customerCode: true,
+                },
+              },
+              items: true,
+            },
+          },
+          items: {
+            include: {
+              orderItem: true,
+            },
+          },
+        },
+      }),
+      prisma.return.count({ where }),
+    ]);
+
+    return { returns, total };
+  }
+
+  async getDesktopReturns(filters: any, pagination: any): Promise<{ returns: any[]; total: number }> {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ReturnWhereInput = {};
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.orderId) {
+      where.orderId = filters.orderId;
+    }
+
+    if (filters?.type) {
+      where.type = filters.type;
+    }
+
+    if (filters?.createdBy) {
+      where.createdBy = filters.createdBy;
+    }
+    
+    if (filters?.source) {
+      where.source = filters.source;
+    }
+
+    const [returns, total] = await Promise.all([
+      prisma.return.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          returnNumber: true,
+          type: true,
+          reason: true,
+          status: true,
+          refundAmount: true,
+          refundMethod: true,
+          createdAt: true,
+          updatedAt: true,
+          order: {
+            select: {
+              orderNumber: true,
+              totalAmount: true,
+              status: true,
+              customerName: true,
+              customerPhone: true,
+            },
+          },
+          items: {
+            select: {
+              quantity: true,
+              condition: true,
+              orderItem: {
+                select: {
+                  productName: true,
+                  productSku: true,
+                  sellingPrice: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.return.count({ where }),
+    ]);
+
+    // Transform the results to flatten the item structure
+    const transformedReturns = returns.map(returnRecord => {
+      return {
+        ...returnRecord,
+        items: returnRecord.items.map(item => ({
+          quantity: item.quantity,
+          condition: item.condition,
+          productName: item.orderItem?.productName,
+          productSku: item.orderItem?.productSku,
+          sellingPrice: item.orderItem?.sellingPrice,
+        })),
+      };
+    });
+
+    return { returns: transformedReturns, total };
+  }
+
+  async updateReturnStatus(returnId: string, data: any): Promise<any> {
+    const { status, inspectionNotes, refundAmount, refundMethod, ...otherData } = data;
+    
+    return prisma.$transaction(async (tx) => {
+      // Update the return record
+      const updatedReturn = await tx.return.update({
+        where: { id: returnId },
+        data: {
+          status,
+          inspectionNotes,
+          refundAmount: refundAmount ? Number(refundAmount) : null,
+          refundMethod,
+          processedAt: status === 'APPROVED' || status === 'REJECTED' ? new Date() : undefined,
+          approvedAt: status === 'APPROVED' ? new Date() : undefined,
+          rejectedAt: status === 'REJECTED' ? new Date() : undefined,
+          ...otherData
+        },
+      });
+      
+      // Update the related order status based on return status
+      if (status === 'APPROVED') {
+        // Check if all items in the order are returned to determine if the entire order is returned
+        const order = await tx.order.findUnique({
+          where: { id: updatedReturn.orderId },
+          include: { items: true, returns: { include: { items: true } }, payments: true }
+        });
+        
+        if (order) {
+          // Calculate total items in order vs total items returned
+          const totalOrderItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+          
+          // Get total quantity of items already returned for this order (excluding the current return being updated)
+          let totalReturnedItems = 0;
+          if (order.returns && Array.isArray(order.returns)) {
+            order.returns.forEach((returnRecord: any) => {
+              // Only count items from other returns, not the one being updated
+              if (returnRecord.id !== returnId && returnRecord.items && Array.isArray(returnRecord.items)) {
+                returnRecord.items.forEach((returnItem: any) => {
+                  totalReturnedItems += returnItem.quantity;
+                });
+              }
+            });
+          }
+          
+          // Add the current return items to the total and handle inventory adjustment
+          // We need to fetch the updated return with items separately
+          const currentReturnWithItems = await tx.return.findUnique({
+            where: { id: returnId },
+            include: { items: true }
+          });
+          
+          if (currentReturnWithItems && currentReturnWithItems.items && Array.isArray(currentReturnWithItems.items)) {
+            for (const returnItem of currentReturnWithItems.items) {
+              totalReturnedItems += returnItem.quantity;
+              
+              // Get the original order item to find product/variant info
+              const originalOrderItem = await tx.orderItem.findUnique({
+                where: { id: returnItem.orderItemId }
+              });
+              
+              if (originalOrderItem) {
+                // Find the corresponding inventory record
+                const inventory = await tx.inventory.findFirst({
+                  where: {
+                    productId: originalOrderItem.productId,
+                    variantId: originalOrderItem.variantId || null,
+                  },
+                });
+                
+                if (inventory) {
+                  // Update inventory: increase available quantity
+                  await tx.inventory.update({
+                    where: { id: inventory.id },
+                    data: {
+                      availableQuantity: {
+                        increment: returnItem.quantity
+                      },
+                      updatedAt: new Date(),
+                    },
+                  });
+                  
+                  // Create stock movement record for the return
+                  await tx.stockMovement.create({
+                    data: {
+                      inventoryId: inventory.id,
+                      warehouseId: inventory.warehouseId,
+                      type: 'RETURN',
+                      quantity: returnItem.quantity,
+                      referenceType: 'RETURN',
+                      referenceId: returnId,
+                      reason: 'Customer return',
+                      notes: `Return of order item ${originalOrderItem.id}`,
+                      performedAt: new Date(),
+                    },
+                  });
+                }
+                
+                // Update the order item to reflect the refunded quantity and return status
+                await tx.orderItem.update({
+                  where: { id: originalOrderItem.id },
+                  data: {
+                    refundedQuantity: {
+                      increment: returnItem.quantity
+                    },
+                    isReturned: true,
+                    updatedAt: new Date(),
+                  },
+                });
+              }
+            }
+            
+            // Process refund for the returned items if not already processed
+            if (order.payments && order.payments.length > 0) {
+              // Check if a refund record already exists for this return
+              const existingRefund = await tx.refund.findFirst({
+                where: {
+                  returnId: returnId,
+                } as any, // Use type assertion to bypass schema validation temporarily
+              });
+              
+              if (!existingRefund && updatedReturn.refundAmount && Number(updatedReturn.refundAmount) > 0) {
+                // Use the first payment for refund processing
+                const payment = order.payments[0];
+                
+                if (payment) {
+                  // Create a refund record linked to both the payment and the return
+                  await tx.refund.create({
+                    data: {
+                      paymentId: payment.id,
+                      returnId: returnId,
+                      amount: updatedReturn.refundAmount,
+                      reason: updatedReturn.reason || 'Return',
+                      status: 'PENDING', // Initially pending, will be updated based on payment gateway response
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    },
+                  });
+                  
+                  // Update the payment's refunded amount
+                  await tx.payment.update({
+                    where: { id: payment.id },
+                    data: {
+                      refundedAmount: {
+                        increment: updatedReturn.refundAmount
+                      },
+                      updatedAt: new Date(),
+                    },
+                  });
+                }
+              }
+            }
+          }
+          
+          // If all items are returned, mark order as RETURNED; otherwise keep as DELIVERED (for partial returns)
+          const newOrderStatus = totalReturnedItems >= totalOrderItems ? 'RETURNED' : 'DELIVERED';
+          
+          await tx.order.update({
+            where: { id: updatedReturn.orderId },
+            data: { status: newOrderStatus },
+          });
+        }
+      } else if (status === 'REJECTED') {
+        // When return is rejected, check if other returns exist, otherwise revert to DELIVERED
+        const otherApprovedReturns = await tx.return.findMany({
+          where: {
+            orderId: updatedReturn.orderId,
+            status: 'APPROVED',
+            id: { not: returnId }, // Exclude the current return
+          },
+          include: { items: true }
+        });
+        
+        // Calculate if any items are still returned after this rejection
+        let totalStillReturned = 0;
+        otherApprovedReturns.forEach((returnRecord: any) => {
+          if (returnRecord.items && Array.isArray(returnRecord.items)) {
+            returnRecord.items.forEach((returnItem: any) => {
+              totalStillReturned += returnItem.quantity;
+            });
+          }
+        });
+        
+        // If no items are still returned after this rejection, revert to DELIVERED
+        if (totalStillReturned === 0) {
+          await tx.order.update({
+            where: { id: updatedReturn.orderId },
+            data: { status: 'DELIVERED' },
+          });
+        }
+        
+        // When a return is rejected, we need to reverse the inventory adjustments made when the return was initially approved
+        // Get the return with its items
+        const rejectedReturnWithItems = await tx.return.findUnique({
+          where: { id: returnId },
+          include: { items: true }
+        });
+        
+        if (rejectedReturnWithItems && rejectedReturnWithItems.items && Array.isArray(rejectedReturnWithItems.items)) {
+          for (const returnItem of rejectedReturnWithItems.items) {
+            // Get the original order item to find product/variant info
+            const originalOrderItem = await tx.orderItem.findUnique({
+              where: { id: returnItem.orderItemId }
+            });
+            
+            if (originalOrderItem) {
+              // Find the corresponding inventory record
+              const inventory = await tx.inventory.findFirst({
+                where: {
+                  productId: originalOrderItem.productId,
+                  variantId: originalOrderItem.variantId || null,
+                },
+              });
+              
+              if (inventory) {
+                // Update inventory: decrease available quantity since return was rejected
+                await tx.inventory.update({
+                  where: { id: inventory.id },
+                  data: {
+                    availableQuantity: {
+                      decrement: returnItem.quantity
+                    },
+                    updatedAt: new Date(),
+                  },
+                });
+                
+                // Create stock movement record for the return reversal
+                await tx.stockMovement.create({
+                  data: {
+                    inventoryId: inventory.id,
+                    warehouseId: inventory.warehouseId,
+                    type: 'ADJUSTMENT',
+                    quantity: returnItem.quantity,
+                    referenceType: 'RETURN_REJECTION',
+                    referenceId: returnId,
+                    reason: 'Return rejected',
+                    notes: `Reversal of return for order item ${originalOrderItem.id}`,
+                    performedAt: new Date(),
+                  },
+                });
+                
+                // Update the order item to reverse the refunded quantity and return status
+                await tx.orderItem.update({
+                  where: { id: originalOrderItem.id },
+                  data: {
+                    refundedQuantity: {
+                      decrement: returnItem.quantity
+                    },
+                    isReturned: false, // Set to false since return was rejected
+                    updatedAt: new Date(),
+                  },
+                });
+              }
+            }
+          }
+          
+          // Reverse the refund if one was processed
+          const refundToReverse = await tx.refund.findFirst({
+            where: {
+              returnId: returnId,
+            }
+          });
+          
+          if (refundToReverse) {
+            // Update the refund status to reflect rejection
+            await tx.refund.update({
+              where: { id: refundToReverse.id },
+              data: {
+                status: 'FAILED', // Mark as failed since return was rejected
+                updatedAt: new Date(),
+              },
+            });
+            
+            // Find the associated order to get the payment
+            const order = await tx.order.findUnique({
+              where: { id: updatedReturn.orderId },
+              include: { payments: true }
+            });
+            
+            if (order && order.payments && order.payments.length > 0) {
+              const payment = order.payments[0];
+              
+              if (payment) {
+                // Reverse the refunded amount from the payment
+                await tx.payment.update({
+                  where: { id: payment.id },
+                  data: {
+                    refundedAmount: {
+                      decrement: refundToReverse.amount
+                    },
+                    updatedAt: new Date(),
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      return updatedReturn;
+    });
+  }
 }

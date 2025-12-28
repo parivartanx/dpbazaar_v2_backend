@@ -5,7 +5,9 @@ import { ProductRepository } from '../repositories/prisma/ProductRepository';
 import { OrderRepository } from '../repositories/prisma/OrderRepository';
 import { UserRepository } from '../repositories/prisma/UserRepository';
 import { AuthService } from '../services/auth.service';
+import { PaymentService } from '../services/payment.service';
 import { PrismaClient } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -562,7 +564,64 @@ export class DesktopController {
       
       // Create payment record if payment method is provided
       if (paymentMethod) {
-        await this.createPayment(order.id, order.totalAmount, paymentMethod, paymentDetails);
+        // For wallet payments, we need to verify the customer first
+        if (paymentMethod === 'WALLET' && customerPhone) {
+          // Verify customer exists and has sufficient wallet balance
+          const user = await prisma.user.findFirst({
+            where: { phone: customerPhone },
+            include: { customer: true }
+          });
+          
+          if (!user || !user.customer) {
+            const response: ApiResponse = {
+              success: false,
+              error: 'Customer not found',
+              message: 'Customer not found for wallet payment',
+              timestamp: new Date().toISOString(),
+            };
+            res.status(400).json(response);
+            return;
+          }
+          
+          // Check if customer has sufficient wallet balance
+          const wallet = await prisma.wallet.findFirst({
+            where: { customerId: user.customer.id }
+          });
+          
+          if (!wallet || Number(wallet.balance) < Number(order.totalAmount)) {
+            const response: ApiResponse = {
+              success: false,
+              error: 'Insufficient wallet balance',
+              message: 'Customer does not have sufficient balance in wallet',
+              timestamp: new Date().toISOString(),
+            };
+            res.status(400).json(response);
+            return;
+          }
+          
+          // Process wallet payment using the payment service
+          const paymentService = new PaymentService();
+          try {
+            await paymentService.processPayment({
+              orderId: order.id,
+              amount: Number(order.totalAmount),
+              paymentMethod: 'WALLET',
+              customerId: user.customer.id,
+            });
+          } catch (paymentError) {
+            const response: ApiResponse = {
+              success: false,
+              error: (paymentError as Error).message,
+              message: 'Failed to process wallet payment',
+              timestamp: new Date().toISOString(),
+            };
+            res.status(500).json(response);
+            return;
+          }
+        } else {
+          // For other payment methods, use the existing createPayment method
+          await this.createPayment(order.id, order.totalAmount, paymentMethod, paymentDetails);
+        }
       }
 
       const response: ApiResponse = {
@@ -907,6 +966,627 @@ export class DesktopController {
         success: false,
         error: (error as Error).message,
         message: 'Problem in fetching discounts',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Get customer wallet details by mobile number
+  getCustomerWalletByMobile = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { mobileNumber } = req.params;
+      
+      // Find user by mobile number first, then get related customer
+      const user = await prisma.user.findFirst({
+        where: {
+          phone: mobileNumber || '',
+        },
+        include: {
+          customer: true
+        }
+      });
+      
+      if (!user || !user.customer) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Customer not found',
+          message: 'No customer found with this mobile number',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      // Find customer's wallet
+      const wallet = await prisma.wallet.findFirst({
+        where: {
+          customerId: user.customer.id
+        }
+      });
+      
+      if (!wallet) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Wallet not found',
+          message: 'Customer does not have a wallet',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          customer: {
+            id: user.customer.id,
+            name: `${user.firstName} ${user.lastName}`,
+            phone: user.phone,
+            email: user.email,
+          },
+          wallet: {
+            id: wallet.id,
+            balance: wallet.balance,
+            type: wallet.type,
+            createdAt: wallet.createdAt,
+          }
+        },
+        message: 'Customer wallet retrieved successfully',
+        timestamp: new Date().toISOString(),
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in getCustomerWalletByMobile: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching customer wallet',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+  
+  // Send OTP for wallet payment verification
+  sendOtpForWalletPayment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { mobileNumber } = req.body;
+      
+      // Validate mobile number
+      if (!mobileNumber) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Mobile number is required',
+          message: 'Mobile number is required to send OTP',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Find user by mobile number
+      const user = await prisma.user.findFirst({
+        where: {
+          phone: mobileNumber,
+        },
+        include: {
+          customer: true
+        }
+      });
+      
+      if (!user || !user.customer) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Customer not found',
+          message: 'No customer found with this mobile number',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      // Generate a 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Set OTP to expire in 5 minutes
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 5);
+      
+      // Check if an OTP record already exists for this phone and type
+      const existingOtp = await prisma.otp.findFirst({
+        where: {
+          phone: mobileNumber,
+          type: 'WALLET',
+        }
+      });
+      
+      if (existingOtp) {
+        // Update the existing OTP record
+        await prisma.otp.update({
+          where: { id: existingOtp.id },
+          data: {
+            otp,
+            status: 'PENDING',
+            expiresAt,
+            updatedAt: new Date(),
+          }
+        });
+      } else {
+        // Create a new OTP record
+        await prisma.otp.create({
+          data: {
+            phone: mobileNumber,
+            email: user.email,
+            otp,
+            type: 'WALLET',
+            status: 'PENDING',
+            expiresAt,
+          }
+        });
+      }
+      
+      // TODO: Actually send OTP to mobile number via SMS service
+      // For now, we return the OTP in the response (only for development/testing)
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          message: 'OTP sent successfully',
+          // In production, we would not return the OTP in the response
+          // For development/testing purposes only
+          otp: process.env.NODE_ENV === 'production' ? undefined : otp,
+          phone: mobileNumber,
+        },
+        message: 'OTP sent successfully',
+        timestamp: new Date().toISOString(),
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in sendOtpForWalletPayment: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in sending OTP',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+  
+  // Verify OTP and get wallet details
+  verifyOtpAndGetWalletDetails = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { mobileNumber, otp } = req.body;
+      
+      // Validate required fields
+      if (!mobileNumber || !otp) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Mobile number and OTP are required',
+          message: 'Mobile number and OTP are required to verify and get wallet details',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Find user by mobile number first, then get related customer
+      const user = await prisma.user.findFirst({
+        where: {
+          phone: mobileNumber || '',
+        },
+        include: {
+          customer: true
+        }
+      });
+      
+      if (!user || !user.customer) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Customer not found',
+          message: 'No customer found with this mobile number',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      // Find the OTP record
+      const otpRecord = await prisma.otp.findFirst({
+        where: {
+          phone: mobileNumber,
+          otp: otp,
+          type: 'WALLET',
+          status: 'PENDING',
+          expiresAt: {
+            gte: new Date() // Not expired
+          }
+        }
+      });
+      
+      if (!otpRecord) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Invalid or expired OTP',
+          message: 'The OTP provided is invalid, expired, or already used',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Find customer's wallet
+      const wallet = await prisma.wallet.findFirst({
+        where: {
+          customerId: user.customer.id
+        }
+      });
+      
+      if (!wallet) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Wallet not found',
+          message: 'Customer does not have a wallet',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      // Update the OTP record to mark as verified
+      await prisma.otp.update({
+        where: { id: otpRecord.id },
+        data: {
+          status: 'VERIFIED',
+          verifiedAt: new Date(),
+          updatedAt: new Date(),
+        }
+      });
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          customer: {
+            id: user.customer.id,
+            name: `${user.firstName} ${user.lastName}`,
+            phone: user.phone,
+            email: user.email,
+          },
+          wallet: {
+            id: wallet.id,
+            balance: wallet.balance,
+            type: wallet.type,
+            createdAt: wallet.createdAt,
+          }
+        },
+        message: 'OTP verified successfully and wallet details retrieved',
+        timestamp: new Date().toISOString(),
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in verifyOtpAndGetWalletDetails: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in verifying OTP or fetching wallet details',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Create return API for desktop manager (processes actual return)
+  createReturnRequest = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const returnData = req.body;
+        
+      // Validate required fields
+      if (!returnData.orderId || !returnData.type || !returnData.reason) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Order ID, type, and reason are required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // If return items are provided, validate them
+      if (returnData.items && Array.isArray(returnData.items) && returnData.items.length > 0) {
+        for (const item of returnData.items) {
+          if (!item.orderItemId || !item.quantity || item.quantity <= 0) {
+            const response: ApiResponse = {
+              success: false,
+              message: 'Each return item must have a valid orderItemId and quantity',
+              timestamp: new Date().toISOString(),
+            };
+            res.status(400).json(response);
+            return;
+          }
+        }
+      }
+        
+      // Generate return number
+      const returnNumber = `RET-${Date.now()}`;
+        
+      // Get the user who is creating the return (from authentication middleware)
+      const createdBy = (req as any).user?.userId || null;
+        
+      // Fetch the original order to calculate refund amount
+      const originalOrder = await this.orderRepo.getOrderById(returnData.orderId);
+      if (!originalOrder) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Original order not found',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      let calculatedRefundAmount = 0;
+      
+      // If return items are provided, calculate the refund amount
+      if (returnData.items && Array.isArray(returnData.items) && returnData.items.length > 0) {
+        // Type assertion to handle the items array
+        const orderItems = (originalOrder as any).items;
+        
+        if (!orderItems || !Array.isArray(orderItems)) {
+          const response: ApiResponse = {
+            success: false,
+            message: 'Original order items not found',
+            timestamp: new Date().toISOString(),
+          };
+          res.status(400).json(response);
+          return;
+        }
+        
+        // Calculate refund amount based on returned items
+        for (const returnItem of returnData.items) {
+          const orderItem = orderItems.find((item: any) => item.id === returnItem.orderItemId);
+          
+          if (!orderItem) {
+            const response: ApiResponse = {
+              success: false,
+              message: `Order item with ID ${returnItem.orderItemId} not found in the original order`,
+              timestamp: new Date().toISOString(),
+            };
+            res.status(400).json(response);
+            return;
+          }
+          
+          // Calculate refund for this item: (sellingPrice * quantity returned)
+          const itemRefund = Number(orderItem.sellingPrice) * returnItem.quantity;
+          calculatedRefundAmount += itemRefund;
+        }
+      }
+      
+      // Determine refund method for counter return
+      const refundMethod = returnData.refundMethod || 'CASH'; // Default to CASH for counter returns
+      
+      // Create return with immediate approval status since it's from desktop manager
+      const returnRequest = await this.orderRepo.createReturn({
+        ...returnData,
+        returnNumber,
+        status: 'APPROVED', // Immediate approval for desktop manager
+        source: 'SYSTEM', // Mark as SYSTEM for desktop operations
+        refundAmount: calculatedRefundAmount, // Set calculated refund amount
+        refundMethod, // Set refund method (CASH, STORE_CREDIT, etc.)
+        ...(createdBy && { createdBy }), // Add createdBy if user is authenticated
+      });
+        
+      const response: ApiResponse = {
+        success: true,
+        data: { return: returnRequest },
+        message: 'Return processed successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(201).json(response);
+    } catch (error) {
+      logger.error(`Return creation error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in creating return',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+  
+  // Get all returns API for desktop manager
+  getReturns = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {
+        status,
+        orderId,
+        type,
+        page,
+        limit,
+        search,
+        startDate,
+        endDate
+      } = req.query;
+  
+      const filters: any = {};
+      if (status) filters.status = status;
+      if (orderId) filters.orderId = orderId as string;
+      if (type) filters.type = type as string;
+      if (search) filters.search = search as string;
+        
+      // Add date filters if provided
+      if (startDate) {
+        filters.startDate = new Date(startDate as string);
+      }
+      if (endDate) {
+        filters.endDate = new Date(endDate as string);
+      }
+        
+      // For desktop, we might want to filter by the user who created the return
+      const createdBy = (req as any).user?.userId || null;
+      if (createdBy) {
+        filters.createdBy = createdBy;
+      }
+            
+      // Only return SYSTEM sourced returns for desktop (counter returns)
+      filters.source = 'SYSTEM';
+      
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 10,
+      };
+      
+      const result = await this.orderRepo.getDesktopReturns(filters, pagination);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          returns: result.returns,
+          total: result.total,
+          page: pagination.page,
+          limit: pagination.limit,
+          totalPages: Math.ceil(result.total / pagination.limit),
+        },
+        message: 'Returns fetched successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Returns fetch error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching returns',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+  
+  // Verify OTP for payment
+  verifyOtpForPayment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { mobileNumber, otp, amount } = req.body;
+      
+      // Validate required fields
+      if (!mobileNumber || !otp || !amount) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Missing required fields',
+          message: 'Mobile number, OTP, and amount are required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Find user by mobile number first, then get related customer
+      const user = await prisma.user.findFirst({
+        where: {
+          phone: mobileNumber || '',
+        },
+        include: {
+          customer: true
+        }
+      });
+      
+      if (!user || !user.customer) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Customer not found',
+          message: 'No customer found with this mobile number',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      // Find the OTP record
+      const otpRecord = await prisma.otp.findFirst({
+        where: {
+          phone: mobileNumber,
+          otp: otp,
+          type: 'PAYMENT',
+          status: 'PENDING',
+          expiresAt: {
+            gte: new Date() // Not expired
+          }
+        }
+      });
+      
+      if (!otpRecord) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Invalid or expired OTP',
+          message: 'The provided OTP is invalid, expired, or already used',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Update the OTP record to mark as verified
+      await prisma.otp.update({
+        where: { id: otpRecord.id },
+        data: {
+          status: 'VERIFIED',
+          verifiedAt: new Date(),
+          updatedAt: new Date(),
+        }
+      });
+      
+      // Check if the customer has sufficient balance in wallet
+      const wallet = await prisma.wallet.findFirst({
+        where: {
+          customerId: user.customer.id
+        }
+      });
+      
+      if (!wallet) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Wallet not found',
+          message: 'Customer does not have a wallet',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      if (wallet.balance < new Decimal(amount)) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Insufficient balance',
+          message: 'Customer does not have sufficient balance in wallet',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          verified: true,
+          customerId: user.customer.id,
+          amount: Number(amount),
+          walletBalance: wallet.balance,
+        },
+        message: 'OTP verified successfully',
+        timestamp: new Date().toISOString(),
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in verifyOtpForPayment: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in verifying OTP',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);

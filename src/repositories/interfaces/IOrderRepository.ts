@@ -125,4 +125,10 @@ export interface IOrderRepository {
   getOrdersByVendor(vendorId: string): Promise<Order[]>;
   cancelOrder(id: string, reason?: string): Promise<Order>;
   confirmOrder(id: string): Promise<Order>;
+
+  // Return Management Methods
+  createReturn(data: any): Promise<any>;
+  getReturnById(returnId: string): Promise<any>;
+  getAllReturns(filters: any, pagination: any): Promise<{ returns: any[]; total: number }>;
+  updateReturnStatus(returnId: string, data: any): Promise<any>;
 }

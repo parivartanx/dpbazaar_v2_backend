@@ -205,10 +205,14 @@ async function createUsers() {
 
     // Create Customer wishlist
     await prisma.wishlist.upsert({
-      where: { id: `WISH${Date.now()}` },
+      where: {
+        customerId_name: {
+          customerId: customerProfile.id,
+          name: 'My Wishlist',
+        }
+      },
       update: {},
       create: {
-        id: `WISH${Date.now()}`,
         customerId: customerProfile.id,
         name: 'My Wishlist',
         isDefault: true,
@@ -220,8 +224,18 @@ async function createUsers() {
     console.log('Customer wishlist created for:', customer.email);
 
     // Create Customer wallet
-    await prisma.wallet.create({
-      data: {
+    await prisma.wallet.upsert({
+      where: {
+        customerId_type: {
+          customerId: customerProfile.id,
+          type: 'SHOPPING',
+        }
+      },
+      update: {
+        balance: 1000,
+        updatedAt: new Date(),
+      },
+      create: {
         customerId: customerProfile.id,
         type: 'SHOPPING',
         balance: 1000,

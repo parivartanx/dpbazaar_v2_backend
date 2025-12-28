@@ -18,6 +18,10 @@ router.get('/products', desktopController.searchProducts);
 // Discount APIs
 router.get('/discounts', desktopController.getAllDiscounts);
 
+// Wallet APIs
+router.post('/verify-otp-and-get-wallet', desktopController.verifyOtpAndGetWalletDetails);
+router.post('/send-otp', desktopController.sendOtpForWalletPayment);
+
 // Order creation API for desktop sales
 router.post('/generate-bill', desktopController.createOrder);
 
@@ -25,6 +29,10 @@ router.post('/generate-bill', desktopController.createOrder);
 router.get('/bills', desktopController.getBillHistory);
 // Get bill by order number API
 router.get('/bills/:orderNumber', desktopController.getBillByOrderNumber);
+
+// Return APIs
+router.post('/create-return-request', desktopController.createReturnRequest);
+router.get('/get-returns', desktopController.getReturns);
 
 // Analytics APIs
 router.get('/analytics/daily-sales', desktopController.getDailySales);
