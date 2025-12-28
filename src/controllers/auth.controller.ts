@@ -330,6 +330,7 @@ export class AuthController {
         }
       });
       
+      let newRegistration = false;
       if (!user) {
         // Create a new user if doesn't exist
         user = await this.authService.userRepository.create({
@@ -354,6 +355,8 @@ export class AuthController {
           lastName: user.lastName || '',
           customerCode: `CUST${Date.now()}`,
         });
+        
+        newRegistration = true;
       }
       
       // Update the OTP record to mark as verified
@@ -380,7 +383,8 @@ export class AuthController {
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
-          }
+          },
+          newRegistration,
         },
         message: 'Login successful',
         timestamp: new Date().toISOString(),
@@ -458,6 +462,7 @@ export class AuthController {
         },
       });
       
+      let newRegistration = false;
       if (!user) {
         // Create a new user if doesn't exist
         user = await this.authService.userRepository.create({
@@ -476,6 +481,8 @@ export class AuthController {
           lastName: user.lastName || '',
           customerCode: `CUST${Date.now()}`,
         });
+        
+        newRegistration = true;
       }
       
       // Generate tokens for the user
@@ -492,7 +499,8 @@ export class AuthController {
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
-          }
+          },
+          newRegistration,
         },
         message: 'Google login successful',
         timestamp: new Date().toISOString(),
