@@ -3,6 +3,8 @@ import { AuthService } from '../services/auth.service';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../types/common';
 import { UserRepository } from '../repositories/prisma/UserRepository';
+import { PrismaClient } from '@prisma/client';
+import { FirebaseService } from '../services/firebase.service';
 
 export class AuthController {
   private authService: AuthService;
@@ -189,6 +191,323 @@ export class AuthController {
       };
 
       res.status(400).json(response);
+    }
+  };
+
+  // Send OTP for mobile login
+  public sendMobileOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { phone } = req.body;
+
+      if (!phone) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Phone number is required',
+          message: 'Phone number is required to send OTP',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      // Generate a 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Set OTP to expire in 5 minutes
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 5);
+      
+      // Save OTP in database
+      const prisma = new PrismaClient();
+      
+      // Check if an OTP record already exists for this phone and type
+      const existingOtp = await prisma.otp.findFirst({
+        where: {
+          phone: phone,
+          type: 'LOGIN',
+        }
+      });
+      
+      if (existingOtp) {
+        // Update the existing OTP record
+        await prisma.otp.update({
+          where: { id: existingOtp.id },
+          data: {
+            otp,
+            status: 'PENDING',
+            expiresAt,
+            updatedAt: new Date(),
+          }
+        });
+      } else {
+        // Create a new OTP record
+        await prisma.otp.create({
+          data: {
+            phone: phone,
+            otp,
+            type: 'LOGIN',
+            status: 'PENDING',
+            expiresAt,
+          }
+        });
+      }
+      
+      // TODO: Actually send OTP to mobile number via SMS service
+      // For now, we return the OTP in the response (only for development/testing)
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          message: 'OTP sent successfully',
+          // In production, we would not return the OTP in the response
+          // For development/testing purposes only
+          otp: process.env.NODE_ENV === 'production' ? undefined : otp,
+          phone: phone,
+        },
+        message: 'OTP sent successfully',
+        timestamp: new Date().toISOString(),
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in sendMobileOtp: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in sending OTP',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Verify mobile OTP and login
+  public verifyMobileOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { phone, otp } = req.body;
+
+      if (!phone || !otp) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Phone number and OTP are required',
+          message: 'Phone number and OTP are required to verify',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const prisma = new PrismaClient();
+      
+      // Find the OTP record
+      const otpRecord = await prisma.otp.findFirst({
+        where: {
+          phone: phone,
+          otp: otp,
+          type: 'LOGIN',
+          status: 'PENDING',
+          expiresAt: {
+            gte: new Date() // Not expired
+          }
+        }
+      });
+      
+      if (!otpRecord) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Invalid or expired OTP',
+          message: 'The OTP provided is invalid, expired, or already used',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Find or create user based on phone number
+      let user = await this.authService.userRepository.findFirst({
+        where: { 
+          phone: phone,
+        }
+      });
+      
+      if (!user) {
+        // Create a new user if doesn't exist
+        user = await this.authService.userRepository.create({
+          firstName: 'User',
+          lastName: '',
+          email: `user_${phone}@example.com`, // Generate email from phone
+          password: 'defaultPassword123', // Repository handles hashing
+          role: 'CUSTOMER',
+          isEmailVerified: false,
+        });
+        
+        // Update phone number after user creation
+        user = await this.authService.userRepository.update(user.id, {
+          phone: phone,
+          isPhoneVerified: true,
+        });
+        
+        // Create customer profile
+        await this.authService.userRepository.createCustomer({
+          userId: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName || '',
+          customerCode: `CUST${Date.now()}`,
+        });
+      }
+      
+      // Update the OTP record to mark as verified
+      await prisma.otp.update({
+        where: { id: otpRecord.id },
+        data: {
+          status: 'VERIFIED',
+          verifiedAt: new Date(),
+          updatedAt: new Date(),
+        }
+      });
+      
+      // Generate tokens for the user
+      const result = await this.authService.generateTokens(user);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          ...result,
+          user: {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          }
+        },
+        message: 'Login successful',
+        timestamp: new Date().toISOString(),
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in verifyMobileOtp: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in verifying OTP',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Google/Firebase login
+  public loginWithGoogle = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { idToken } = req.body;
+
+      if (!idToken) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Google ID token is required',
+          message: 'Google ID token is required for login',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Verify the ID token using Firebase service
+      let decodedToken;
+      try {
+        const firebaseService = FirebaseService.getInstance();
+        decodedToken = await firebaseService.verifyIdToken(idToken);
+      } catch (verifyError) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Invalid Google ID token',
+          message: 'The Google ID token provided is invalid',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Get user info from decoded token
+      const googleUser = {
+        email: decodedToken.email,
+        firstName: decodedToken.name?.split(' ')[0] || 'Google',
+        lastName: decodedToken.name?.split(' ').slice(1).join(' ') || 'User',
+        googleId: decodedToken.sub,
+        emailVerified: decodedToken.email_verified || false,
+      };
+      
+      if (!googleUser.email) {
+        const response: ApiResponse = {
+          success: false,
+          error: 'Email not found in Google token',
+          message: 'Email is required for Google login',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Find or create user based on email
+      let user = await this.authService.userRepository.findFirst({
+        where: { 
+          email: googleUser.email,
+        },
+      });
+      
+      if (!user) {
+        // Create a new user if doesn't exist
+        user = await this.authService.userRepository.create({
+          firstName: googleUser.firstName,
+          lastName: googleUser.lastName,
+          email: googleUser.email,
+          password: 'google_auth_password', // Repository handles hashing
+          role: 'CUSTOMER',
+          isEmailVerified: googleUser.emailVerified,
+        });
+        
+        // Create customer profile
+        await this.authService.userRepository.createCustomer({
+          userId: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName || '',
+          customerCode: `CUST${Date.now()}`,
+        });
+      }
+      
+      // Generate tokens for the user
+      const result = await this.authService.generateTokens(user);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          ...result,
+          user: {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          }
+        },
+        message: 'Google login successful',
+        timestamp: new Date().toISOString(),
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in loginWithGoogle: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Google login failed',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 }

@@ -25,7 +25,7 @@ interface AuthResult {
 
 export class AuthService {
   // In a real application, you would inject the user repository
-  private userRepository: IUserRepository;
+  public userRepository: IUserRepository;
 
   constructor(userRepository: IUserRepository) {
     this.userRepository = userRepository;
@@ -240,7 +240,7 @@ export class AuthService {
     }
   }
 
-  private generateTokens(user: LoginUser): {
+  public generateTokens(user: LoginUser): {
     accessToken: string;
     refreshToken: string;
   } {
