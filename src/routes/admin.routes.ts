@@ -86,7 +86,62 @@ import {
   createWalletTransactionSchema,
   updateWalletTransactionSchema,
 } from '../validators/walletTransaction.validation';
-import { createReturnSchema, updateReturnStatusSchema } from '../validators/order.validation';
+import { updateReturnStatusSchema, createOrderSchema, updateOrderSchema, updateOrderStatusSchema, cancelOrderSchema } from '../validators/order.validation';
+import { DiscountController } from '../controllers/discount.controller';
+import { ProductReviewController } from '../controllers/productReview.controller';
+import { createDiscountSchema, updateDiscountSchema } from '../validators/discount.validation';
+import { replyReviewSchema } from '../validators/review.validation';
+import { VendorController } from '../controllers/vendor.controller';
+import { createVendorSchema, updateVendorSchema, updateVendorStatusSchema } from '../validators/vendor.validation';
+import { WarehouseController } from '../controllers/warehouse.controller';
+import { createWarehouseSchema, updateWarehouseSchema } from '../validators/warehouse.validation';
+import { InventoryController } from '../controllers/inventory.controller';
+import { createInventorySchema, updateInventorySchema } from '../validators/inventory.validation';
+import { DeliveryAgentController } from '../controllers/deliveryAgent.controller';
+import { createDeliveryAgentSchema, updateDeliveryAgentSchema } from '../validators/deliveryAgent.validation';
+import { DeliveryController } from '../controllers/delivery.controller';
+import { createDeliverySchema, updateDeliverySchema } from '../validators/delivery.validation';
+
+import { ReferralCodeController } from '../controllers/referralCode.controller';
+import { ReferralHistoryController } from '../controllers/referralHistory.controller';
+import { createReferralCodeSchema, updateReferralCodeSchema } from '../validators/referralCode.validation';
+import { createReferralHistorySchema, updateReferralHistorySchema } from '../validators/referralHistory.validation';
+
+import { NotificationController } from '../controllers/notification.controller';
+import { createNotificationSchema, updateNotificationSchema } from '../validators/notification.validation';
+
+import { EmailTemplateController } from '../controllers/emailTemplate.controller';
+import { createEmailTemplateSchema, updateEmailTemplateSchema } from '../validators/emailTemplate.validation';
+
+import { PaymentController } from '../controllers/payment.controller';
+import { VendorPayoutController } from '../controllers/vendorPayout.controller';
+import { createVendorPayoutSchema, updateVendorPayoutSchema, updateVendorPayoutStatusSchema } from '../validators/vendorPayout.validation';
+
+import { SystemSettingController } from '../controllers/systemSetting.controller';
+import { createSystemSettingSchema, updateSystemSettingSchema } from '../validators/systemSetting.validation';
+
+import { AuditLogController } from '../controllers/auditLog.controller';
+
+import { InvoiceController } from '../controllers/invoice.controller';
+import { createInvoiceSchema, updateInvoiceSchema } from '../validators/invoice.validation';
+
+import { DeliveryEarningController } from '../controllers/deliveryEarning.controller';
+import { createDeliveryEarningSchema, updateDeliveryEarningSchema } from '../validators/deliveryEarning.validation';
+
+import { PriceHistoryController } from '../controllers/priceHistory.controller';
+
+import { StockMovementController } from '../controllers/stockMovement.controller';
+import { createStockMovementSchema } from '../validators/stockMovement.validation';
+
+import { RefundController } from '../controllers/refund.controller';
+import { createRefundSchema, updateRefundSchema } from '../validators/refund.validation';
+
+import { ReturnController } from '../controllers/return.controller';
+import { createReturnSchema, updateReturnSchema } from '../validators/return.validation';
+
+import { JobExecutionController } from '../controllers/jobExecution.controller';
+import { EmployeeActivityController } from '../controllers/employeeActivity.controller';
+
 
 const router = Router();
 const upload = multer();
@@ -95,6 +150,29 @@ const upload = multer();
 const adminController = new AdminController();
 const analyticsController = new AnalyticsController();
 const userController = new UserController();
+const discountController = new DiscountController();
+const productReviewController = new ProductReviewController();
+const vendorController = new VendorController();
+const warehouseController = new WarehouseController();
+const inventoryController = new InventoryController();
+const deliveryAgentController = new DeliveryAgentController();
+const deliveryController = new DeliveryController();
+const referralCodeController = new ReferralCodeController();
+const referralHistoryController = new ReferralHistoryController();
+const notificationController = new NotificationController();
+const emailTemplateController = new EmailTemplateController();
+const paymentController = new PaymentController();
+const vendorPayoutController = new VendorPayoutController();
+const systemSettingController = new SystemSettingController();
+const auditLogController = new AuditLogController();
+const invoiceController = new InvoiceController();
+const deliveryEarningController = new DeliveryEarningController();
+const priceHistoryController = new PriceHistoryController();
+const stockMovementController = new StockMovementController();
+const refundController = new RefundController();
+const returnController = new ReturnController();
+const jobExecutionController = new JobExecutionController();
+const employeeActivityController = new EmployeeActivityController();
 
 
 const departmentController = new DepartmentController();
@@ -317,6 +395,19 @@ router.put('/admin/wallet-transactions/:id', validateJoi(updateWalletTransaction
 router.delete('/admin/wallet-transactions/:id', walletTransactionController.deleteTransaction);
 
 /**
+ * ORDER MANAGEMENT
+ */
+router.get('/orders', orderController.getAllOrders);
+router.get('/orders/:id', orderController.getOrderById);
+router.post('/orders', validateJoi(createOrderSchema), orderController.createOrder);
+router.put('/orders/:id', validateJoi(updateOrderSchema), orderController.updateOrder);
+router.delete('/orders/:id', orderController.deleteOrder);
+router.patch('/orders/:id/status', validateJoi(updateOrderStatusSchema), orderController.updateOrderStatus);
+router.patch('/orders/:id/cancel', validateJoi(cancelOrderSchema), orderController.cancelOrder);
+router.patch('/orders/:id/confirm', orderController.confirmOrder);
+router.patch('/orders/:id/restore', orderController.restoreOrder);
+
+/**
  * RETURN MANAGEMENT
  */
 router.post('/returns', validateJoi(createReturnSchema), orderController.createReturnRequest);
@@ -325,16 +416,195 @@ router.get('/returns', orderController.getAllReturns);
 router.patch('/returns/:returnId/status', validateJoi(updateReturnStatusSchema), orderController.updateReturnStatus);
 
 /**
- * PAYMNET MANAGEMENT
+ * DISCOUNT MANAGEMENT
  */
-
-/**
- * COUPON MANAGEMENT
- */
+router.get('/discounts', discountController.getDiscountOffers);
+router.get('/discounts/:id', discountController.getDiscountById);
+router.post('/discounts', validateJoi(createDiscountSchema), discountController.createDiscount);
+router.put('/discounts/:id', validateJoi(updateDiscountSchema), discountController.updateDiscount);
+router.delete('/discounts/:id', discountController.deleteDiscount);
 
 /**
  * REVIEW MANAGEMENT
  */
+router.get('/reviews', productReviewController.getAllReviews);
+router.patch('/reviews/:id/approve', productReviewController.approveReview);
+router.patch('/reviews/:id/reject', productReviewController.rejectReview);
+router.delete('/reviews/:id', productReviewController.deleteReview);
+router.post('/reviews/:id/reply', validateJoi(replyReviewSchema), productReviewController.replyToReview);
+
+/**
+ * VENDOR MANAGEMENT
+ */
+router.get('/vendors', vendorController.getAllVendors);
+router.get('/vendors/:id', vendorController.getVendorById);
+router.post('/vendors', validateJoi(createVendorSchema), vendorController.createVendor);
+router.put('/vendors/:id', validateJoi(updateVendorSchema), vendorController.updateVendor);
+router.delete('/vendors/:id', vendorController.deleteVendor);
+router.patch('/vendors/:id/status', validateJoi(updateVendorStatusSchema), vendorController.updateVendorStatus);
+
+/**
+ * WAREHOUSE MANAGEMENT
+ */
+router.get('/warehouses', warehouseController.getAllWarehouses);
+router.get('/warehouses/:id', warehouseController.getWarehouseById);
+router.post('/warehouses', validateJoi(createWarehouseSchema), warehouseController.createWarehouse);
+router.put('/warehouses/:id', validateJoi(updateWarehouseSchema), warehouseController.updateWarehouse);
+router.delete('/warehouses/:id', warehouseController.deleteWarehouse);
+
+/**
+ * INVENTORY MANAGEMENT
+ */
+router.get('/inventories', inventoryController.getAllInventory);
+router.get('/inventories/:id', inventoryController.getInventoryById);
+router.post('/inventories', validateJoi(createInventorySchema), inventoryController.createInventory);
+router.put('/inventories/:id', validateJoi(updateInventorySchema), inventoryController.updateInventory);
+router.delete('/inventories/:id', inventoryController.deleteInventory);
+
+/**
+ * DELIVERY AGENT MANAGEMENT
+ */
+router.get('/delivery-agents', deliveryAgentController.getAllDeliveryAgents);
+router.get('/delivery-agents/:id', deliveryAgentController.getDeliveryAgentById);
+router.post('/delivery-agents', validateJoi(createDeliveryAgentSchema), deliveryAgentController.createDeliveryAgent);
+router.put('/delivery-agents/:id', validateJoi(updateDeliveryAgentSchema), deliveryAgentController.updateDeliveryAgent);
+router.delete('/delivery-agents/:id', deliveryAgentController.deleteDeliveryAgent);
+
+/**
+ * DELIVERY MANAGEMENT
+ */
+router.get('/deliveries', deliveryController.getAllDeliveries);
+router.get('/deliveries/:id', deliveryController.getDeliveryById);
+router.post('/deliveries', validateJoi(createDeliverySchema), deliveryController.createDelivery);
+router.put('/deliveries/:id', validateJoi(updateDeliverySchema), deliveryController.updateDelivery);
+router.delete('/deliveries/:id', deliveryController.deleteDelivery);
+
+/**
+ * DELIVERY EARNING MANAGEMENT
+ */
+router.get('/delivery-earnings', deliveryEarningController.getAllEarnings);
+router.get('/delivery-earnings/:id', deliveryEarningController.getEarningById);
+router.post('/delivery-earnings', validateJoi(createDeliveryEarningSchema), deliveryEarningController.createEarning);
+router.put('/delivery-earnings/:id', validateJoi(updateDeliveryEarningSchema), deliveryEarningController.updateEarning);
+router.delete('/delivery-earnings/:id', deliveryEarningController.deleteEarning);
+
+/**
+ * REFERRAL MANAGEMENT
+ */
+router.get('/referral-codes', referralCodeController.listReferralCodes);
+router.get('/referral-codes/:id', referralCodeController.getReferralCode);
+router.post('/referral-codes', validateJoi(createReferralCodeSchema), referralCodeController.createReferralCode);
+router.put('/referral-codes/:id', validateJoi(updateReferralCodeSchema), referralCodeController.updateReferralCode);
+router.delete('/referral-codes/:id', referralCodeController.deleteReferralCode);
+router.patch('/referral-codes/:id/deactivate', referralCodeController.deactivateReferralCode);
+
+router.get('/referral-history', referralHistoryController.listReferralHistories);
+router.get('/referral-history/:id', referralHistoryController.getReferralHistory);
+router.post('/referral-history', validateJoi(createReferralHistorySchema), referralHistoryController.createReferralHistory);
+router.put('/referral-history/:id', validateJoi(updateReferralHistorySchema), referralHistoryController.updateReferralHistory);
+router.delete('/referral-history/:id', referralHistoryController.deleteReferralHistory);
+
+/**
+ * NOTIFICATION MANAGEMENT
+ */
+router.get('/notifications', notificationController.getAllNotifications);
+router.get('/notifications/:id', notificationController.getNotificationById);
+router.post('/notifications', validateJoi(createNotificationSchema), notificationController.createNotification);
+router.put('/notifications/:id', validateJoi(updateNotificationSchema), notificationController.updateNotification);
+router.delete('/notifications/:id', notificationController.deleteNotification);
+
+/**
+ * EMAIL TEMPLATE MANAGEMENT
+ */
+router.get('/email-templates', emailTemplateController.getAllTemplates);
+router.get('/email-templates/:id', emailTemplateController.getTemplateById);
+router.post('/email-templates', validateJoi(createEmailTemplateSchema), emailTemplateController.createTemplate);
+router.put('/email-templates/:id', validateJoi(updateEmailTemplateSchema), emailTemplateController.updateTemplate);
+router.delete('/email-templates/:id', emailTemplateController.deleteTemplate);
+
+/**
+ * RETURN MANAGEMENT
+ */
+router.get('/returns', returnController.getAllReturns);
+router.get('/returns/:id', returnController.getReturnById);
+router.post('/returns', validateJoi(createReturnSchema), returnController.createReturn);
+router.put('/returns/:id', validateJoi(updateReturnSchema), returnController.updateReturn);
+router.delete('/returns/:id', returnController.deleteReturn);
+
+/**
+ * REFUND MANAGEMENT
+ */
+router.get('/refunds', refundController.getAllRefunds);
+router.get('/refunds/:id', refundController.getRefundById);
+router.post('/refunds', validateJoi(createRefundSchema), refundController.createRefund);
+router.put('/refunds/:id', validateJoi(updateRefundSchema), refundController.updateRefund);
+
+/**
+ * JOB EXECUTION MANAGEMENT
+ */
+router.get('/job-executions', jobExecutionController.getAllJobExecutions);
+router.get('/job-executions/:id', jobExecutionController.getJobExecutionById);
+
+/**
+ * EMPLOYEE ACTIVITY MANAGEMENT
+ */
+router.get('/employee-activities', employeeActivityController.getAllActivities);
+router.get('/employee-activities/:id', employeeActivityController.getActivityById);
+
+/**
+ * PAYMENT MANAGEMENT
+ */
+router.get('/payments', paymentController.getAllPayments);
+router.get('/payments/:id', paymentController.getPaymentById);
+router.patch('/payments/:id/status', paymentController.updatePaymentStatus);
+
+/**
+ * VENDOR PAYOUT MANAGEMENT
+ */
+router.get('/vendor-payouts', vendorPayoutController.getAllPayouts);
+router.get('/vendor-payouts/:id', vendorPayoutController.getPayoutById);
+router.post('/vendor-payouts', validateJoi(createVendorPayoutSchema), vendorPayoutController.createPayout);
+router.put('/vendor-payouts/:id', validateJoi(updateVendorPayoutSchema), vendorPayoutController.updatePayout);
+router.delete('/vendor-payouts/:id', vendorPayoutController.deletePayout);
+router.patch('/vendor-payouts/:id/status', validateJoi(updateVendorPayoutStatusSchema), vendorPayoutController.updateStatus);
+
+/**
+ * INVOICE MANAGEMENT
+ */
+router.get('/invoices', invoiceController.getAllInvoices);
+router.get('/invoices/:id', invoiceController.getInvoiceById);
+router.post('/invoices', validateJoi(createInvoiceSchema), invoiceController.createInvoice);
+router.put('/invoices/:id', validateJoi(updateInvoiceSchema), invoiceController.updateInvoice);
+router.delete('/invoices/:id', invoiceController.deleteInvoice);
+
+/**
+ * STOCK MOVEMENT MANAGEMENT (INVENTORY HISTORY)
+ */
+router.get('/stock-movements', stockMovementController.getAllMovements);
+router.get('/stock-movements/:id', stockMovementController.getMovementById);
+router.post('/stock-movements', validateJoi(createStockMovementSchema), stockMovementController.createMovement);
+
+/**
+ * PRICE HISTORY MANAGEMENT
+ */
+router.get('/price-history', priceHistoryController.getAllPriceHistory);
+router.get('/price-history/:id', priceHistoryController.getPriceHistoryById);
+
+/**
+ * SYSTEM SETTING MANAGEMENT
+ */
+router.get('/system-settings', systemSettingController.getAllSettings);
+router.get('/system-settings/:key', systemSettingController.getSettingByKey);
+router.post('/system-settings', validateJoi(createSystemSettingSchema), systemSettingController.createSetting);
+router.put('/system-settings/:key', validateJoi(updateSystemSettingSchema), systemSettingController.updateSetting);
+router.delete('/system-settings/:key', systemSettingController.deleteSetting);
+
+/**
+ * AUDIT LOG MANAGEMENT
+ */
+router.get('/audit-logs', auditLogController.getAllLogs);
+router.get('/audit-logs/:id', auditLogController.getLogById);
+router.get('/audit-logs/:entityType/:entityId', auditLogController.getLogsByEntity);
 
 /**
  * CMS MANAGEMENT

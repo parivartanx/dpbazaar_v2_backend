@@ -355,7 +355,7 @@ export class OrderRepository implements IOrderRepository {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
         include: {
           // For desktop bill history, include only minimal details
           items: {
@@ -908,6 +908,55 @@ export class OrderRepository implements IOrderRepository {
   // Return Management Methods
   async createReturn(data: any): Promise<any> {
     return prisma.$transaction(async (tx) => {
+      // Check if the same order items have already been returned to prevent duplicate returns
+      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        for (const item of data.items) {
+          // Get all existing returns for this order item
+          const existingReturns = await tx.returnItem.findMany({
+            where: {
+              orderItemId: item.orderItemId,
+            },
+            include: {
+              return: true
+            }
+          });
+          
+          // Calculate total quantity already returned for this order item
+          let totalReturnedQuantity = 0;
+          existingReturns.forEach((existingReturnItem) => {
+            if (existingReturnItem.return.status !== 'REJECTED') {
+              // Only count items from returns that were not rejected
+              totalReturnedQuantity += existingReturnItem.quantity;
+            }
+          });
+          
+          // Get the original order item to check the purchased quantity
+          const originalOrderItem = await tx.orderItem.findUnique({
+            where: { id: item.orderItemId }
+          });
+          
+          if (!originalOrderItem) {
+            throw new Error(`Order item with ID ${item.orderItemId} not found`);
+          }
+          
+          // Check if returning more quantity than was purchased
+          const quantityToReturn = item.quantity;
+          const availableQuantityForReturn = originalOrderItem.quantity - totalReturnedQuantity;
+          
+          if (quantityToReturn > availableQuantityForReturn) {
+            throw new Error(
+              `Cannot return ${quantityToReturn} items for order item ${item.orderItemId}. ` +
+              `Only ${availableQuantityForReturn} items available for return. ` +
+              `(${originalOrderItem.quantity} purchased - ${totalReturnedQuantity} already returned)`
+            );
+          }
+          
+          if (quantityToReturn <= 0) {
+            throw new Error(`Return quantity must be greater than 0 for order item ${item.orderItemId}`);
+          }
+        }
+      }
+      
       // Build the return data object conditionally to avoid type issues
       const returnData: any = {
         orderId: data.orderId,

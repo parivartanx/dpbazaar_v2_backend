@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { PrismaClient } from '@prisma/client';
+import { ReviewRepository } from '../repositories/prisma/ReviewRepository';
 
 const prisma = new PrismaClient();
+const reviewRepository = new ReviewRepository();
 
 export class ProductReviewController {
   // Create product review API
@@ -220,4 +222,190 @@ export class ProductReviewController {
       logger.error(`Error updating product average rating: ${error}`);
     }
   }
+
+  // --- ADMIN METHODS ---
+
+  // Get all reviews (Admin)
+  getAllReviews = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const filters = req.query;
+      const reviews = await reviewRepository.getAll(filters);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: { reviews },
+        message: 'All reviews retrieved successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in getAllReviews: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching reviews',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Approve review
+  approveReview = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const adminId = (req as any).user?.id; // Assuming auth middleware adds user
+
+      if (!id) {
+        const response: ApiResponse = {
+            success: false,
+            message: 'Review ID is required',
+            timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      if (!adminId) {
+         const response: ApiResponse = {
+            success: false,
+            message: 'Admin ID not found in request',
+            timestamp: new Date().toISOString(),
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const review = await reviewRepository.approve(id, adminId);
+      const response: ApiResponse = {
+        success: true,
+        data: { review },
+        message: 'Review approved successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in approveReview: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in approving review',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Reject review
+  rejectReview = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        const response: ApiResponse = {
+            success: false,
+            message: 'Review ID is required',
+            timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const review = await reviewRepository.reject(id);
+      const response: ApiResponse = {
+        success: true,
+        data: { review },
+        message: 'Review rejected successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in rejectReview: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in rejecting review',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Delete review
+  deleteReview = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        const response: ApiResponse = {
+            success: false,
+            message: 'Review ID is required',
+            timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      await reviewRepository.delete(id);
+      const response: ApiResponse = {
+        success: true,
+        message: 'Review deleted successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in deleteReview: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in deleting review',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Reply to review
+  replyToReview = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { reply } = req.body;
+
+      if (!id) {
+        const response: ApiResponse = {
+            success: false,
+            message: 'Review ID is required',
+            timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      if (!reply) {
+         const response: ApiResponse = {
+            success: false,
+            message: 'Reply content is required',
+            timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const review = await reviewRepository.reply(id, reply);
+      const response: ApiResponse = {
+        success: true,
+        data: { review },
+        message: 'Replied to review successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in replyToReview: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in replying to review',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
 }

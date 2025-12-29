@@ -5,12 +5,12 @@ This document provides comprehensive documentation for the authentication API en
 
 ## Authentication Endpoints
 
-### POST /api/auth/register
+### POST /auth/register
 **Description:** Registers a new user account
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/register`
+- Route: `/auth/register`
 
 **Request Body:**
 ```json
@@ -56,12 +56,12 @@ This document provides comprehensive documentation for the authentication API en
 }
 ```
 
-### POST /api/auth/login
+### POST /auth/login
 **Description:** Authenticates a user and returns access tokens
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/login`
+- Route: `/auth/login`
 
 **Request Body:**
 ```json
@@ -101,12 +101,12 @@ This document provides comprehensive documentation for the authentication API en
 }
 ```
 
-### POST /api/auth/login-mobile-otp
+### POST /auth/login-mobile-otp
 **Description:** Sends OTP to user's mobile number for login
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/login-mobile-otp`
+- Route: `/auth/login-mobile-otp`
 
 **Request Body:**
 ```json
@@ -135,12 +135,12 @@ This document provides comprehensive documentation for the authentication API en
 }
 ```
 
-### POST /api/auth/verify-mobile-otp
+### POST /auth/verify-mobile-otp
 **Description:** Verifies OTP sent to mobile number and logs in the user
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/verify-mobile-otp`
+- Route: `/auth/verify-mobile-otp`
 
 **Request Body:**
 ```json
@@ -180,12 +180,12 @@ This document provides comprehensive documentation for the authentication API en
 }
 ```
 
-### POST /api/auth/login-google
+### POST /auth/login-google
 **Description:** Authenticates user using Google ID token
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/login-google`
+- Route: `/auth/login-google`
 
 **Request Body:**
 ```json
@@ -223,12 +223,12 @@ This document provides comprehensive documentation for the authentication API en
 }
 ```
 
-### POST /api/auth/logout
+### POST /auth/logout
 **Description:** Logs out the current user
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/logout`
+- Route: `/auth/logout`
 
 **Response:**
 ```json
@@ -239,12 +239,12 @@ This document provides comprehensive documentation for the authentication API en
 }
 ```
 
-### POST /api/auth/refresh-token
+### POST /auth/refresh-token
 **Description:** Refreshes the access token using a refresh token
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/refresh-token`
+- Route: `/auth/refresh-token`
 
 **Request Body:**
 ```json
@@ -272,12 +272,12 @@ This document provides comprehensive documentation for the authentication API en
 }
 ```
 
-### POST /api/auth/forgot-password
+### POST /auth/forgot-password
 **Description:** Initiates the password reset process
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/forgot-password`
+- Route: `/auth/forgot-password`
 
 **Request Body:**
 ```json
@@ -302,12 +302,12 @@ This document provides comprehensive documentation for the authentication API en
 }
 ```
 
-### POST /api/auth/reset-password
+### POST /auth/reset-password
 **Description:** Resets the user's password using a reset token
 
 **Request:**
 - Method: `POST`
-- Route: `/api/auth/reset-password`
+- Route: `/auth/reset-password`
 
 **Request Body:**
 ```json

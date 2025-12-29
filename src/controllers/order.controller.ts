@@ -655,6 +655,30 @@ export class OrderController {
         return;
       }
       
+      // Validate return items
+      if (!returnData.items || !Array.isArray(returnData.items) || returnData.items.length === 0) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Return items are required and must be a non-empty array',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      // Validate each return item
+      for (const item of returnData.items) {
+        if (!item.orderItemId || !item.quantity || item.quantity <= 0) {
+          const response: ApiResponse = {
+            success: false,
+            message: 'Each return item must have a valid orderItemId and quantity greater than 0',
+            timestamp: new Date().toISOString(),
+          };
+          res.status(400).json(response);
+          return;
+        }
+      }
+      
       // Generate return number
       const returnNumber = `RET-${Date.now()}`;
       
