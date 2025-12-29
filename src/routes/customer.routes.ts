@@ -2,6 +2,10 @@ import { Router } from 'express';
 import { CustomerController } from '../controllers/customer.controller';
 import { AddressController } from '../controllers/address.controller';
 import { WalletController } from '../controllers/wallet.controller';
+import { ReferralCodeController } from '../controllers/referralCode.controller';
+import { ReferralHistoryController } from '../controllers/referralHistory.controller';
+
+import { isAccessAllowed } from '../middlewares/isAccessAllowed';
 import { validateJoi } from '../middlewares/validateJoi';
 import {
   updateCustomerSchema,
@@ -12,28 +16,33 @@ const router = Router();
 const customerCtrl = new CustomerController();
 const addressCtrl = new AddressController();
 const walletCtrl = new WalletController();
+const referralCodeCtrl = new ReferralCodeController();
+const referralHistoryCtrl = new ReferralHistoryController();
 
 // Customer Profile Management
-router.get('/me/profile', customerCtrl.getMyProfile);
-router.put('/me/profile', validateJoi(updateCustomerSchema), customerCtrl.updateMyProfile);
+router.get('/me/profile', isAccessAllowed('CUSTOMER'), customerCtrl.getMyProfile);
+router.put('/me/profile', isAccessAllowed('CUSTOMER'), validateJoi(updateCustomerSchema), customerCtrl.updateMyProfile);
 
 // Customer Address Management
-router.get('/me/addresses', addressCtrl.getMyAddresses);
-router.post('/me/addresses', addressCtrl.createMyAddress);
-router.put('/me/addresses/:id', addressCtrl.updateMyAddress);
-router.delete('/me/addresses/:id', addressCtrl.deleteMyAddress);
+router.get('/me/addresses', isAccessAllowed('CUSTOMER'), addressCtrl.getMyAddresses);
+router.post('/me/addresses', isAccessAllowed('CUSTOMER'), addressCtrl.createMyAddress);
+router.put('/me/addresses/:id', isAccessAllowed('CUSTOMER'), addressCtrl.updateMyAddress);
+router.delete('/me/addresses/:id', isAccessAllowed('CUSTOMER'), addressCtrl.deleteMyAddress);
 
 // WALLET MANAGEMENT
-router.get('/me/wallets', walletCtrl.getCustomerWallets);
-router.get('/me/wallet-transactions', walletCtrl.getCustomerWalletTransactions);
-router.post('/me/wallets/transfer', walletCtrl.transferBetweenWallets);
-router.post('/me/wallets/withdrawal', walletCtrl.withdrawFromWallet);
+router.get('/me/wallets', isAccessAllowed('CUSTOMER'), walletCtrl.getCustomerWallets);
+router.get('/me/wallet-transactions', isAccessAllowed('CUSTOMER'), walletCtrl.getCustomerWalletTransactions);
+router.post('/me/wallets/transfer', isAccessAllowed('CUSTOMER'), walletCtrl.transferBetweenWallets);
+router.post('/me/wallets/withdrawal', isAccessAllowed('CUSTOMER'), walletCtrl.withdrawFromWallet);
 
 
-// Customer Referral History
-// router.get('/me/referrals', referralHistoryCtrl.getCustomerReferrals);
+// REFERRAL MANAGEMENT
+router.post('/me/referral-code', isAccessAllowed('CUSTOMER'), referralCodeCtrl.createCustomerReferralCode);
+router.get('/me/referral-code', isAccessAllowed('CUSTOMER'), referralCodeCtrl.getCustomerReferralCode);
+router.get('/me/referrals-history', isAccessAllowed('CUSTOMER'), referralHistoryCtrl.getCustomerReferralHistory);
+router.get('/me/referred-history', isAccessAllowed('CUSTOMER'), referralHistoryCtrl.getReferredUserHistory);
 
-// Customer Search History
-// router.get('/me/search-history', searchHistoryCtrl.getCustomerSearchHistory);
+// use referral code
+router.post('/me/referral-code/use', isAccessAllowed('CUSTOMER'), referralHistoryCtrl.useReferralCode);
 
 export { router as customerRouter };

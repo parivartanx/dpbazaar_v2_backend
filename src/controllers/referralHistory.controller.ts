@@ -1,10 +1,17 @@
 // src/controllers/ReferralHistoryController.ts
 import { Request, Response } from 'express';
 import { ReferralHistoryRepository } from '../repositories/prisma/ReferralHistoryRepository';
+import { ReferralCodeRepository } from '../repositories/prisma/ReferralCodeRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 
+// ✅ Extend Request type to include `user`
+interface AuthRequest extends Request {
+  user?: { id: string };
+}
+
 const referralHistoryRepo = new ReferralHistoryRepository();
+const referralCodeRepo = new ReferralCodeRepository();
 
 export class ReferralHistoryController {
   /** ----------------- ADMIN END ----------------- */
@@ -158,13 +165,13 @@ export class ReferralHistoryController {
 
   /** ----------------- CUSTOMER END ----------------- */
 
-  getCustomerReferralHistory = async (req: Request, res: Response): Promise<void> => {
+  getCustomerReferralHistory = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.params.customerId as string;
+      const customerId = req.user?.id;
       if (!customerId) {
-        res.status(400).json({
+        res.status(401).json({
           success: false,
-          message: 'Customer ID is required',
+          message: 'Customer authentication required',
           timestamp: new Date().toISOString(),
         });
         return;
@@ -191,13 +198,13 @@ export class ReferralHistoryController {
     }
   };
 
-  getReferredUserHistory = async (req: Request, res: Response): Promise<void> => {
+  getReferredUserHistory = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const userId = req.params.userId as string;
+      const userId = req.user?.id;
       if (!userId) {
-        res.status(400).json({
+        res.status(401).json({
           success: false,
-          message: 'User ID is required',
+          message: 'User authentication required',
           timestamp: new Date().toISOString(),
         });
         return;
@@ -224,6 +231,91 @@ export class ReferralHistoryController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch referred user history',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  // Use a referral code
+  useReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const customerId = req.user?.id;
+      if (!customerId) {
+        res.status(401).json({
+          success: false,
+          message: 'Customer authentication required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const { code } = req.body;
+      if (!code) {
+        res.status(400).json({
+          success: false,
+          message: 'Referral code is required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Find the referral code using ReferralCodeRepository
+      const referralCode = await referralCodeRepo.findByCode(code);
+      if (!referralCode || !referralCode.isActive) {
+        res.status(404).json({
+          success: false,
+          message: 'Invalid or inactive referral code',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if this customer is the same as the referrer
+      if (referralCode.customerId === customerId) {
+        res.status(400).json({
+          success: false,
+          message: 'Cannot use your own referral code',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if this customer has already used a referral code
+      const existingReferral = await referralHistoryRepo.findByReferredUserId(customerId);
+      if (existingReferral) {
+        res.status(400).json({
+          success: false,
+          message: 'Customer has already used a referral code',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Create referral history record with all required fields
+      const referralHistory = await referralHistoryRepo.create({
+        referralCodeId: referralCode.id,
+        referrerId: referralCode.customerId, // The person who created the code
+        referredUserId: customerId, // The person using the code
+        referrerSubscriptionId: '', // Will be set when user subscribes
+        triggeredCardId: '', // Will be set when user subscribes
+        status: 'PENDING', // Initially pending
+        rewardAmount: null, // Will be set when qualified
+        rewardedAt: null, // Will be set when rewarded
+        expiredAt: null, // Will be set when expired
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Referral code applied successfully',
+        data: { referralHistory },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`Error applying referral code: ${error}`);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to apply referral code',
         error: (error as Error).message,
         timestamp: new Date().toISOString(),
       });
