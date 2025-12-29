@@ -381,4 +381,131 @@ export class WalletController {
       });
     }
   };
+
+  withdrawFromWallet = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const customerId = (req as any).user?.id; // Assuming user ID is attached by authentication middleware
+      if (!customerId) {
+        res.status(401).json({
+          success: false,
+          message: 'Customer authentication required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const { walletType, amount, accountNumber, ifscCode, accountHolderName, upiId, bankName, description } = req.body;
+
+      if (!walletType || !amount || (!accountNumber && !upiId)) {
+        res.status(400).json({
+          success: false,
+          message: 'walletType, amount, and either accountNumber/IFSC or UPI ID are required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Only allow withdrawals from WITHDRAWABLE wallet
+      if (walletType !== 'WITHDRAWABLE') {
+        res.status(400).json({
+          success: false,
+          message: 'Only WITHDRAWABLE wallets support withdrawals',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Get the wallet
+      const wallet = await walletRepo.findByCustomerIdAndType(customerId, walletType as any);
+
+      if (!wallet) {
+        res.status(404).json({
+          success: false,
+          message: `Wallet of type ${walletType} not found`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if wallet has sufficient balance
+      if (Number(wallet.balance) < Number(amount)) {
+        res.status(400).json({
+          success: false,
+          message: 'Insufficient balance in wallet',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Perform the withdrawal in a transaction
+      const result = await prisma.$transaction(async (tx) => {
+        // Deduct from wallet
+        const updatedWallet = await tx.wallet.update({
+          where: { id: wallet.id },
+          data: {
+            balance: {
+              decrement: Number(amount)
+            }
+          }
+        });
+
+        // Create transaction record
+        const transaction = await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            customerId,
+            type: 'DEBIT',
+            amount: Number(amount),
+            reason: 'WITHDRAWAL',
+            status: 'PENDING', // Initially set to PENDING until payment gateway confirms
+            balanceBefore: Number(wallet.balance),
+            balanceAfter: Number(updatedWallet.balance),
+            metadata: {
+              description: description || 'Wallet withdrawal',
+              accountDetails: {
+                accountNumber: accountNumber ? '****' + accountNumber.slice(-4) : null, // Only store last 4 digits
+                ifscCode: ifscCode || null,
+                accountHolderName: accountHolderName || null,
+                upiId: upiId || null,
+                bankName: bankName || null,
+              },
+            },
+          }
+        });
+
+        return {
+          wallet: updatedWallet,
+          transaction
+        };
+      });
+
+      // Here you would integrate with a payment gateway (like Razorpay, Stripe, etc.)
+      // to actually transfer the money to the customer's account/UPId
+      // For now, this is a placeholder for the actual payment gateway integration
+      
+      // Example of what would happen next:
+      // 1. Call payment gateway API to initiate transfer
+      // 2. Update transaction status based on gateway response
+      // 3. Handle success/error scenarios
+      
+      // For now, returning the initiated withdrawal
+      res.status(200).json({
+        success: true,
+        message: 'Withdrawal initiated successfully. Processing through payment gateway.',
+        data: {
+          wallet: result.wallet,
+          transaction: result.transaction
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`Error withdrawing from wallet: ${error}`);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to withdraw from wallet',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
 }

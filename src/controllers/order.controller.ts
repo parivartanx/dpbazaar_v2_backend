@@ -658,10 +658,11 @@ export class OrderController {
       // Generate return number
       const returnNumber = `RET-${Date.now()}`;
       
-      // Create return with the generated return number
+      // Create return with the generated return number and default status to REQUESTED
       const returnRequest = await this.repo.createReturn({
         ...returnData,
         returnNumber,
+        status: 'REQUESTED', // Default to REQUESTED for customer-initiated returns
       });
       
       const response: ApiResponse = {
@@ -728,8 +729,9 @@ export class OrderController {
     }
   };
 
-  getAllReturns = async (req: Request, res: Response): Promise<void> => {
+  getCustomerReturns = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
+      const customerId = req.user?.id;
       const {
         status,
         orderId,
@@ -738,10 +740,29 @@ export class OrderController {
         limit,
       } = req.query;
 
-      const filters: any = {};
+      if (!customerId) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Customer not authenticated',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const filters: any = {
+        orderId,
+        type,
+      };
+      
+      // Get all orders for this customer to filter returns
+      const customerOrders = await this.repo.getAllOrders({ customerId }, { page: 1, limit: 1000 });
+      const customerOrderIds = customerOrders.orders.map((order: any) => order.id);
+      
+      // Only allow returns from customer's orders
+      filters.orderId = { in: customerOrderIds };
       if (status) filters.status = status;
-      if (orderId) filters.orderId = orderId as string;
-      if (type) filters.type = type as string;
+      if (orderId) filters.orderId = orderId as string; // Override if specific order ID is provided
 
       const pagination = {
         page: page ? parseInt(page as string) : 1,
@@ -759,16 +780,16 @@ export class OrderController {
           limit: pagination.limit,
           totalPages: Math.ceil(result.total / pagination.limit),
         },
-        message: 'Returns fetched successfully',
+        message: 'Customer returns fetched successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
     } catch (error) {
-      logger.error(`Returns fetch error: ${error}`);
+      logger.error(`Customer returns fetch error: ${error}`);
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in fetching returns',
+        message: 'Problem in fetching customer returns',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -828,18 +849,18 @@ export class OrderController {
 
   // Customer & Vendor Specific Methods
 
-  getCustomerOrders = async (req: Request, res: Response): Promise<void> => {
+  getCustomerOrders = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { customerId } = req.params;
+      const customerId = req.user?.id;
       const { page, limit } = req.query;
-
+      
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
-          message: 'Customer ID is required',
+          message: 'Customer not authenticated',
           timestamp: new Date().toISOString(),
         };
-        res.status(400).json(response);
+        res.status(401).json(response);
         return;
       }
 
@@ -872,6 +893,76 @@ export class OrderController {
         success: false,
         error: (error as Error).message,
         message: 'Problem in fetching customer orders',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  getCustomerReturnById = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params; // Using 'id' to match the route parameter
+      const customerId = req.user?.id;
+      
+      if (!id) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Return ID is required',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(400).json(response);
+        return;
+      }
+      
+      if (!customerId) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Customer not authenticated',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      // Get the return and verify it belongs to the customer's orders
+      const returnRequest = await this.repo.getReturnById(id);
+      
+      if (!returnRequest) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Return request not found',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(404).json(response);
+        return;
+      }
+      
+      // Get the associated order to check if it belongs to the customer
+      const order = await this.repo.getOrderById(returnRequest.orderId);
+      
+      if (!order || order.customerId !== customerId) {
+        const response: ApiResponse = {
+          success: false,
+          message: 'Unauthorized: This return does not belong to you',
+          timestamp: new Date().toISOString(),
+        };
+        res.status(403).json(response);
+        return;
+      }
+
+      const response: ApiResponse = {
+        success: true,
+        data: { return: returnRequest },
+        message: 'Return request found',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Return fetch error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching return request',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -922,6 +1013,54 @@ export class OrderController {
         success: false,
         error: (error as Error).message,
         message: 'Problem in fetching vendor orders',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  // Admin method to get all returns (unrestricted)
+  getAllReturns = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {
+        status,
+        orderId,
+        type,
+        page,
+        limit,
+      } = req.query;
+
+      const filters: any = {};
+      if (status) filters.status = status;
+      if (orderId) filters.orderId = orderId as string;
+      if (type) filters.type = type as string;
+
+      const pagination = {
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 10,
+      };
+
+      const result = await this.repo.getAllReturns(filters, pagination);
+
+      const response: ApiResponse = {
+        success: true,
+        data: {
+          returns: result.returns,
+          total: result.total,
+          page: pagination.page,
+          limit: pagination.limit,
+          totalPages: Math.ceil(result.total / pagination.limit),
+        },
+        message: 'Returns fetched successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Returns fetch error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in fetching returns',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);

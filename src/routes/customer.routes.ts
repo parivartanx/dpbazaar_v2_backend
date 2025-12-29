@@ -7,6 +7,7 @@ import {
   updateCustomerSchema,
 } from '../validators/customer.validaton';
 
+
 const router = Router();
 const customerCtrl = new CustomerController();
 const addressCtrl = new AddressController();
@@ -22,10 +23,11 @@ router.post('/me/addresses', addressCtrl.createMyAddress);
 router.put('/me/addresses/:id', addressCtrl.updateMyAddress);
 router.delete('/me/addresses/:id', addressCtrl.deleteMyAddress);
 
-// Customer Wallet
+// WALLET MANAGEMENT
 router.get('/me/wallets', walletCtrl.getCustomerWallets);
 router.get('/me/wallet-transactions', walletCtrl.getCustomerWalletTransactions);
 router.post('/me/wallets/transfer', walletCtrl.transferBetweenWallets);
+router.post('/me/wallets/withdrawal', walletCtrl.withdrawFromWallet);
 
 
 // Customer Referral History

@@ -27,6 +27,7 @@ import { CustomerController } from '../controllers/customer.controller';
 import { CustomerSegmentController } from '../controllers/customerSegment.controller';
 import { WalletController } from '../controllers/wallet.controller';
 import { WalletTransactionController } from '../controllers/walletTransaction.controller';
+import { OrderController } from '../controllers/order.controller';
 // import { isAccessAllowed } from '../middlewares/isAccessAllowed';
 import { validateJoi } from '../middlewares/validateJoi';
 import {
@@ -85,6 +86,7 @@ import {
   createWalletTransactionSchema,
   updateWalletTransactionSchema,
 } from '../validators/walletTransaction.validation';
+import { createReturnSchema, updateReturnStatusSchema } from '../validators/order.validation';
 
 const router = Router();
 const upload = multer();
@@ -112,6 +114,7 @@ const customerCtrl = new CustomerController();
 const segmentCtrl = new CustomerSegmentController();
 const walletController = new WalletController();
 const walletTransactionController = new WalletTransactionController();
+const orderController = new OrderController();
 // const reviewController = new ReviewController();
 // const reportController = new ReportController();
 
@@ -313,22 +316,13 @@ router.post('/admin/wallet-transactions', validateJoi(createWalletTransactionSch
 router.put('/admin/wallet-transactions/:id', validateJoi(updateWalletTransactionSchema), walletTransactionController.updateTransaction);
 router.delete('/admin/wallet-transactions/:id', walletTransactionController.deleteTransaction);
 
-// /**
-//  * REVIEW ROUTES
-//  */
-// router.get('/reviews', reviewController.getAllReviews);
-// router.patch('/reviews/:id/approve', reviewController.approveReview);
-// router.patch('/reviews/:id/reject', reviewController.rejectReview);
-// router.delete('/reviews/:id', reviewController.deleteReview);
-// router.post('/reviews/:id/reply', reviewController.replyToReview);
-
-// /**
-//  * REPORT ROUTES
-//  */
-// router.get('/reports/sales', reportController.getSalesReport);
-// router.get('/reports/best-sellers', reportController.getBestSellers);
-// router.get('/reports/category-sales', reportController.getCategorySales);
-// router.get('/reports/returns', reportController.getReturnsReport);
+/**
+ * RETURN MANAGEMENT
+ */
+router.post('/returns', validateJoi(createReturnSchema), orderController.createReturnRequest);
+router.get('/returns/:returnId', orderController.getReturnById);
+router.get('/returns', orderController.getAllReturns);
+router.patch('/returns/:returnId/status', validateJoi(updateReturnStatusSchema), orderController.updateReturnStatus);
 
 /**
  * PAYMNET MANAGEMENT
