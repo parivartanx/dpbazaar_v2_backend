@@ -448,45 +448,118 @@ export class DesktopController {
         return;
       }
 
-      // Calculate return status for each item in the order
-      // Type assertion to handle the order with includes
+      // Transform the order data to avoid duplicate/unnecessary information
       const orderWithIncludes = order as any;
       
+      // Transform items to include only necessary fields and add return status
+      const transformedItems = orderWithIncludes.items.map((item: any) => {
+        // Calculate total quantity already returned for this order item
+        let totalReturnedQuantity = item.refundedQuantity || 0; // Use the refundedQuantity from the order item
+        
+        // Calculate available quantity for return
+        const availableForReturn = item.quantity - totalReturnedQuantity;
+        
+        // Determine if this item can be returned
+        const canReturn = availableForReturn > 0;
+        
+        // Create a simplified item with only necessary fields
+        return {
+          id: item.id,
+          orderId: item.orderId,
+          productId: item.productId,
+          variantId: item.variantId,
+          productName: item.productName,
+          productSku: item.productSku,
+          variantName: item.variantName,
+          productImage: item.productImage,
+          mrp: item.mrp,
+          sellingPrice: item.sellingPrice,
+          quantity: item.quantity,
+          discount: item.discount,
+          taxRate: item.taxRate,
+          taxAmount: item.taxAmount,
+          totalAmount: item.totalAmount,
+          status: item.status,
+          refundedQuantity: item.refundedQuantity,
+          isReturned: item.isReturned,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          returnStatus: {
+            totalOrdered: item.quantity,
+            totalReturned: totalReturnedQuantity,
+            availableForReturn: availableForReturn,
+            canReturn: canReturn,
+          }
+        };
+      });
+      
+      // Transform returns to include only necessary fields
+      const transformedReturns = (orderWithIncludes.returns || []).map((ret: any) => ({
+        id: ret.id,
+        orderId: ret.orderId,
+        returnNumber: ret.returnNumber,
+        type: ret.type,
+        reason: ret.reason,
+        detailedReason: ret.detailedReason,
+        status: ret.status,
+        customerComments: ret.customerComments,
+        images: ret.images,
+        pickupAddress: ret.pickupAddress,
+        pickupScheduledDate: ret.pickupScheduledDate,
+        pickupCompletedAt: ret.pickupCompletedAt,
+        inspectionNotes: ret.inspectionNotes,
+        inspectionCompletedAt: ret.inspectionCompletedAt,
+        inspectedBy: ret.inspectedBy,
+        refundAmount: ret.refundAmount,
+        refundMethod: ret.refundMethod,
+        exchangeOrderId: ret.exchangeOrderId,
+        approvedAt: ret.approvedAt,
+        rejectedAt: ret.rejectedAt,
+        processedAt: ret.processedAt,
+        createdAt: ret.createdAt,
+        updatedAt: ret.updatedAt,
+        source: ret.source,
+        createdBy: ret.createdBy
+      }));
+      
       const orderWithReturnStatus = {
-        ...orderWithIncludes,
-        items: orderWithIncludes.items.map((item: any) => {
-          // Calculate total quantity already returned for this order item
-          let totalReturnedQuantity = item.refundedQuantity || 0; // Use the refundedQuantity from the order item
-          
-          // Calculate available quantity for return
-          const availableForReturn = item.quantity - totalReturnedQuantity;
-          
-          // Determine if this item can be returned
-          const canReturn = availableForReturn > 0;
-          
-          return {
-            ...item,
-            returnStatus: {
-              totalOrdered: item.quantity,
-              totalReturned: totalReturnedQuantity,
-              availableForReturn: availableForReturn,
-              canReturn: canReturn,
-            }
-          };
-        }),
-        // Add overall return status for the order
-        returnSummary: {
-          totalItems: orderWithIncludes.items.length,
-          itemsWithReturns: orderWithIncludes.items.filter((item: any) => {
-            const totalReturned = item.refundedQuantity || 0;
-            return totalReturned > 0;
-          }).length,
-          hasActiveReturns: orderWithIncludes.returns && orderWithIncludes.returns.some((r: any) => r.status !== 'REJECTED'),
-          canReturnItems: orderWithIncludes.items.some((item: any) => {
-            const totalReturned = item.refundedQuantity || 0;
-            return (item.quantity - totalReturned) > 0;
-          })
-        }
+        id: orderWithIncludes.id,
+        orderNumber: orderWithIncludes.orderNumber,
+        customerId: orderWithIncludes.customerId,
+        vendorId: orderWithIncludes.vendorId,
+        itemsTotal: orderWithIncludes.itemsTotal,
+        taxAmount: orderWithIncludes.taxAmount,
+        shippingCharges: orderWithIncludes.shippingCharges,
+        codCharges: orderWithIncludes.codCharges,
+        discount: orderWithIncludes.discount,
+        totalAmount: orderWithIncludes.totalAmount,
+        status: orderWithIncludes.status,
+        paymentStatus: orderWithIncludes.paymentStatus,
+        shippingAddress: orderWithIncludes.shippingAddress,
+        billingAddress: orderWithIncludes.billingAddress,
+        customerName: orderWithIncludes.customerName,
+        customerEmail: orderWithIncludes.customerEmail,
+        customerPhone: orderWithIncludes.customerPhone,
+        customerNotes: orderWithIncludes.customerNotes,
+        adminNotes: orderWithIncludes.adminNotes,
+        trackingNumber: orderWithIncludes.trackingNumber,
+        courierPartner: orderWithIncludes.courierPartner,
+        confirmedAt: orderWithIncludes.confirmedAt,
+        packedAt: orderWithIncludes.packedAt,
+        shippedAt: orderWithIncludes.shippedAt,
+        deliveredAt: orderWithIncludes.deliveredAt,
+        cancelledAt: orderWithIncludes.cancelledAt,
+        returnRequestedAt: orderWithIncludes.returnRequestedAt,
+        createdBy: orderWithIncludes.createdBy,
+        source: orderWithIncludes.source,
+        deviceInfo: orderWithIncludes.deviceInfo,
+        metadata: orderWithIncludes.metadata,
+        createdAt: orderWithIncludes.createdAt,
+        updatedAt: orderWithIncludes.updatedAt,
+        items: transformedItems,
+
+        // Include the actual returns array for frontend access
+        returns: transformedReturns
       };
 
       const response: ApiResponse = {

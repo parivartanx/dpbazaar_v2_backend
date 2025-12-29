@@ -487,9 +487,11 @@ This document provides comprehensive documentation for the desktop application A
       "id": "string",
       "orderNumber": "ORD-2023-12345",
       "customerId": "string",
+      "vendorId": null,
       "itemsTotal": 90.00,
       "taxAmount": 9.00,
       "shippingCharges": 0.00,
+      "codCharges": 0.00,
       "discount": 0.00,
       "totalAmount": 99.00,
       "status": "DELIVERED",
@@ -501,7 +503,10 @@ This document provides comprehensive documentation for the desktop application A
         "city": "City",
         "state": "State",
         "country": "Country",
-        "postalCode": "123456"
+        "postalCode": "123456",
+        "landmark": "Landmark",
+        "alternatePhone": null,
+        "deliveryInstructions": "Delivery Instructions"
       },
       "billingAddress": {
         "fullName": "Customer Name",
@@ -510,30 +515,91 @@ This document provides comprehensive documentation for the desktop application A
         "city": "City",
         "state": "State",
         "country": "Country",
-        "postalCode": "123456"
+        "postalCode": "123456",
+        "landmark": "Landmark",
+        "alternatePhone": null
       },
+      "customerName": "Customer Name",
+      "customerEmail": "customer@example.com",
+      "customerPhone": "string",
+      "customerNotes": null,
+      "adminNotes": null,
+      "trackingNumber": null,
+      "courierPartner": null,
+      "confirmedAt": "2023-12-25T10:30:00.000Z",
+      "packedAt": null,
+      "shippedAt": null,
+      "deliveredAt": null,
+      "cancelledAt": null,
+      "returnRequestedAt": null,
+      "createdBy": null,
+      "source": "SYSTEM",
+      "deviceInfo": {
+        "platform": "desktop",
+        "userAgent": "Mozilla/5.0..."
+      },
+      "metadata": null,
+      "createdAt": "2023-12-25T10:30:00.000Z",
+      "updatedAt": "2023-12-25T10:30:00.000Z",
       "items": [
         {
           "id": "string",
           "orderId": "string",
           "productId": "string",
+          "variantId": null,
           "productName": "Product Name",
           "productSku": "SKU123",
+          "variantName": null,
+          "productImage": "https://example.com/image.jpg",
           "mrp": 100.00,
           "sellingPrice": 90.00,
           "quantity": 1,
           "discount": 0.00,
           "taxRate": 10.00,
           "taxAmount": 9.00,
-          "totalAmount": 99.00
+          "totalAmount": 99.00,
+          "status": "PENDING",
+          "refundedQuantity": 0,
+          "isReturned": false,
+          "createdAt": "2023-12-25T10:30:00.000Z",
+          "updatedAt": "2023-12-25T10:30:00.000Z",
+          "returnStatus": {
+            "totalOrdered": 1,
+            "totalReturned": 0,
+            "availableForReturn": 1,
+            "canReturn": true
+          }
         }
       ],
-      "customerName": "Customer Name",
-      "customerEmail": "customer@example.com",
-      "customerPhone": "string",
-      "source": "SYSTEM",
-      "createdBy": "string",
-      "createdAt": "2023-12-25T10:30:00.000Z"
+      "returns": [
+        {
+          "id": "string",
+          "orderId": "string",
+          "returnNumber": "RET-2023-12345",
+          "type": "RETURN",
+          "reason": "Not as Described",
+          "detailedReason": "Not as Described",
+          "status": "APPROVED",
+          "customerComments": null,
+          "images": [],
+          "pickupAddress": null,
+          "pickupScheduledDate": null,
+          "pickupCompletedAt": null,
+          "inspectionNotes": null,
+          "inspectionCompletedAt": null,
+          "inspectedBy": null,
+          "refundAmount": "7996",
+          "refundMethod": "CASH",
+          "exchangeOrderId": null,
+          "approvedAt": null,
+          "rejectedAt": null,
+          "processedAt": null,
+          "createdAt": "2023-12-25T10:30:00.000Z",
+          "updatedAt": "2023-12-25T10:30:00.000Z",
+          "source": "SYSTEM",
+          "createdBy": null
+        }
+      ]
     }
   },
   "message": "Bill retrieved successfully",
