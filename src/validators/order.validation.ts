@@ -163,7 +163,10 @@ export const createReturnSchema = Joi.object({
       }),
       condition: Joi.string().trim().valid('NEW', 'USED', 'DAMAGED').optional().default('USED'),
     })
-  ).optional(),
+  ).required().min(1).messages({
+    'array.min': 'At least one return item is required',
+    'any.required': 'Return items are required',
+  }),
   refundMethod: Joi.string().trim().valid('ORIGINAL_PAYMENT', 'STORE_CREDIT', 'BANK_TRANSFER', 'CASH', 'WALLET').optional().default('CASH'),
 });
 

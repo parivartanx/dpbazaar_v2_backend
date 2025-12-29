@@ -1,32 +1,63 @@
-// import { PrismaClient, Review } from '@prisma/client';
-// import { IReviewRepository } from '../interfaces/IReviewRepository';
+import { PrismaClient, Review } from '@prisma/client';
+import { IReviewRepository } from '../interfaces/IReviewRepository';
 
-// const prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
-// export class ReviewRepository implements IReviewRepository {
-//   async getAll(): Promise<Review[]> {
-//     return prisma.review.findMany({ include: { product: true, user: true } });
-//   }
+export class ReviewRepository implements IReviewRepository {
+  async getAll(filters?: any): Promise<Review[]> {
+    return prisma.review.findMany({
+      where: filters,
+      include: { 
+        product: { select: { name: true, slug: true, sku: true } }, 
+        customer: { select: { firstName: true, lastName: true } } 
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
 
-//   async approve(id: string): Promise<Review> {
-//     return prisma.review.update({
-//       where: { id },
-//       data: { status: 'APPROVED' },
-//     });
-//   }
+  async getById(id: string): Promise<Review | null> {
+    return prisma.review.findUnique({
+      where: { id },
+      include: {
+        product: true,
+        customer: true
+      }
+    });
+  }
 
-//   async reject(id: string, reason?: string): Promise<Review> {
-//     return prisma.review.update({
-//       where: { id },
-//       data: { status: 'REJECTED', rejectionReason: reason },
-//     });
-//   }
+  async create(data: any): Promise<Review> {
+    return prisma.review.create({ data });
+  }
 
-//   async delete(id: string): Promise<void> {
-//     await prisma.review.delete({ where: { id } });
-//   }
+  async approve(id: string, approvedBy: string): Promise<Review> {
+    return prisma.review.update({
+      where: { id },
+      data: { 
+        status: 'APPROVED',
+        approvedBy,
+        approvedAt: new Date()
+      },
+    });
+  }
 
-//   async reply(id: string, reply: string): Promise<Review> {
-//     return prisma.review.update({ where: { id }, data: { adminReply: reply } });
-//   }
-// }
+  async reject(id: string): Promise<Review> {
+    return prisma.review.update({
+      where: { id },
+      data: { status: 'REJECTED' },
+    });
+  }
+
+  async delete(id: string): Promise<void> {
+    await prisma.review.delete({ where: { id } });
+  }
+
+  async reply(id: string, reply: string): Promise<Review> {
+    return prisma.review.update({ 
+      where: { id }, 
+      data: { 
+        sellerResponse: reply,
+        sellerRespondedAt: new Date()
+      } 
+    });
+  }
+}
