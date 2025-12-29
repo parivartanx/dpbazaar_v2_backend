@@ -355,7 +355,7 @@ export class OrderRepository implements IOrderRepository {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           // For desktop bill history, include only minimal details
           items: {
