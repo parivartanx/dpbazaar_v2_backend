@@ -1,4 +1,4 @@
-import { Notification, NotificationType } from '@prisma/client';
+import { Notification } from '@prisma/client';
 
 export interface INotificationRepository {
   create(data: any): Promise<Notification>;
