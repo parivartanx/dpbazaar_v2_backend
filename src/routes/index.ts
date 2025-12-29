@@ -5,19 +5,16 @@ import { adminRoutes } from './admin.routes';
 import { customerRouter } from './customer.routes';
 import { desktopRoutes } from './desktop.routes';
 import { subscriptionCardRoutes } from './subscriptionCard.routes';
-import { referralCodeRoutes } from './referralCode.routes';
-import { referralHistoryRoutes } from './referralHistory.routes';
+
 const router = Router();
 
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/products', productRoutes);
 router.use('/admin', adminRoutes);
-router.use('/customers', customerRouter);
+router.use('/customer', customerRouter);
 router.use('/desktop', desktopRoutes);
 router.use('/subscription-cards', subscriptionCardRoutes);
-router.use('/referral-codes', referralCodeRoutes);
-router.use('/referral-histories', referralHistoryRoutes);
 
 // API version prefix
 const apiRouter = Router();

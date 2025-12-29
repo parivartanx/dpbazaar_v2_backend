@@ -4,6 +4,11 @@ import { ReferralCodeRepository } from '../repositories/prisma/ReferralCodeRepos
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 
+// ✅ Extend Request type to include `user`
+interface AuthRequest extends Request {
+  user?: { id: string };
+}
+
 const referralCodeRepo = new ReferralCodeRepository();
 
 export class ReferralCodeController {
@@ -231,13 +236,65 @@ export class ReferralCodeController {
 
   /** ----------------- CUSTOMER END ----------------- */
 
-  getCustomerReferralCode = async (req: Request, res: Response): Promise<void> => {
+  // Create a referral code for the authenticated customer
+  createCustomerReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.params.customerId as string;
+      const customerId = req.user?.id;
       if (!customerId) {
+        res.status(401).json({
+          success: false,
+          message: 'Customer authentication required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if customer already has a referral code
+      const existingReferralCode = await referralCodeRepo.findByCustomerId(customerId);
+      if (existingReferralCode) {
         res.status(400).json({
           success: false,
-          message: 'Customer ID is required',
+          message: 'Customer already has a referral code',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Create a unique referral code
+      const referralCode = `REF${customerId.substring(0, 8).toUpperCase()}`;
+
+      // Create the referral code record
+      const newReferralCode = await referralCodeRepo.create({
+        code: referralCode,
+        customerId: customerId,
+        isActive: true,
+        deactivatedAt: null,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Referral code created successfully',
+        data: { referralCode: newReferralCode },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`Error creating customer referral code: ${error}`);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create referral code',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  getCustomerReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const customerId = req.user?.id;
+      if (!customerId) {
+        res.status(401).json({
+          success: false,
+          message: 'Customer authentication required',
           timestamp: new Date().toISOString(),
         });
         return;
