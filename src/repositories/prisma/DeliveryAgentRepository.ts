@@ -67,4 +67,10 @@ export class DeliveryAgentRepository implements IDeliveryAgentRepository {
       where: { agentCode: code }
     });
   }
+
+  async findByEmail(email: string): Promise<DeliveryAgent | null> {
+    return prisma.deliveryAgent.findUnique({
+      where: { email }
+    });
+  }
 }

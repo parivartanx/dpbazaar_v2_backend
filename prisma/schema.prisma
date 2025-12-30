@@ -18,6 +18,8 @@ enum UserRole {
   EMPLOYEE
   VENDOR
   CUSTOMER
+  DELIVERY_AGENT
+  SUPPORT
 }
 
 enum UserStatus {
@@ -136,6 +138,59 @@ enum PermissionAction {
   REJECT
 }
 
+enum PermissionResource {
+  DASHBOARD
+  ANALYTICS
+  USERS
+  DEPARTMENTS
+  EMPLOYEES
+  PERMISSIONS
+  EMPLOYEE_PERMISSIONS
+  BRANDS
+  CATEGORIES
+  PRODUCTS
+  VARIANTS
+  ATTRIBUTES
+  RELATIONS
+  CARDS
+  SUBSCRIPTION_CARDS
+  CUSTOMERS
+  SEGMENTS
+  WALLETS
+  WALLET_TRANSACTIONS
+  ORDERS
+  DISCOUNTS
+  REVIEWS
+  VENDORS
+  WAREHOUSES
+  INVENTORIES
+  DELIVERY_AGENTS
+  DELIVERIES
+  REFERRAL_CODES
+  REFERRAL_HISTORY
+  NOTIFICATIONS
+  EMAIL_TEMPLATES
+  PAYMENTS
+  VENDOR_PAYOUTS
+  SYSTEM_SETTINGS
+  AUDIT_LOGS
+  INVOICES
+  DELIVERY_EARNINGS
+  PRICE_HISTORY
+  STOCK_MOVEMENTS
+  REFUNDS
+  RETURNS
+  JOB_EXECUTIONS
+  EMPLOYEE_ACTIVITIES
+  ADDRESSES
+  SESSIONS
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
 enum Visibility {
   PUBLIC
   PRIVATE
@@ -1300,7 +1355,7 @@ model DeliveryAgent {
   insuranceExpiry DateTime?
 
   // Work info
-  employmentType String         @default("FREELANCE") // EMPLOYEE, FREELANCE, CONTRACT
+  employmentType EmploymentType         @default(CONTRACT)
   status         EmployeeStatus @default(ACTIVE)
   zones          String[] // Service areas/zones
   currentZone    String?
