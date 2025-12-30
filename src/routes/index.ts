@@ -6,6 +6,7 @@ import { customerRouter } from './customer.routes';
 import { desktopRoutes } from './desktop.routes';
 import { subscriptionCardRoutes } from './subscriptionCard.routes';
 import { deliveryAgentRoutes } from './deliveryAgent.routes';
+import { publicRoutes } from './public.routes';
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use('/customer', customerRouter);
 router.use('/desktop', desktopRoutes);
 router.use('/subscription-cards', subscriptionCardRoutes);
 router.use('/delivery-agents', deliveryAgentRoutes);
+router.use('/public', publicRoutes);
 
 // API version prefix
 const apiRouter = Router();
