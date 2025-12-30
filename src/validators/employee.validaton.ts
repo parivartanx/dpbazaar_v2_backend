@@ -74,7 +74,7 @@ export const updateEmployeeSchema = Joi.object({
   designation: Joi.string().optional(),
   reportingTo: Joi.string().allow(null, ''),
   status: Joi.string().valid('ACTIVE', 'INACTIVE', 'SUSPENDED'),
-  employmentType: Joi.string().valid('FULL_TIME', 'PART_TIME', 'CONTRACT'),
+  employmentType: Joi.string().valid('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'FREELANCE'),
   joiningDate: Joi.date().optional(),
   confirmationDate: Joi.date().optional(),
   lastWorkingDate: Joi.date().optional(),
@@ -93,7 +93,7 @@ export const updateEmployeeSchema = Joi.object({
 export const createPermissionSchema = Joi.object({
   resource: Joi.string().required(), // e.g., "products"
   action: Joi.string()
-    .valid('CREATE', 'READ', 'UPDATE', 'DELETE', 'MANAGE')
+    .valid('CREATE', 'READ', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT')
     .required(),
   description: Joi.string().allow(null, ''),
 });

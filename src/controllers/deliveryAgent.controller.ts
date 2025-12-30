@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { DeliveryAgentRepository } from '../repositories/prisma/DeliveryAgentRepository';
+import { DeliveryRepository } from '../repositories/prisma/DeliveryRepository';
 
 const deliveryAgentRepository = new DeliveryAgentRepository();
+const deliveryRepository = new DeliveryRepository();
 
 export class DeliveryAgentController {
   getAllDeliveryAgents = async (req: Request, res: Response): Promise<void> => {
@@ -92,6 +94,7 @@ export class DeliveryAgentController {
         data: { agent },
         message: 'Delivery agent updated successfully',
         timestamp: new Date().toISOString(),
+        
       };
       res.status(200).json(response);
     } catch (error: any) {
@@ -123,6 +126,153 @@ export class DeliveryAgentController {
     } catch (error) {
       logger.error(`Error in deleteDeliveryAgent: ${error}`);
       res.status(500).json({ success: false, message: 'Problem in deleting delivery agent', error: (error as Error).message });
+    }
+  };
+
+  getMe = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const email = (req as any).user?.email;
+      if (!email) {
+         res.status(401).json({ success: false, message: 'Unauthorized' });
+         return;
+      }
+
+      const agent = await deliveryAgentRepository.findByEmail(email);
+      if (!agent) {
+        res.status(404).json({ success: false, message: 'Delivery agent profile not found' });
+        return;
+      }
+
+      const response: ApiResponse = {
+        success: true,
+        data: { agent },
+        message: 'Profile retrieved successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in getMe: ${error}`);
+      res.status(500).json({ success: false, message: 'Problem in fetching profile', error: (error as Error).message });
+    }
+  };
+
+  toggleAvailability = async (req: Request, res: Response): Promise<void> => {
+     try {
+      const email = (req as any).user?.email;
+      if (!email) {
+         res.status(401).json({ success: false, message: 'Unauthorized' });
+         return;
+      }
+
+      const agent = await deliveryAgentRepository.findByEmail(email);
+      if (!agent) {
+        res.status(404).json({ success: false, message: 'Delivery agent profile not found' });
+        return;
+      }
+
+      const { isAvailable } = req.body;
+      if (typeof isAvailable !== 'boolean') {
+         res.status(400).json({ success: false, message: 'isAvailable must be a boolean' });
+         return;
+      }
+
+      const updatedAgent = await deliveryAgentRepository.update(agent.id, { isAvailable });
+       const response: ApiResponse = {
+        success: true,
+        data: { agent: updatedAgent },
+        message: 'Availability updated successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+
+     } catch (error) {
+      logger.error(`Error in toggleAvailability: ${error}`);
+      res.status(500).json({ success: false, message: 'Problem in updating availability', error: (error as Error).message });
+    }
+  };
+
+  getMyDeliveries = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const email = (req as any).user?.email;
+      if (!email) {
+         res.status(401).json({ success: false, message: 'Unauthorized' });
+         return;
+      }
+
+      const agent = await deliveryAgentRepository.findByEmail(email);
+      if (!agent) {
+        res.status(404).json({ success: false, message: 'Delivery agent profile not found' });
+        return;
+      }
+
+      const filters = { ...req.query, agentId: agent.id };
+      const deliveries = await deliveryRepository.getAll(filters);
+
+      const response: ApiResponse = {
+        success: true,
+        data: { deliveries },
+        message: 'Assigned deliveries retrieved successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`Error in getMyDeliveries: ${error}`);
+      res.status(500).json({ success: false, message: 'Problem in fetching deliveries', error: (error as Error).message });
+    }
+  };
+
+  updateDeliveryStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const email = (req as any).user?.email;
+      if (!email) {
+         res.status(401).json({ success: false, message: 'Unauthorized' });
+         return;
+      }
+
+      const agent = await deliveryAgentRepository.findByEmail(email);
+      if (!agent) {
+        res.status(404).json({ success: false, message: 'Delivery agent profile not found' });
+        return;
+      }
+
+      const idParam = req.params.id;
+      if (!idParam) {
+        res.status(400).json({ success: false, message: 'Delivery ID is required' });
+        return;
+      }
+      const { status, deliveryProof, deliveryOtp } = req.body;
+
+      // Verify delivery is assigned to this agent
+      const delivery = await deliveryRepository.getById(idParam);
+      if (!delivery) {
+        res.status(404).json({ success: false, message: 'Delivery not found' });
+        return;
+      }
+
+      if (delivery.deliveryAgentId !== agent.id) {
+        res.status(403).json({ success: false, message: 'This delivery is not assigned to you' });
+        return;
+      }
+
+      // Update delivery
+      const updateData: any = {};
+      if (status) updateData.status = status;
+      if (deliveryProof) updateData.deliveryProof = deliveryProof;
+      if (deliveryOtp) updateData.deliveryOtp = deliveryOtp;
+
+      const updatedDelivery = await deliveryRepository.update(idParam, updateData);
+
+      const response: ApiResponse = {
+        success: true,
+        data: { delivery: updatedDelivery },
+        message: 'Delivery status updated successfully',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(200).json(response);
+
+    } catch (error) {
+      logger.error(`Error in updateDeliveryStatus: ${error}`);
+      res.status(500).json({ success: false, message: 'Problem in updating delivery status', error: (error as Error).message });
     }
   };
 }

@@ -36,6 +36,8 @@ export enum UserRole {
   EMPLOYEE = 'EMPLOYEE',
   VENDOR = 'VENDOR',
   CUSTOMER = 'CUSTOMER',
+  DELIVERY_AGENT = 'DELIVERY_AGENT',
+  SUPPORT = 'SUPPORT',
 }
 
 // JWT related types

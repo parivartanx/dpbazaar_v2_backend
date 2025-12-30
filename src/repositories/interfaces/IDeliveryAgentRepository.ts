@@ -7,4 +7,5 @@ export interface IDeliveryAgentRepository {
   getById(id: string): Promise<DeliveryAgent | null>;
   getAll(filters?: any): Promise<DeliveryAgent[]>;
   findByCode(code: string): Promise<DeliveryAgent | null>;
+  findByEmail(email: string): Promise<DeliveryAgent | null>;
 }
