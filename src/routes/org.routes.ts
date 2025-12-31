@@ -145,6 +145,11 @@ import { EmployeeActivityController } from '../controllers/employeeActivity.cont
 import { AddressController } from '../controllers/address.controller';
 import { createAddressSchema, updateAddressSchema } from '../validators/address.validation';
 import { SessionController } from '../controllers/session.controller';
+import { BannerController } from '../controllers/banner.controller';
+import {
+  createBannerValidation,
+  updateBannerValidation,
+} from '../validators/banner.validation';
 
 const router = Router();
 const upload = multer();
@@ -179,6 +184,7 @@ const employeeActivityController = new EmployeeActivityController();
 
 const addressController = new AddressController();
 const sessionController = new SessionController();
+const bannerController = new BannerController();
 
 const departmentController = new DepartmentController();
 const employeeController = new EmployeeController();
@@ -616,6 +622,15 @@ router.get('/system-settings/:key', checkPermission('system_settings', Permissio
 router.post('/system-settings', checkPermission('system_settings', PermissionAction.CREATE), validateJoi(createSystemSettingSchema), systemSettingController.createSetting);
 router.put('/system-settings/:key', checkPermission('system_settings', PermissionAction.UPDATE), validateJoi(updateSystemSettingSchema), systemSettingController.updateSetting);
 router.delete('/system-settings/:key', checkPermission('system_settings', PermissionAction.DELETE), systemSettingController.deleteSetting);
+
+/**
+ * BANNER MANAGEMENT
+ */
+router.get('/banners', checkPermission('banners', PermissionAction.READ), bannerController.getAllBanners);
+router.get('/banners/:id', checkPermission('banners', PermissionAction.READ), bannerController.getBannerById);
+router.post('/banners', checkPermission('banners', PermissionAction.CREATE), validateJoi(createBannerValidation), bannerController.createBanner);
+router.put('/banners/:id', checkPermission('banners', PermissionAction.UPDATE), validateJoi(updateBannerValidation), bannerController.updateBanner);
+router.delete('/banners/:id', checkPermission('banners', PermissionAction.DELETE), bannerController.deleteBanner);
 
 /**
  * AUDIT LOG MANAGEMENT

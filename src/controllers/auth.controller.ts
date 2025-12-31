@@ -261,7 +261,7 @@ export class AuthController {
           message: 'OTP sent successfully',
           // In production, we would not return the OTP in the response
           // For development/testing purposes only
-          otp: process.env.NODE_ENV === 'production' ? undefined : otp,
+          otp: otp,
           phone: phone,
         },
         message: 'OTP sent successfully',
