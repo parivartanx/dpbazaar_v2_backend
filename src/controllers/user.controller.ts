@@ -2,8 +2,12 @@ import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { UserRepository } from '../repositories/prisma/UserRepository';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 const userRepo = new UserRepository();
+const r2Service = new R2Service();
+const imageUrlTransformer = new ImageUrlTransformer({ r2Service });
 
 export class UserController {
   /**
@@ -15,10 +19,13 @@ export class UserController {
     try {
       const counts = await userRepo.getUserCounts();
 
+      // Transform image keys to public URLs in the counts response
+      const transformedCounts = imageUrlTransformer.transformCommonImageFields(counts);
+      
       const response: ApiResponse = {
         success: true,
         message: "User counts fetched successfully",
-        data: counts,
+        data: transformedCounts,
         timestamp: new Date().toISOString(),
       };
 
@@ -59,11 +66,14 @@ export class UserController {
         search: search as string,
       });
 
+      // Transform image keys to public URLs in the users response
+      const transformedUsers = imageUrlTransformer.transformCommonImageFields(users);
+      
       const response: ApiResponse = {
         success: true,
         message: "Filtered users fetched successfully",
         data: { 
-          users,
+          users: transformedUsers,
           pagination: {
             currentPage: pageNum,
             totalPages: Math.ceil(total / limitNum),
@@ -98,10 +108,13 @@ export class UserController {
         limit: Number(limit) || 20,
       });
 
+      // Transform image keys to public URLs in the users response
+      const transformedUsers = imageUrlTransformer.transformCommonImageFields(users);
+      
       const response: ApiResponse = {
         success: true,
         message: 'User List',
-        data: { users },
+        data: { users: transformedUsers },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -141,10 +154,13 @@ export class UserController {
         return;
       }
 
+      // Transform image keys to public URLs in the user response
+      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      
       const response: ApiResponse = {
         success: true,
         message: 'User Found',
-        data: { user },
+        data: { user: transformedUser },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -163,10 +179,14 @@ export class UserController {
   createUser = async (req: Request, res: Response): Promise<void> => {
     try {
       const user = await userRepo.create(req.body);
+      
+      // Transform image keys to public URLs in the user response
+      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      
       const response: ApiResponse = {
         success: true,
         message: 'User created successfully',
-        data: { user },
+        data: { user: transformedUser },
         timestamp: new Date().toISOString(),
       };
       res.status(201).json(response);
@@ -196,10 +216,14 @@ export class UserController {
       }
 
       const user = await userRepo.update(id, req.body);
+      
+      // Transform image keys to public URLs in the user response
+      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      
       const response: ApiResponse = {
         success: true,
         message: 'User updated successfully',
-        data: { user },
+        data: { user: transformedUser },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -229,10 +253,14 @@ export class UserController {
       }
 
       const user = await userRepo.delete(id);
+      
+      // Transform image keys to public URLs in the user response
+      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      
       const response: ApiResponse = {
         success: true,
         message: 'User deleted successfully',
-        data: { user },
+        data: { user: transformedUser },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -262,10 +290,14 @@ export class UserController {
       }
 
       const user = await userRepo.restore(id);
+      
+      // Transform image keys to public URLs in the user response
+      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      
       const response: ApiResponse = {
         success: true,
         message: 'User restored successfully',
-        data: { user },
+        data: { user: transformedUser },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -296,10 +328,14 @@ export class UserController {
       }
 
       const user = await userRepo.lockUser(id, new Date(lockedUntil));
+      
+      // Transform image keys to public URLs in the user response
+      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      
       const response: ApiResponse = {
         success: true,
         message: 'User locked successfully',
-        data: { user },
+        data: { user: transformedUser },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -329,10 +365,14 @@ export class UserController {
       }
 
       const user = await userRepo.unlockUser(id);
+      
+      // Transform image keys to public URLs in the user response
+      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      
       const response: ApiResponse = {
         success: true,
         message: 'User unlocked successfully',
-        data: { user },
+        data: { user: transformedUser },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

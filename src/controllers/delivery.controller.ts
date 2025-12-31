@@ -2,10 +2,14 @@ import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { DeliveryRepository } from '../repositories/prisma/DeliveryRepository';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 const deliveryRepository = new DeliveryRepository();
 
 export class DeliveryController {
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
   getAllDeliveries = async (req: Request, res: Response): Promise<void> => {
     try {
       const filters: any = { ...req.query };
@@ -14,9 +18,12 @@ export class DeliveryController {
 
       const deliveries = await deliveryRepository.getAll(filters);
       
+      // Transform image keys to public URLs in the deliveries response
+      const transformedDeliveries = this.imageUrlTransformer.transformCommonImageFields(deliveries);
+      
       const response: ApiResponse = {
         success: true,
-        data: { deliveries },
+        data: { deliveries: transformedDeliveries },
         message: 'Deliveries retrieved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -41,9 +48,12 @@ export class DeliveryController {
         return;
       }
 
+      // Transform image keys to public URLs in the delivery response
+      const transformedDelivery = this.imageUrlTransformer.transformCommonImageFields(delivery);
+      
       const response: ApiResponse = {
         success: true,
-        data: { delivery },
+        data: { delivery: transformedDelivery },
         message: 'Delivery retrieved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -66,9 +76,13 @@ export class DeliveryController {
       }
 
       const delivery = await deliveryRepository.create(req.body);
+      
+      // Transform image keys to public URLs in the delivery response
+      const transformedDelivery = this.imageUrlTransformer.transformCommonImageFields(delivery);
+      
       const response: ApiResponse = {
         success: true,
-        data: { delivery },
+        data: { delivery: transformedDelivery },
         message: 'Delivery created successfully',
         timestamp: new Date().toISOString(),
       };
@@ -93,9 +107,13 @@ export class DeliveryController {
       }
 
       const delivery = await deliveryRepository.update(id, req.body);
+      
+      // Transform image keys to public URLs in the delivery response
+      const transformedDelivery = this.imageUrlTransformer.transformCommonImageFields(delivery);
+      
       const response: ApiResponse = {
         success: true,
-        data: { delivery },
+        data: { delivery: transformedDelivery },
         message: 'Delivery updated successfully',
         timestamp: new Date().toISOString(),
       };

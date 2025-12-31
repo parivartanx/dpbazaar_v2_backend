@@ -2,8 +2,12 @@ import { Request, Response } from 'express';
 import { BannerRepository } from '../repositories/prisma/BannerRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 const bannerRepo = new BannerRepository();
+const r2Service = new R2Service();
+const imageUrlTransformer = new ImageUrlTransformer({ r2Service });
 
 export class BannerController {
   /**
@@ -23,11 +27,14 @@ export class BannerController {
       }
 
       const banner = await bannerRepo.create(bannerData);
-
+      
+      // Transform image keys to public URLs in the banner response
+      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Banner created successfully',
-        data: banner,
+        data: transformedBanner,
         timestamp: new Date().toISOString(),
       };
 
@@ -67,10 +74,13 @@ export class BannerController {
         return;
       }
 
+      // Transform image keys to public URLs in the banner response
+      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Banner retrieved successfully',
-        data: banner,
+        data: transformedBanner,
         timestamp: new Date().toISOString(),
       };
 
@@ -110,12 +120,15 @@ export class BannerController {
         filters,
         { page: Number(page), limit: Number(limit) }
       );
-
+      
+      // Transform image keys to public URLs in the banners response
+      const transformedBanners = imageUrlTransformer.transformCommonImageFields(result.data);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Banners retrieved successfully',
         data: {
-          banners: result.data,
+          banners: transformedBanners,
           pagination: {
             page: result.page,
             limit: result.limit,
@@ -154,11 +167,14 @@ export class BannerController {
       }
 
       const banner = await bannerRepo.update(id, updateData);
-
+      
+      // Transform image keys to public URLs in the banner response
+      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Banner updated successfully',
-        data: banner,
+        data: transformedBanner,
         timestamp: new Date().toISOString(),
       };
 
@@ -188,11 +204,14 @@ export class BannerController {
       }
 
       const banner = await bannerRepo.delete(id);
-
+      
+      // Transform image keys to public URLs in the banner response
+      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Banner deleted successfully',
-        data: banner,
+        data: transformedBanner,
         timestamp: new Date().toISOString(),
       };
 
@@ -214,11 +233,14 @@ export class BannerController {
   getActiveBanners = async (req: Request, res: Response): Promise<void> => {
     try {
       const banners = await bannerRepo.getActiveBanners();
-
+      
+      // Transform image keys to public URLs in the banners response
+      const transformedBanners = imageUrlTransformer.transformCommonImageFields(banners);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Active banners retrieved successfully',
-        data: banners,
+        data: transformedBanners,
         timestamp: new Date().toISOString(),
       };
 
@@ -249,11 +271,14 @@ export class BannerController {
       }
 
       const banner = await bannerRepo.incrementImpressions(id);
-
+      
+      // Transform image keys to public URLs in the banner response
+      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Impressions incremented successfully',
-        data: banner,
+        data: transformedBanner,
         timestamp: new Date().toISOString(),
       };
 
@@ -284,11 +309,14 @@ export class BannerController {
       }
 
       const banner = await bannerRepo.incrementClicks(id);
-
+      
+      // Transform image keys to public URLs in the banner response
+      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Clicks incremented successfully',
-        data: banner,
+        data: transformedBanner,
         timestamp: new Date().toISOString(),
       };
 

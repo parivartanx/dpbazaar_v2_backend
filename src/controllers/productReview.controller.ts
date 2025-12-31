@@ -3,11 +3,15 @@ import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { PrismaClient } from '@prisma/client';
 import { ReviewRepository } from '../repositories/prisma/ReviewRepository';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 const prisma = new PrismaClient();
 const reviewRepository = new ReviewRepository();
 
 export class ProductReviewController {
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
   // Create product review API
   createProductReview = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -85,9 +89,12 @@ export class ProductReviewController {
       // Update product's average rating
       await this.updateProductAverageRating(productId);
 
+      // Transform image keys to public URLs in the review response
+      const transformedReview = this.imageUrlTransformer.transformCommonImageFields(review);
+      
       const response: ApiResponse = {
         success: true,
-        data: { review },
+        data: { review: transformedReview },
         message: 'Review created successfully',
         timestamp: new Date().toISOString(),
       };
@@ -161,10 +168,13 @@ export class ProductReviewController {
         where: filters,
       });
 
+      // Transform image keys to public URLs in the reviews response
+      const transformedReviews = this.imageUrlTransformer.transformCommonImageFields(reviews);
+      
       const response: ApiResponse = {
         success: true,
         data: {
-          reviews,
+          reviews: transformedReviews,
           pagination: {
             currentPage: pagination.page,
             totalPages: Math.ceil(totalReviews / pagination.limit),
@@ -231,9 +241,12 @@ export class ProductReviewController {
       const filters = req.query;
       const reviews = await reviewRepository.getAll(filters);
       
+      // Transform image keys to public URLs in the reviews response
+      const transformedReviews = this.imageUrlTransformer.transformCommonImageFields(reviews);
+      
       const response: ApiResponse = {
         success: true,
-        data: { reviews },
+        data: { reviews: transformedReviews },
         message: 'All reviews retrieved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -277,9 +290,12 @@ export class ProductReviewController {
       }
 
       const review = await reviewRepository.approve(id, adminId);
+      // Transform image keys to public URLs in the review response
+      const transformedReview = this.imageUrlTransformer.transformCommonImageFields(review);
+      
       const response: ApiResponse = {
         success: true,
-        data: { review },
+        data: { review: transformedReview },
         message: 'Review approved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -311,9 +327,12 @@ export class ProductReviewController {
       }
 
       const review = await reviewRepository.reject(id);
+      // Transform image keys to public URLs in the review response
+      const transformedReview = this.imageUrlTransformer.transformCommonImageFields(review);
+      
       const response: ApiResponse = {
         success: true,
-        data: { review },
+        data: { review: transformedReview },
         message: 'Review rejected successfully',
         timestamp: new Date().toISOString(),
       };
@@ -390,9 +409,12 @@ export class ProductReviewController {
       }
 
       const review = await reviewRepository.reply(id, reply);
+      // Transform image keys to public URLs in the review response
+      const transformedReview = this.imageUrlTransformer.transformCommonImageFields(review);
+      
       const response: ApiResponse = {
         success: true,
-        data: { review },
+        data: { review: transformedReview },
         message: 'Replied to review successfully',
         timestamp: new Date().toISOString(),
       };

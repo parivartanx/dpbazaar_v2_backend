@@ -2,18 +2,26 @@ import { Request, Response } from 'express';
 import { ReturnRepository } from '../repositories/prisma/ReturnRepository';
 import { ApiResponse } from '../types/common';
 import { logger } from '../utils/logger';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 const returnRepository = new ReturnRepository();
 
 export class ReturnController {
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
   createReturn = async (req: Request, res: Response): Promise<void> => {
     try {
       // Logic for creating return usually involves checking order, etc.
       // For admin manual creation, we assume valid input or basic validation
       const returnRequest = await returnRepository.create(req.body);
+      
+      // Transform image keys to public URLs in the return response
+      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      
       const response: ApiResponse = {
         success: true,
-        data: { return: returnRequest },
+        data: { return: transformedReturn },
         message: 'Return request created successfully',
         timestamp: new Date().toISOString(),
       };
@@ -38,9 +46,12 @@ export class ReturnController {
       const returns = await returnRepository.findAll(filters);
       const total = await returnRepository.count(filters);
 
+      // Transform image keys to public URLs in the returns response
+      const transformedReturns = this.imageUrlTransformer.transformCommonImageFields(returns);
+      
       const response: ApiResponse = {
         success: true,
-        data: { returns, total, page: filters.page, limit: filters.limit },
+        data: { returns: transformedReturns, total, page: filters.page, limit: filters.limit },
         message: 'Returns retrieved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -65,9 +76,12 @@ export class ReturnController {
         return;
       }
 
+      // Transform image keys to public URLs in the return response
+      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      
       const response: ApiResponse = {
         success: true,
-        data: { return: returnRequest },
+        data: { return: transformedReturn },
         message: 'Return request retrieved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -86,9 +100,13 @@ export class ReturnController {
          return;
       }
       const returnRequest = await returnRepository.update(id, req.body);
+      
+      // Transform image keys to public URLs in the return response
+      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      
       const response: ApiResponse = {
         success: true,
-        data: { return: returnRequest },
+        data: { return: transformedReturn },
         message: 'Return request updated successfully',
         timestamp: new Date().toISOString(),
       };

@@ -4,6 +4,8 @@ import { ApiResponse } from '@/types/common';
 import { OrderRepository } from '../repositories/prisma/OrderRepository';
 import { PaymentService } from '../services/payment.service';
 import { PaymentMethod } from '@prisma/client';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 // import { OrderStatus } from '@prisma/client';
 
 // ✅ Extend Request type to include `user`
@@ -14,15 +16,21 @@ interface AuthRequest extends Request {
 export class OrderController {
   private repo = new OrderRepository();
   private paymentService = new PaymentService();
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
   // CRUD Operations
 
   createOrder = async (req: Request, res: Response): Promise<void> => {
     try {
       const order = await this.repo.createOrder(req.body);
+      
+      // Transform image keys to public URLs in the order response
+      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      
       const response: ApiResponse = {
         success: true,
-        data: { order },
+        data: { order: transformedOrder },
         message: 'Order created successfully',
         timestamp: new Date().toISOString(),
       };
@@ -91,10 +99,13 @@ export class OrderController {
 
       const result = await this.repo.getAllOrders(filters, pagination);
 
+      // Transform image keys to public URLs in the orders response
+      const transformedOrders = this.imageUrlTransformer.transformCommonImageFields(result.orders);
+      
       const response: ApiResponse = {
         success: true,
         data: {
-          orders: result.orders,
+          orders: transformedOrders,
           total: result.total,
           page: pagination.page,
           limit: pagination.limit,
@@ -183,9 +194,12 @@ export class OrderController {
         return;
       }
 
+      // Transform image keys to public URLs in the order response
+      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      
       const response: ApiResponse = {
         success: true,
-        data: { order },
+        data: { order: transformedOrder },
         message: 'Order found',
         timestamp: new Date().toISOString(),
       };
@@ -252,9 +266,12 @@ export class OrderController {
         return;
       }
 
+      // Transform image keys to public URLs in the order response
+      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      
       const response: ApiResponse = {
         success: true,
-        data: { order },
+        data: { order: transformedOrder },
         message: 'Order found',
         timestamp: new Date().toISOString(),
       };
@@ -285,9 +302,13 @@ export class OrderController {
       }
 
       const order = await this.repo.updateOrder(id, req.body);
+      
+      // Transform image keys to public URLs in the order response
+      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      
       const response: ApiResponse = {
         success: true,
-        data: { order },
+        data: { order: transformedOrder },
         message: 'Order updated successfully',
         timestamp: new Date().toISOString(),
       };
@@ -320,9 +341,13 @@ export class OrderController {
       }
 
       const order = await this.repo.updateOrderStatus(id, status);
+      
+      // Transform image keys to public URLs in the order response
+      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      
       const response: ApiResponse = {
         success: true,
-        data: { order },
+        data: { order: transformedOrder },
         message: 'Order status updated successfully',
         timestamp: new Date().toISOString(),
       };
@@ -353,9 +378,13 @@ export class OrderController {
       }
 
       const order = await this.repo.deleteOrder(id);
+      
+      // Transform image keys to public URLs in the order response
+      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      
       const response: ApiResponse = {
         success: true,
-        data: { order },
+        data: { order: transformedOrder },
         message: 'Order deleted successfully',
         timestamp: new Date().toISOString(),
       };
@@ -386,9 +415,13 @@ export class OrderController {
       }
 
       const order = await this.repo.restoreOrder(id);
+      
+      // Transform image keys to public URLs in the order response
+      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      
       const response: ApiResponse = {
         success: true,
-        data: { order },
+        data: { order: transformedOrder },
         message: 'Order restored successfully',
         timestamp: new Date().toISOString(),
       };
@@ -603,9 +636,12 @@ export class OrderController {
         });
       }
       
+      // Transform image keys to public URLs in the order response
+      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      
       const response: ApiResponse = {
         success: true,
-        data: { order },
+        data: { order: transformedOrder },
         message: 'Order created successfully',
         timestamp: new Date().toISOString(),
       };
@@ -689,9 +725,12 @@ export class OrderController {
         status: 'REQUESTED', // Default to REQUESTED for customer-initiated returns
       });
       
+      // Transform image keys to public URLs in the return response
+      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      
       const response: ApiResponse = {
         success: true,
-        data: { return: returnRequest },
+        data: { return: transformedReturn },
         message: 'Return request created successfully',
         timestamp: new Date().toISOString(),
       };
@@ -734,9 +773,12 @@ export class OrderController {
         return;
       }
 
+      // Transform image keys to public URLs in the return response
+      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      
       const response: ApiResponse = {
         success: true,
-        data: { return: returnRequest },
+        data: { return: transformedReturn },
         message: 'Return request found',
         timestamp: new Date().toISOString(),
       };
@@ -795,10 +837,13 @@ export class OrderController {
 
       const result = await this.repo.getAllReturns(filters, pagination);
 
+      // Transform image keys to public URLs in the returns response
+      const transformedReturns = this.imageUrlTransformer.transformCommonImageFields(result.returns);
+      
       const response: ApiResponse = {
         success: true,
         data: {
-          returns: result.returns,
+          returns: transformedReturns,
           total: result.total,
           page: pagination.page,
           limit: pagination.limit,
@@ -852,9 +897,12 @@ export class OrderController {
         refundMethod,
       });
 
+      // Transform image keys to public URLs in the return response
+      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      
       const response: ApiResponse = {
         success: true,
-        data: { return: returnRequest },
+        data: { return: transformedReturn },
         message: 'Return status updated successfully',
         timestamp: new Date().toISOString(),
       };
@@ -898,10 +946,13 @@ export class OrderController {
         pagination
       );
 
+      // Transform image keys to public URLs in the orders response
+      const transformedOrders = this.imageUrlTransformer.transformCommonImageFields(result.orders);
+      
       const response: ApiResponse = {
         success: true,
         data: {
-          orders: result.orders,
+          orders: transformedOrders,
           total: result.total,
           page: pagination.page,
           limit: pagination.limit,
@@ -974,9 +1025,12 @@ export class OrderController {
         return;
       }
 
+      // Transform image keys to public URLs in the return response
+      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      
       const response: ApiResponse = {
         success: true,
-        data: { return: returnRequest },
+        data: { return: transformedReturn },
         message: 'Return request found',
         timestamp: new Date().toISOString(),
       };
@@ -1018,10 +1072,13 @@ export class OrderController {
         pagination
       );
 
+      // Transform image keys to public URLs in the orders response
+      const transformedOrders = this.imageUrlTransformer.transformCommonImageFields(result.orders);
+      
       const response: ApiResponse = {
         success: true,
         data: {
-          orders: result.orders,
+          orders: transformedOrders,
           total: result.total,
           page: pagination.page,
           limit: pagination.limit,
@@ -1066,10 +1123,13 @@ export class OrderController {
 
       const result = await this.repo.getAllReturns(filters, pagination);
 
+      // Transform image keys to public URLs in the returns response
+      const transformedReturns = this.imageUrlTransformer.transformCommonImageFields(result.returns);
+      
       const response: ApiResponse = {
         success: true,
         data: {
-          returns: result.returns,
+          returns: transformedReturns,
           total: result.total,
           page: pagination.page,
           limit: pagination.limit,

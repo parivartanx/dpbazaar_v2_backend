@@ -7,8 +7,9 @@ import { AttributeRepository } from '../repositories/prisma/AttributeRepository'
 import { RelationRepository } from '../repositories/prisma/RelationRepository';
 // import { ReviewRepository } from '../repositories/prisma/ReviewRepository';
 // import { ReportRepository } from '../repositories/prisma/ReportRepository';
-import { r2Client } from '../config/r2Client';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 import crypto from 'crypto';
 
 /**
@@ -20,14 +21,20 @@ type AttrParam = { attrId: string };
 
 export class ProductController {
   private repo = new ProductRepository();
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
   // Products
   getAllProducts = async (req: Request, res: Response): Promise<void> => {
     try {
       const products = await this.repo.getAll();
+      
+      // Transform image keys to public URLs in the products response
+      const transformedProducts = this.imageUrlTransformer.transformCommonImageFields(products);
+      
       const response: ApiResponse = {
         success: true,
-        data: { products },
+        data: { products: transformedProducts },
         message: 'Products Found',
         timestamp: new Date().toISOString(),
       };
@@ -134,10 +141,13 @@ export class ProductController {
       
       const totalPages = Math.ceil(totalCount / limit);
       
+      // Transform image keys to public URLs in the products response
+      const transformedProducts = this.imageUrlTransformer.transformCommonImageFields(products);
+      
       const response: ApiResponse = {
         success: true,
         data: {
-          products,
+          products: transformedProducts,
           pagination: {
             currentPage: page,
             totalPages,
@@ -186,10 +196,13 @@ export class ProductController {
         return;
       }
 
+      // Transform image keys to public URLs in the product response
+      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      
       res.status(200).json({
         success: true,
         message: 'Product Found',
-        data: { product },
+        data: { product: transformedProduct },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -228,10 +241,13 @@ export class ProductController {
         return;
       }
 
+      // Transform image keys to public URLs in the product response
+      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      
       res.status(200).json({
         success: true,
         message: 'Product Found',
-        data: { product },
+        data: { product: transformedProduct },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -280,10 +296,14 @@ export class ProductController {
       }
 
       const product = await this.repo.update(id, req.body);
+      
+      // Transform image keys to public URLs in the product response
+      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      
       res.status(200).json({
         success: true,
         message: 'product updated',
-        data: { product },
+        data: { product: transformedProduct },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -311,10 +331,14 @@ export class ProductController {
       }
 
       const product = await this.repo.softDelete(id);
+      
+      // Transform image keys to public URLs in the product response
+      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      
       res.status(200).json({
         success: true,
         message: 'Product deleted',
-        data: { product },
+        data: { product: transformedProduct },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -342,10 +366,14 @@ export class ProductController {
       }
 
       const product = await this.repo.restore(id);
+      
+      // Transform image keys to public URLs in the product response
+      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      
       res.status(200).json({
         success: true,
         message: 'Product recovered successfully',
-        data: { product },
+        data: { product: transformedProduct },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -360,19 +388,12 @@ export class ProductController {
     }
   };
 
-  // Images with R2 upload
+  // Add image by providing image key (R2 key) - frontend uploads directly using pre-signed URL
   addImage = async (req: Request, res: Response): Promise<void> => {
     try {
-      if (!req.file) {
-        res.status(400).json({
-          success: false,
-          message: 'File required',
-          timeStamp: new Date().toISOString(),
-        });
-        return;
-      }
-
       const { productId } = req.params;
+      const { imageKey, isPrimary = false } = req.body;
+      
       if (!productId) {
         res.status(400).json({
           success: false,
@@ -381,26 +402,26 @@ export class ProductController {
         });
         return;
       }
+      
+      if (!imageKey) {
+        res.status(400).json({
+          success: false,
+          message: 'Image key is required',
+          timeStamp: new Date().toISOString(),
+        });
+        return;
+      }
 
-      const ext = req.file.originalname.split('.').pop();
-      const key = `products/${productId}/${crypto.randomUUID()}.${ext}`;
-
-      await r2Client.send(
-        new PutObjectCommand({
-          Bucket: process.env.R2_BUCKET as string,
-          Key: key,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-        })
-      );
-
-      const url = `${process.env.R2_PUBLIC_BASE_URL as string}/${key}`;
-      const image = await this.repo.addProductImage(productId, url);
-
+      // Store the image key in the database
+      const image = await this.repo.addProductImage(productId, imageKey, isPrimary);
+      
+      // Transform the response to include public URL instead of key
+      const transformedImage = this.imageUrlTransformer.transformCommonImageFields(image);
+      
       res.status(201).json({
         success: true,
         message: 'Image added',
-        data: { image },
+        data: { image: transformedImage },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -417,16 +438,9 @@ export class ProductController {
 
   addImagesBulk = async (req: Request, res: Response): Promise<void> => {
     try {
-      if (!req.files || !Array.isArray(req.files)) {
-        res.status(400).json({
-          success: false,
-          message: 'Files required',
-          timeStamp: new Date().toISOString(),
-        });
-        return;
-      }
-
       const { productId } = req.params;
+      const { imageKeys = [] } = req.body;
+      
       if (!productId) {
         res.status(400).json({
           success: false,
@@ -435,29 +449,26 @@ export class ProductController {
         });
         return;
       }
-
-      const urls: string[] = [];
-      for (const file of req.files as Express.Multer.File[]) {
-        const ext = file.originalname.split('.').pop();
-        const key = `products/${productId}/${crypto.randomUUID()}.${ext}`;
-
-        await r2Client.send(
-          new PutObjectCommand({
-            Bucket: process.env.R2_BUCKET as string,
-            Key: key,
-            Body: file.buffer,
-            ContentType: file.mimetype,
-          })
-        );
-
-        urls.push(`${process.env.R2_PUBLIC_BASE_URL as string}/${key}`);
+      
+      if (!Array.isArray(imageKeys) || imageKeys.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Image keys array is required',
+          timeStamp: new Date().toISOString(),
+        });
+        return;
       }
 
-      const images = await this.repo.addProductImagesBulk(productId, urls);
+      // Store the image keys in the database
+      const images = await this.repo.addProductImagesBulk(productId, imageKeys);
+      
+      // Transform the response to include public URLs instead of keys
+      const transformedImages = this.imageUrlTransformer.transformCommonImageFields(images);
+      
       res.status(201).json({
         success: true,
-        message: 'Image added',
-        data: { images },
+        message: 'Images added',
+        data: { images: transformedImages },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -538,6 +549,8 @@ export class ProductController {
 
 export class VariantController {
   private repo = new VariantRepository();
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
   getProductVariants = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -551,10 +564,14 @@ export class VariantController {
         return;
       }
       const variants = await this.repo.getByProduct(id);
+      
+      // Transform image keys to public URLs in the variants response
+      const transformedVariants = this.imageUrlTransformer.transformCommonImageFields(variants);
+      
       res.status(200).json({
         success: true,
         message: 'Variants found',
-        data: { variants },
+        data: { variants: transformedVariants },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -581,10 +598,14 @@ export class VariantController {
         return;
       }
       const variant = await this.repo.create(id, req.body);
+      
+      // Transform image keys to public URLs in the variant response
+      const transformedVariant = this.imageUrlTransformer.transformCommonImageFields(variant);
+      
       res.status(201).json({
         success: true,
         message: 'variant created',
-        data: { variant },
+        data: { variant: transformedVariant },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -611,10 +632,14 @@ export class VariantController {
         return;
       }
       const variant = await this.repo.update(id, req.body);
+      
+      // Transform image keys to public URLs in the variant response
+      const transformedVariant = this.imageUrlTransformer.transformCommonImageFields(variant);
+      
       res.status(200).json({
         success: true,
         message: 'variant updated',
-        data: { variant },
+        data: { variant: transformedVariant },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -670,10 +695,14 @@ export class VariantController {
         return;
       }
       const variant = await this.repo.toggleActive(id, req.body.isActive);
+      
+      // Transform image keys to public URLs in the variant response
+      const transformedVariant = this.imageUrlTransformer.transformCommonImageFields(variant);
+      
       res.status(200).json({
         success: true,
         message: 'variant toggle activated',
-        data: { variant },
+        data: { variant: transformedVariant },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
