@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, Send } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 import { R2Service } from '../services/r2.service';
 
