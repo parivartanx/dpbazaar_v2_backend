@@ -3,10 +3,14 @@ import { Request, Response } from 'express';
 import { SubscriptionCardRepository } from '../repositories/prisma/SubscriptionCardRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 const subscriptionCardRepo = new SubscriptionCardRepository();
 
 export class SubscriptionCardController {
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
   /** ----------------- ADMIN END ----------------- */
 
   listCards = async (req: Request, res: Response): Promise<void> => {
@@ -20,10 +24,13 @@ export class SubscriptionCardController {
         visibility: visibility as any,
       });
 
+      // Transform image keys to public URLs in the cards response
+      const transformedCards = this.imageUrlTransformer.transformCommonImageFields(cards);
+      
       const response: ApiResponse = {
         success: true,
         message: 'Subscription cards fetched successfully',
-        data: { cards },
+        data: { cards: transformedCards },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -59,10 +66,13 @@ export class SubscriptionCardController {
         });
         return;
       }
+      // Transform image keys to public URLs in the card response
+      const transformedCard = this.imageUrlTransformer.transformCommonImageFields(card);
+      
       res.status(200).json({
         success: true,
         message: 'Subscription card fetched successfully',
-        data: { card },
+        data: { card: transformedCard },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -79,10 +89,13 @@ export class SubscriptionCardController {
   createCard = async (req: Request, res: Response): Promise<void> => {
     try {
       const card = await subscriptionCardRepo.create(req.body);
+      // Transform image keys to public URLs in the card response
+      const transformedCard = this.imageUrlTransformer.transformCommonImageFields(card);
+      
       res.status(201).json({
         success: true,
         message: 'Subscription card created successfully',
-        data: { card },
+        data: { card: transformedCard },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -109,10 +122,13 @@ export class SubscriptionCardController {
 
     try {
       const card = await subscriptionCardRepo.update(id, req.body);
+      // Transform image keys to public URLs in the card response
+      const transformedCard = this.imageUrlTransformer.transformCommonImageFields(card);
+      
       res.status(200).json({
         success: true,
         message: 'Subscription card updated successfully',
-        data: { card },
+        data: { card: transformedCard },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -169,10 +185,13 @@ export class SubscriptionCardController {
 
     try {
       const card = await subscriptionCardRepo.restore(id);
+      // Transform image keys to public URLs in the card response
+      const transformedCard = this.imageUrlTransformer.transformCommonImageFields(card);
+      
       res.status(200).json({
         success: true,
         message: 'Subscription card restored successfully',
-        data: { card },
+        data: { card: transformedCard },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {

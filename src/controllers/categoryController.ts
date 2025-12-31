@@ -2,9 +2,13 @@ import { Request, Response } from 'express';
 import { CategoryRepository } from '../repositories/prisma/CategoryRepository';
 import { ApiResponse } from '../types/common';
 import { logger } from '../utils/logger';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 export class CategoryController {
   private categoryRepo: CategoryRepository;
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
   constructor() {
     this.categoryRepo = new CategoryRepository();
@@ -13,10 +17,14 @@ export class CategoryController {
   createCategory = async (req: Request, res: Response) => {
     try {
       const category = await this.categoryRepo.create(req.body);
+      
+      // Transform image keys to public URLs in the category response
+      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(category);
+      
       return res.status(201).json({
         success: true,
         message: 'Category created successfully',
-        data: { category },
+        data: { category: transformedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -35,10 +43,14 @@ export class CategoryController {
   getAllCategories = async (req: Request, res: Response) => {
     try {
       const categories = await this.categoryRepo.findAll();
+      
+      // Transform image keys to public URLs in the categories response
+      const transformedCategories = this.imageUrlTransformer.transformCommonImageFields(categories);
+      
       return res.status(200).json({
         success: true,
         message: 'Categories fetched successfully',
-        data: { categories },
+        data: { categories: transformedCategories },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -76,10 +88,13 @@ export class CategoryController {
             timestamp: new Date().toISOString(),
           });
 
+      // Transform image keys to public URLs in the category response
+      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(category);
+      
       return res.status(200).json({
         success: true,
         message: 'Category fetched successfully',
-        data: { category },
+        data: { category: transformedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -108,10 +123,14 @@ export class CategoryController {
           });
 
       const updated = await this.categoryRepo.update(id, req.body);
+      
+      // Transform image keys to public URLs in the category response
+      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(updated);
+      
       return res.status(200).json({
         success: true,
         message: 'Category updated successfully',
-        data: { updated },
+        data: { updated: transformedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -182,10 +201,14 @@ export class CategoryController {
       }
 
       const category = await this.categoryRepo.toggleFeature(id, isFeatured);
+      
+      // Transform image keys to public URLs in the category response
+      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(category);
+      
       return res.status(200).json({
         success: true,
         message: 'Category feature flag updated',
-        data: { category },
+        data: { category: transformedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -225,10 +248,14 @@ export class CategoryController {
       }
 
       const category = await this.categoryRepo.toggleActive(id, isActive);
+      
+      // Transform image keys to public URLs in the category response
+      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(category);
+      
       return res.status(200).json({
         success: true,
         message: 'Category active status updated',
-        data: { category },
+        data: { category: transformedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {

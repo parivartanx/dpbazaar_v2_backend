@@ -3,11 +3,16 @@ import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { DeliveryAgentRepository } from '../repositories/prisma/DeliveryAgentRepository';
 import { DeliveryRepository } from '../repositories/prisma/DeliveryRepository';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 const deliveryAgentRepository = new DeliveryAgentRepository();
 const deliveryRepository = new DeliveryRepository();
 
 export class DeliveryAgentController {
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
+  
   getAllDeliveryAgents = async (req: Request, res: Response): Promise<void> => {
     try {
       const filters: any = { ...req.query };
@@ -16,9 +21,12 @@ export class DeliveryAgentController {
 
       const agents = await deliveryAgentRepository.getAll(filters);
       
+      // Transform image keys to public URLs in the agents response
+      const transformedAgents = this.imageUrlTransformer.transformCommonImageFields(agents);
+      
       const response: ApiResponse = {
         success: true,
-        data: { agents },
+        data: { agents: transformedAgents },
         message: 'Delivery agents retrieved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -43,9 +51,12 @@ export class DeliveryAgentController {
         return;
       }
 
+      // Transform image keys to public URLs in the agent response
+      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(agent);
+      
       const response: ApiResponse = {
         success: true,
-        data: { agent },
+        data: { agent: transformedAgent },
         message: 'Delivery agent retrieved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -62,9 +73,13 @@ export class DeliveryAgentController {
       // Let's rely on DB constraint for atomicity.
       
       const agent = await deliveryAgentRepository.create(req.body);
+      
+      // Transform image keys to public URLs in the agent response
+      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(agent);
+      
       const response: ApiResponse = {
         success: true,
-        data: { agent },
+        data: { agent: transformedAgent },
         message: 'Delivery agent created successfully',
         timestamp: new Date().toISOString(),
       };
@@ -89,9 +104,13 @@ export class DeliveryAgentController {
       }
 
       const agent = await deliveryAgentRepository.update(id, req.body);
+      
+      // Transform image keys to public URLs in the agent response
+      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(agent);
+      
       const response: ApiResponse = {
         success: true,
-        data: { agent },
+        data: { agent: transformedAgent },
         message: 'Delivery agent updated successfully',
         timestamp: new Date().toISOString(),
         
@@ -143,9 +162,12 @@ export class DeliveryAgentController {
         return;
       }
 
+      // Transform image keys to public URLs in the agent response
+      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(agent);
+      
       const response: ApiResponse = {
         success: true,
-        data: { agent },
+        data: { agent: transformedAgent },
         message: 'Profile retrieved successfully',
         timestamp: new Date().toISOString(),
       };
@@ -177,9 +199,13 @@ export class DeliveryAgentController {
       }
 
       const updatedAgent = await deliveryAgentRepository.update(agent.id, { isAvailable });
-       const response: ApiResponse = {
+      
+      // Transform image keys to public URLs in the agent response
+      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(updatedAgent);
+      
+      const response: ApiResponse = {
         success: true,
-        data: { agent: updatedAgent },
+        data: { agent: transformedAgent },
         message: 'Availability updated successfully',
         timestamp: new Date().toISOString(),
       };

@@ -229,7 +229,11 @@ For support and questions:
 - [ ] User management features
 - [ ] Role-based access control
 - [ ] Email service integration
-- [ ] File upload functionality
+- [x] File upload functionality with pre-signed URL workflow
+  - Frontend uploads directly to Cloudflare R2 using pre-signed URLs
+  - Backend generates pre-signed URLs for secure uploads
+  - Automatic transformation of image keys to public URLs in API responses
+  - Admin controls for file management
 - [ ] API documentation with Swagger
 - [ ] Comprehensive test suite
 - [ ] Docker containerization

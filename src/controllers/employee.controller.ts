@@ -5,6 +5,8 @@ import { EmployeePermissionRepository } from '../repositories/prisma/EmployeePer
 import { PermissionRepository } from '../repositories/prisma/PermissionRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
+import { R2Service } from '../services/r2.service';
+import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 /**
  * ===========================
@@ -163,14 +165,20 @@ export class DepartmentController {
  */
 export class EmployeeController {
   private repo = new EmployeeRepository();
+  private r2Service = new R2Service();
+  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
   createEmployee = async (req: Request, res: Response) => {
     try {
       const employee = await this.repo.create(req.body);
+      
+      // Transform image keys to public URLs in the employee response
+      const transformedEmployee = this.imageUrlTransformer.transformCommonImageFields(employee);
+      
       return res.status(201).json({
         success: true,
         message: 'Employee created successfully',
-        data: { employee },
+        data: { employee: transformedEmployee },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -188,10 +196,14 @@ export class EmployeeController {
   getAllEmployees = async (_: Request, res: Response) => {
     try {
       const employees = await this.repo.findAll();
+      
+      // Transform image keys to public URLs in the employees response
+      const transformedEmployees = this.imageUrlTransformer.transformCommonImageFields(employees);
+      
       return res.status(200).json({
         success: true,
         message: 'Employees fetched successfully',
-        data: { employees },
+        data: { employees: transformedEmployees },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -228,10 +240,13 @@ export class EmployeeController {
             timestamp: new Date().toISOString(),
           });
 
+      // Transform image keys to public URLs in the employee response
+      const transformedEmployee = this.imageUrlTransformer.transformCommonImageFields(employee);
+      
       return res.status(200).json({
         success: true,
         message: 'Employee fetched successfully',
-        data: { employee },
+        data: { employee: transformedEmployee },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -259,10 +274,14 @@ export class EmployeeController {
           });
 
       const updated = await this.repo.update(id, req.body);
+      
+      // Transform image keys to public URLs in the employee response
+      const transformedEmployee = this.imageUrlTransformer.transformCommonImageFields(updated);
+      
       return res.status(200).json({
         success: true,
         message: 'Employee updated successfully',
-        data: { updated },
+        data: { updated: transformedEmployee },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
