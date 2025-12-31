@@ -423,7 +423,7 @@ model User {
 ### 2. Advanced Features
 
 - **Real-time notifications** (WebSocket)
-- **File upload** service
+- **File upload** service with pre-signed URL workflow
 - **Search functionality**
 - **Analytics** integration
 

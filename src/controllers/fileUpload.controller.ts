@@ -2,11 +2,9 @@ import { Request, Response } from 'express';
 import { R2Service } from '../services/r2.service';
 import { ApiResponse } from '@/types/common';
 import { logger } from '../utils/logger';
-import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 export class FileUploadController {
   private r2Service = new R2Service();
-  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
   // Generate pre-signed URL for direct upload to R2
   generatePresignedUploadUrl = async (req: Request, res: Response): Promise<void> => {

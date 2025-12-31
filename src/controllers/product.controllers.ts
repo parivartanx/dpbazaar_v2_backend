@@ -10,7 +10,6 @@ import { RelationRepository } from '../repositories/prisma/RelationRepository';
 
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
-import crypto from 'crypto';
 
 /**
  * Shared param types
