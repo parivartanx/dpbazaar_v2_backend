@@ -2,12 +2,12 @@ import { Request, Response } from 'express';
 import { CartRepository } from '../repositories/prisma/CartRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
-import { PrismaClient, PaymentMethod } from '@prisma/client';
+import { PaymentMethod } from '@prisma/client';
 import { OrderRepository } from '../repositories/prisma/OrderRepository';
 import { PaymentService } from '../services/payment.service';
+import { prisma } from '../config/prismaClient';
 
 const cartRepo = new CartRepository();
-const prisma = new PrismaClient();
 const orderRepo = new OrderRepository();
 const paymentService = new PaymentService();
 

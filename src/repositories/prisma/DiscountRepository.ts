@@ -1,7 +1,8 @@
-import { PrismaClient, Discount } from '@prisma/client';
+import { Discount } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IDiscountRepository } from '../interfaces/IDiscountRepository';
 
-const prisma = new PrismaClient();
+
 
 export class DiscountRepository implements IDiscountRepository {
   async getAll(filters?: any): Promise<Discount[]> {

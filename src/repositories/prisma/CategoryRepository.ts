@@ -1,7 +1,8 @@
-import { PrismaClient, Prisma, Category } from '@prisma/client';
+import { Prisma, Category } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { ICategoryRepository } from '../interfaces/ICategoryRepository';
 
-const prisma = new PrismaClient();
+
 
 export class CategoryRepository implements ICategoryRepository {
   async create(data: Prisma.CategoryCreateInput): Promise<Category> {

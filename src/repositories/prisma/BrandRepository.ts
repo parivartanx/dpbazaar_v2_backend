@@ -1,7 +1,8 @@
 import { IBrandRepository } from '../interfaces/IBrandRepository';
-import { PrismaClient, Brand, Prisma } from '@prisma/client';
+import { Brand, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 
-const prisma = new PrismaClient();
+
 
 export class BrandRepository implements IBrandRepository {
   async create(data: Prisma.BrandCreateInput): Promise<Brand> {

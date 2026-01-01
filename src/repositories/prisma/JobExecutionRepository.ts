@@ -1,7 +1,8 @@
-import { PrismaClient, JobExecution } from '@prisma/client';
+import { JobExecution } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IJobExecutionRepository } from '../interfaces/jobExecution.repository.interface';
 
-const prisma = new PrismaClient();
+
 
 export class JobExecutionRepository implements IJobExecutionRepository {
   async findById(id: string): Promise<JobExecution | null> {

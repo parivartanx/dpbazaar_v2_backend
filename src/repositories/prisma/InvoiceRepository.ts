@@ -1,7 +1,8 @@
-import { PrismaClient, Invoice, Prisma } from '@prisma/client';
+import { Invoice, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IInvoiceRepository } from '../interfaces/IInvoiceRepository';
 
-const prisma = new PrismaClient();
+
 
 export class InvoiceRepository implements IInvoiceRepository {
   async create(data: Prisma.InvoiceCreateInput): Promise<Invoice> {

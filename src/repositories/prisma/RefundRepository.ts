@@ -1,7 +1,8 @@
-import { PrismaClient, Refund } from '@prisma/client';
+import { Refund } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IRefundRepository } from '../interfaces/refund.repository.interface';
 
-const prisma = new PrismaClient();
+
 
 export class RefundRepository implements IRefundRepository {
   async create(data: any): Promise<Refund> {

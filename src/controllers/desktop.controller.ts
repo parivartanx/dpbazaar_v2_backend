@@ -6,11 +6,10 @@ import { OrderRepository } from '../repositories/prisma/OrderRepository';
 import { UserRepository } from '../repositories/prisma/UserRepository';
 import { AuthService } from '../services/auth.service';
 import { PaymentService } from '../services/payment.service';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prismaClient';
 import { Decimal } from '@prisma/client/runtime/library';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import { smsService } from '../services/sms.service';
 
 export class DesktopController {
   private productRepo = new ProductRepository();
@@ -1241,21 +1240,42 @@ export class DesktopController {
         });
       }
       
-      // TODO: Actually send OTP to mobile number via SMS service
-      // For now, we return the OTP in the response (only for development/testing)
+      let response: ApiResponse;
       
-      const response: ApiResponse = {
-        success: true,
-        data: {
+      // Send OTP via SMS service
+      try {
+        await smsService.sendOtp(mobileNumber, otp);
+        
+        response = {
+          success: true,
+          data: {
+            message: 'OTP sent successfully',
+            phone: mobileNumber,
+            // In production, we would not return the OTP in the response
+            // For development/testing purposes only
+            otp: otp,
+          },
           message: 'OTP sent successfully',
-          // In production, we would not return the OTP in the response
-          // For development/testing purposes only
-          otp: otp,
-          phone: mobileNumber,
-        },
-        message: 'OTP sent successfully',
-        timestamp: new Date().toISOString(),
-      };
+          timestamp: new Date().toISOString(),
+        };
+      } catch (error) {
+        logger.error(`Failed to send OTP via SMS: ${error}`);
+        
+        // In case of SMS failure, still return success but log the error
+        response = {
+          success: true,
+          data: {
+            message: 'OTP generated but SMS sending failed',
+            phone: mobileNumber,
+            // Still return OTP for development/testing purposes
+            otp: otp,
+          },
+          message: 'OTP generated but SMS sending failed',
+          timestamp: new Date().toISOString(),
+        };
+      }
+      
+      res.status(200).json(response);
       
       res.status(200).json(response);
     } catch (error) {

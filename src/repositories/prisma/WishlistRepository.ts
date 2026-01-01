@@ -1,7 +1,8 @@
-import { PrismaClient, Wishlist, WishlistItem } from '@prisma/client';
+import { Wishlist, WishlistItem } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IWishlistRepository } from '../interfaces/IWishlistRepository';
 
-const prisma = new PrismaClient();
+
 
 export class WishlistRepository implements IWishlistRepository {
   async getCustomerWishlists(customerId: string): Promise<Wishlist[]> {

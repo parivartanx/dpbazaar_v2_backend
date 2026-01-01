@@ -1,7 +1,8 @@
-import { PrismaClient, Payment, Prisma } from '@prisma/client';
+import { Payment, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IPaymentRepository } from '../interfaces/IPaymentRepository';
 
-const prisma = new PrismaClient();
+
 
 export class PaymentRepository implements IPaymentRepository {
   async create(data: Prisma.PaymentCreateInput): Promise<Payment> {

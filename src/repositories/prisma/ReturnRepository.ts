@@ -1,7 +1,8 @@
-import { PrismaClient, Return } from '@prisma/client';
+import { Return } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IReturnRepository } from '../interfaces/return.repository.interface';
 
-const prisma = new PrismaClient();
+
 
 export class ReturnRepository implements IReturnRepository {
   async create(data: any): Promise<Return> {

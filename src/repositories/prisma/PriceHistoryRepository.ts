@@ -1,7 +1,8 @@
-import { PrismaClient, PriceHistory } from '@prisma/client';
+import { PriceHistory } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IPriceHistoryRepository } from '../interfaces/priceHistory.repository.interface';
 
-const prisma = new PrismaClient();
+
 
 export class PriceHistoryRepository implements IPriceHistoryRepository {
   async findById(id: string): Promise<PriceHistory | null> {

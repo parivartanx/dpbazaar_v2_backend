@@ -1,7 +1,7 @@
-import { PrismaClient, StockMovement, Prisma } from '@prisma/client';
+import { StockMovement, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IStockMovementRepository } from '../interfaces/IStockMovementRepository';
 
-const prisma = new PrismaClient();
 
 export class StockMovementRepository implements IStockMovementRepository {
   async create(data: Prisma.StockMovementCreateInput): Promise<StockMovement> {

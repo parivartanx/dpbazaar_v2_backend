@@ -3,8 +3,9 @@ import { AuthService } from '../services/auth.service';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../types/common';
 import { UserRepository } from '../repositories/prisma/UserRepository';
-import { PrismaClient } from '@prisma/client';
 import { FirebaseService } from '../services/firebase.service';
+import { smsService } from '../services/sms.service';
+import { prisma } from '../config/prismaClient';
 
 export class AuthController {
   private authService: AuthService;
@@ -218,7 +219,6 @@ export class AuthController {
       expiresAt.setMinutes(expiresAt.getMinutes() + 5);
       
       // Save OTP in database
-      const prisma = new PrismaClient();
       
       // Check if an OTP record already exists for this phone and type
       const existingOtp = await prisma.otp.findFirst({
@@ -252,21 +252,40 @@ export class AuthController {
         });
       }
       
-      // TODO: Actually send OTP to mobile number via SMS service
-      // For now, we return the OTP in the response (only for development/testing)
+      let response: ApiResponse;
       
-      const response: ApiResponse = {
-        success: true,
-        data: {
+      // Send OTP via SMS service
+      try {
+        await smsService.sendOtp(phone, otp);
+        
+        response = {
+          success: true,
+          data: {
+            message: 'OTP sent successfully',
+            phone: phone,
+            // In production, we would not return the OTP in the response
+            // For development/testing purposes only
+            otp: otp,
+          },
           message: 'OTP sent successfully',
-          // In production, we would not return the OTP in the response
-          // For development/testing purposes only
-          otp: otp,
-          phone: phone,
-        },
-        message: 'OTP sent successfully',
-        timestamp: new Date().toISOString(),
-      };
+          timestamp: new Date().toISOString(),
+        };
+      } catch (error) {
+        logger.error(`Failed to send OTP via SMS: ${error}`);
+        
+        // In case of SMS failure, still return success but log the error
+        response = {
+          success: true,
+          data: {
+            message: 'OTP generated but SMS sending failed',
+            phone: phone,
+            // Still return OTP for development/testing purposes
+            otp: otp,
+          },
+          message: 'OTP generated but SMS sending failed',
+          timestamp: new Date().toISOString(),
+        };
+      }
       
       res.status(200).json(response);
     } catch (error) {
@@ -296,8 +315,7 @@ export class AuthController {
         res.status(400).json(response);
         return;
       }
-
-      const prisma = new PrismaClient();
+            
       
       // Find the OTP record
       const otpRecord = await prisma.otp.findFirst({

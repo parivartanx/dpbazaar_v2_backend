@@ -1,7 +1,8 @@
-import { PrismaClient, ProductRelation } from '@prisma/client';
+import { ProductRelation } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IRelationRepository } from '../interfaces/IProductRelationRepository';
 
-const prisma = new PrismaClient();
+
 
 export class RelationRepository implements IRelationRepository {
   async getByProduct(productId: string): Promise<ProductRelation[]> {

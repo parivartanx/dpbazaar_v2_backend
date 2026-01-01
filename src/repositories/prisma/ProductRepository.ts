@@ -1,7 +1,8 @@
-import { PrismaClient, Product, ProductImage } from '@prisma/client';
+import { Product, ProductImage } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IProductRepository } from '../interfaces/IProductRepository';
 
-const prisma = new PrismaClient();
+
 
 export class ProductRepository implements IProductRepository {
   async getAll(): Promise<Product[]> {

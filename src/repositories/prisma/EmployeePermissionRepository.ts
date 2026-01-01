@@ -1,7 +1,8 @@
-import { PrismaClient, EmployeePermission, Prisma } from '@prisma/client';
+import { EmployeePermission, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IEmployeePermissionRepository } from '../interfaces/IEmployeePermissionRepository';
 
-const prisma = new PrismaClient();
+
 
 export class EmployeePermissionRepository
   implements IEmployeePermissionRepository

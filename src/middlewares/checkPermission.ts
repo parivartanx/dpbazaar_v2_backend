@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient, PermissionAction } from '@prisma/client';
+import { PermissionAction } from '@prisma/client';
 import { UserRole } from '../types/common';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/prismaClient';
 
 export const checkPermission = (resource: string, action: PermissionAction) => {
   return async (req: Request, res: Response, next: NextFunction) => {

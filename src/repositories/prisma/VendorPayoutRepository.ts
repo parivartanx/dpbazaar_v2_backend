@@ -1,7 +1,6 @@
-import { PrismaClient, VendorPayout, Prisma } from '@prisma/client';
+import { VendorPayout, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IVendorPayoutRepository } from '../interfaces/IVendorPayoutRepository';
-
-const prisma = new PrismaClient();
 
 export class VendorPayoutRepository implements IVendorPayoutRepository {
   async create(data: Prisma.VendorPayoutCreateInput): Promise<VendorPayout> {

@@ -1,8 +1,9 @@
 // src/repositories/prisma/ReferralCodeRepository.ts
-import { PrismaClient, ReferralCode } from '@prisma/client';
+import { ReferralCode } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IReferralCodeRepository } from '../interfaces/IReferralCodeRepository';
 
-const prisma = new PrismaClient();
+
 
 export class ReferralCodeRepository implements IReferralCodeRepository {
   async list(params?: {

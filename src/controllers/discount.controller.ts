@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
-import { PrismaClient } from '@prisma/client';
 import { DiscountRepository } from '../repositories/prisma/DiscountRepository';
+import { prisma } from '../config/prismaClient';
 
-const prisma = new PrismaClient();
 const discountRepository = new DiscountRepository();
 
 export class DiscountController {

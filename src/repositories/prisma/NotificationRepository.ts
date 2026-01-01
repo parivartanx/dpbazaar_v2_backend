@@ -1,7 +1,8 @@
-import { PrismaClient, Notification } from '@prisma/client';
+import { Notification } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { INotificationRepository } from '../interfaces/INotificationRepository';
 
-const prisma = new PrismaClient();
+
 
 export class NotificationRepository implements INotificationRepository {
   async create(data: any): Promise<Notification> {

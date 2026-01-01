@@ -1,7 +1,8 @@
-import { PrismaClient, EmailTemplate } from '@prisma/client';
+import { EmailTemplate } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IEmailTemplateRepository } from '../interfaces/IEmailTemplateRepository';
 
-const prisma = new PrismaClient();
+
 
 export class EmailTemplateRepository implements IEmailTemplateRepository {
   async create(data: any): Promise<EmailTemplate> {

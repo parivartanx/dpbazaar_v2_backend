@@ -1,7 +1,8 @@
-import { PrismaClient, Employee, Prisma, EmployeeStatus } from '@prisma/client';
+import { Employee, Prisma, EmployeeStatus } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IEmployeeRepository } from '../interfaces/IEmployeeRepository';
 
-const prisma = new PrismaClient();
+
 
 export class EmployeeRepository implements IEmployeeRepository {
   async create(data: Prisma.EmployeeCreateInput): Promise<Employee> {

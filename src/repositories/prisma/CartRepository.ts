@@ -1,7 +1,6 @@
-import { PrismaClient, Cart, CartItem, Prisma } from '@prisma/client';
+import { Cart, CartItem, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { ICartRepository } from '../interfaces/ICartRepository';
-
-const prisma = new PrismaClient();
 
 export class CartRepository implements ICartRepository {
   async findByCustomerId(customerId: string): Promise<Cart & { items: CartItem[] } | null> {

@@ -1,8 +1,9 @@
 // src/repositories/prisma/ReferralHistoryRepository.ts
-import { PrismaClient, ReferralHistory, ReferralStatus } from '@prisma/client';
+import { ReferralHistory, ReferralStatus } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IReferralHistoryRepository } from '../interfaces/IReferralHistoryRepository';
 
-const prisma = new PrismaClient();
+
 
 export class ReferralHistoryRepository implements IReferralHistoryRepository {
   async list(params?: {

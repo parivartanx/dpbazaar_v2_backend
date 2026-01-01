@@ -1,12 +1,11 @@
 import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
-import { PrismaClient } from '@prisma/client';
 import { ReviewRepository } from '../repositories/prisma/ReviewRepository';
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
+import { prisma } from '../config/prismaClient';
 
-const prisma = new PrismaClient();
 const reviewRepository = new ReviewRepository();
 
 export class ProductReviewController {
