@@ -20,7 +20,7 @@ export class UserController {
       const counts = await userRepo.getUserCounts();
 
       // Transform image keys to public URLs in the counts response
-      const transformedCounts = imageUrlTransformer.transformCommonImageFields(counts);
+      const transformedCounts = await imageUrlTransformer.transformCommonImageFields(counts);
       
       const response: ApiResponse = {
         success: true,
@@ -67,7 +67,7 @@ export class UserController {
       });
 
       // Transform image keys to public URLs in the users response
-      const transformedUsers = imageUrlTransformer.transformCommonImageFields(users);
+      const transformedUsers = await imageUrlTransformer.transformCommonImageFields(users);
       
       const response: ApiResponse = {
         success: true,
@@ -109,7 +109,7 @@ export class UserController {
       });
 
       // Transform image keys to public URLs in the users response
-      const transformedUsers = imageUrlTransformer.transformCommonImageFields(users);
+      const transformedUsers = await imageUrlTransformer.transformCommonImageFields(users);
       
       const response: ApiResponse = {
         success: true,
@@ -155,7 +155,7 @@ export class UserController {
       }
 
       // Transform image keys to public URLs in the user response
-      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      const transformedUser = await imageUrlTransformer.transformCommonImageFields(user);
       
       const response: ApiResponse = {
         success: true,
@@ -181,7 +181,7 @@ export class UserController {
       const user = await userRepo.create(req.body);
       
       // Transform image keys to public URLs in the user response
-      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      const transformedUser = await imageUrlTransformer.transformCommonImageFields(user);
       
       const response: ApiResponse = {
         success: true,
@@ -218,7 +218,7 @@ export class UserController {
       const user = await userRepo.update(id, req.body);
       
       // Transform image keys to public URLs in the user response
-      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      const transformedUser = await imageUrlTransformer.transformCommonImageFields(user);
       
       const response: ApiResponse = {
         success: true,
@@ -255,7 +255,7 @@ export class UserController {
       const user = await userRepo.delete(id);
       
       // Transform image keys to public URLs in the user response
-      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      const transformedUser = await imageUrlTransformer.transformCommonImageFields(user);
       
       const response: ApiResponse = {
         success: true,
@@ -292,7 +292,7 @@ export class UserController {
       const user = await userRepo.restore(id);
       
       // Transform image keys to public URLs in the user response
-      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      const transformedUser = await imageUrlTransformer.transformCommonImageFields(user);
       
       const response: ApiResponse = {
         success: true,
@@ -330,7 +330,7 @@ export class UserController {
       const user = await userRepo.lockUser(id, new Date(lockedUntil));
       
       // Transform image keys to public URLs in the user response
-      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      const transformedUser = await imageUrlTransformer.transformCommonImageFields(user);
       
       const response: ApiResponse = {
         success: true,
@@ -367,7 +367,7 @@ export class UserController {
       const user = await userRepo.unlockUser(id);
       
       // Transform image keys to public URLs in the user response
-      const transformedUser = imageUrlTransformer.transformCommonImageFields(user);
+      const transformedUser = await imageUrlTransformer.transformCommonImageFields(user);
       
       const response: ApiResponse = {
         success: true,

@@ -302,14 +302,14 @@ router.patch('/categories/:id/activate', checkPermission('categories', Permissio
  * PRODUCT MANAGEMENT
  */
 router.get('/products', checkPermission('products', PermissionAction.READ), productController.getAllProducts);
-router.get('/products/:id', checkPermission('products', PermissionAction.READ), productController.getProductById);
+router.get('/products/:id', productController.getProductById);
 router.post('/products', checkPermission('products', PermissionAction.CREATE), validateJoi(createProductSchema), productController.createProduct);
-router.put('/products/:id', checkPermission('products', PermissionAction.UPDATE), validateJoi(updateProductSchema), productController.updateProduct);
+router.put('/products/:id', validateJoi(updateProductSchema), productController.updateProduct);
 router.delete('/products/:id', checkPermission('products', PermissionAction.DELETE), productController.softDeleteProduct);
 router.patch('/products/:id/restore', checkPermission('products', PermissionAction.UPDATE), validateJoi(updateProductSchema), productController.restoreProduct);
 
 // Images
-router.post('/:productId/images', checkPermission('products', PermissionAction.UPDATE), upload.single('file'), productController.addImage);
+router.post('/:productId/images', upload.single('file'), productController.addImage);
 router.post('/:productId/images/bulk', checkPermission('products', PermissionAction.UPDATE), upload.array('files'), productController.addImagesBulk);
 router.delete('/images/:imageId', checkPermission('products', PermissionAction.UPDATE), productController.deleteImage);
 router.patch('/:productId/images/:imageId/primary', checkPermission('products', PermissionAction.UPDATE), productController.setPrimaryImage);

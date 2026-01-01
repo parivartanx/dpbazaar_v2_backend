@@ -22,7 +22,7 @@ export class DeliveryAgentController {
       const agents = await deliveryAgentRepository.getAll(filters);
       
       // Transform image keys to public URLs in the agents response
-      const transformedAgents = this.imageUrlTransformer.transformCommonImageFields(agents);
+      const transformedAgents = await this.imageUrlTransformer.transformCommonImageFields(agents);
       
       const response: ApiResponse = {
         success: true,
@@ -52,7 +52,7 @@ export class DeliveryAgentController {
       }
 
       // Transform image keys to public URLs in the agent response
-      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(agent);
+      const transformedAgent = await this.imageUrlTransformer.transformCommonImageFields(agent);
       
       const response: ApiResponse = {
         success: true,
@@ -75,7 +75,7 @@ export class DeliveryAgentController {
       const agent = await deliveryAgentRepository.create(req.body);
       
       // Transform image keys to public URLs in the agent response
-      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(agent);
+      const transformedAgent = await this.imageUrlTransformer.transformCommonImageFields(agent);
       
       const response: ApiResponse = {
         success: true,
@@ -106,7 +106,7 @@ export class DeliveryAgentController {
       const agent = await deliveryAgentRepository.update(id, req.body);
       
       // Transform image keys to public URLs in the agent response
-      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(agent);
+      const transformedAgent = await this.imageUrlTransformer.transformCommonImageFields(agent);
       
       const response: ApiResponse = {
         success: true,
@@ -163,7 +163,7 @@ export class DeliveryAgentController {
       }
 
       // Transform image keys to public URLs in the agent response
-      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(agent);
+      const transformedAgent = await this.imageUrlTransformer.transformCommonImageFields(agent);
       
       const response: ApiResponse = {
         success: true,
@@ -201,7 +201,7 @@ export class DeliveryAgentController {
       const updatedAgent = await deliveryAgentRepository.update(agent.id, { isAvailable });
       
       // Transform image keys to public URLs in the agent response
-      const transformedAgent = this.imageUrlTransformer.transformCommonImageFields(updatedAgent);
+      const transformedAgent = await this.imageUrlTransformer.transformCommonImageFields(updatedAgent);
       
       const response: ApiResponse = {
         success: true,

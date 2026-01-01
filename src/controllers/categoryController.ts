@@ -19,7 +19,7 @@ export class CategoryController {
       const category = await this.categoryRepo.create(req.body);
       
       // Transform image keys to public URLs in the category response
-      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(category);
+      const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(category);
       
       return res.status(201).json({
         success: true,
@@ -45,7 +45,7 @@ export class CategoryController {
       const categories = await this.categoryRepo.findAll();
       
       // Transform image keys to public URLs in the categories response
-      const transformedCategories = this.imageUrlTransformer.transformCommonImageFields(categories);
+      const transformedCategories = await this.imageUrlTransformer.transformCommonImageFields(categories);
       
       return res.status(200).json({
         success: true,
@@ -89,7 +89,7 @@ export class CategoryController {
           });
 
       // Transform image keys to public URLs in the category response
-      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(category);
+      const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(category);
       
       return res.status(200).json({
         success: true,
@@ -125,7 +125,7 @@ export class CategoryController {
       const updated = await this.categoryRepo.update(id, req.body);
       
       // Transform image keys to public URLs in the category response
-      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(updated);
+      const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(updated);
       
       return res.status(200).json({
         success: true,
@@ -203,7 +203,7 @@ export class CategoryController {
       const category = await this.categoryRepo.toggleFeature(id, isFeatured);
       
       // Transform image keys to public URLs in the category response
-      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(category);
+      const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(category);
       
       return res.status(200).json({
         success: true,
@@ -250,7 +250,7 @@ export class CategoryController {
       const category = await this.categoryRepo.toggleActive(id, isActive);
       
       // Transform image keys to public URLs in the category response
-      const transformedCategory = this.imageUrlTransformer.transformCommonImageFields(category);
+      const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(category);
       
       return res.status(200).json({
         success: true,

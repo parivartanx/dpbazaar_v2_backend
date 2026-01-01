@@ -173,7 +173,7 @@ export class EmployeeController {
       const employee = await this.repo.create(req.body);
       
       // Transform image keys to public URLs in the employee response
-      const transformedEmployee = this.imageUrlTransformer.transformCommonImageFields(employee);
+      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(employee);
       
       return res.status(201).json({
         success: true,
@@ -198,7 +198,7 @@ export class EmployeeController {
       const employees = await this.repo.findAll();
       
       // Transform image keys to public URLs in the employees response
-      const transformedEmployees = this.imageUrlTransformer.transformCommonImageFields(employees);
+      const transformedEmployees = await this.imageUrlTransformer.transformCommonImageFields(employees);
       
       return res.status(200).json({
         success: true,
@@ -241,7 +241,7 @@ export class EmployeeController {
           });
 
       // Transform image keys to public URLs in the employee response
-      const transformedEmployee = this.imageUrlTransformer.transformCommonImageFields(employee);
+      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(employee);
       
       return res.status(200).json({
         success: true,
@@ -276,7 +276,7 @@ export class EmployeeController {
       const updated = await this.repo.update(id, req.body);
       
       // Transform image keys to public URLs in the employee response
-      const transformedEmployee = this.imageUrlTransformer.transformCommonImageFields(updated);
+      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(updated);
       
       return res.status(200).json({
         success: true,

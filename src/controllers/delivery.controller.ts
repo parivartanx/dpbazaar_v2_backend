@@ -19,7 +19,7 @@ export class DeliveryController {
       const deliveries = await deliveryRepository.getAll(filters);
       
       // Transform image keys to public URLs in the deliveries response
-      const transformedDeliveries = this.imageUrlTransformer.transformCommonImageFields(deliveries);
+      const transformedDeliveries = await this.imageUrlTransformer.transformCommonImageFields(deliveries);
       
       const response: ApiResponse = {
         success: true,
@@ -49,7 +49,7 @@ export class DeliveryController {
       }
 
       // Transform image keys to public URLs in the delivery response
-      const transformedDelivery = this.imageUrlTransformer.transformCommonImageFields(delivery);
+      const transformedDelivery = await this.imageUrlTransformer.transformCommonImageFields(delivery);
       
       const response: ApiResponse = {
         success: true,
@@ -78,7 +78,7 @@ export class DeliveryController {
       const delivery = await deliveryRepository.create(req.body);
       
       // Transform image keys to public URLs in the delivery response
-      const transformedDelivery = this.imageUrlTransformer.transformCommonImageFields(delivery);
+      const transformedDelivery = await this.imageUrlTransformer.transformCommonImageFields(delivery);
       
       const response: ApiResponse = {
         success: true,
@@ -109,7 +109,7 @@ export class DeliveryController {
       const delivery = await deliveryRepository.update(id, req.body);
       
       // Transform image keys to public URLs in the delivery response
-      const transformedDelivery = this.imageUrlTransformer.transformCommonImageFields(delivery);
+      const transformedDelivery = await this.imageUrlTransformer.transformCommonImageFields(delivery);
       
       const response: ApiResponse = {
         success: true,

@@ -17,7 +17,7 @@ export class BrandController {
       const brand = await this.brandRepo.create(req.body);
       
       // Transform image keys to public URLs in the brand response
-      const transformedBrand = this.imageUrlTransformer.transformCommonImageFields(brand);
+      const transformedBrand = await this.imageUrlTransformer.transformCommonImageFields(brand);
       
       return res.status(201).json({
         success: true,
@@ -37,7 +37,7 @@ export class BrandController {
       const brands = await this.brandRepo.findAll();
       
       // Transform image keys to public URLs in the brands response
-      const transformedBrands = this.imageUrlTransformer.transformCommonImageFields(brands);
+      const transformedBrands = await this.imageUrlTransformer.transformCommonImageFields(brands);
       
       return res.status(200).json({
         success: true,
@@ -61,7 +61,7 @@ export class BrandController {
       if (!brand) return res.status(404).json({ message: 'Brand not found' });
       
       // Transform image keys to public URLs in the brand response
-      const transformedBrand = this.imageUrlTransformer.transformCommonImageFields(brand);
+      const transformedBrand = await this.imageUrlTransformer.transformCommonImageFields(brand);
       
       return res.status(200).json({
         success: true,
@@ -84,7 +84,7 @@ export class BrandController {
       const updated = await this.brandRepo.update(id, req.body);
       
       // Transform image keys to public URLs in the brand response
-      const transformedBrand = this.imageUrlTransformer.transformCommonImageFields(updated);
+      const transformedBrand = await this.imageUrlTransformer.transformCommonImageFields(updated);
       
       return res.status(200).json({
         success: true,
