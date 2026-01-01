@@ -1,7 +1,8 @@
-import { PrismaClient, Session } from '@prisma/client';
+import { Session } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { ISessionRepository } from '../interfaces/ISessionRepository';
 
-const prisma = new PrismaClient();
+
 
 export class SessionRepository implements ISessionRepository {
   async getAll(params?: {

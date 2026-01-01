@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prismaClient';
 import cron from 'node-cron';
 import { Decimal } from '@prisma/client/runtime/library';
 import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Cron job to distribute subscription rewards to customers

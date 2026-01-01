@@ -1,8 +1,9 @@
 // src/repositories/prisma/CardRepository.ts
-import { PrismaClient, SubscriptionCard } from '@prisma/client';
+import { SubscriptionCard } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { ICardRepository } from '../interfaces/ICardRepository';
 
-const prisma = new PrismaClient();
+
 
 export class CardRepository implements ICardRepository {
   async list(params?: {

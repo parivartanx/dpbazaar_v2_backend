@@ -1,7 +1,7 @@
-// import { PrismaClient } from '@prisma/client';
+// import { prisma } from '../config/prismaClient';
 // import { IReportRepository } from '../interfaces/IReportRepository';
 
-// const prisma = new PrismaClient();
+// 
 
 // export class ReportRepository implements IReportRepository {
 //   async getSalesReport(): Promise<any> {

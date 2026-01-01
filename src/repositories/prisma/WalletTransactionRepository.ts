@@ -1,8 +1,9 @@
 // src/repositories/prisma/WalletTransactionRepository.ts
-import { PrismaClient, WalletTransaction, TransactionType, TransactionReason, TransactionStatus } from '@prisma/client';
+import { WalletTransaction, TransactionType, TransactionReason, TransactionStatus } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IWalletTransactionRepository } from '../interfaces/IWalletTransactionRepository';
 
-const prisma = new PrismaClient();
+
 
 export class WalletTransactionRepository implements IWalletTransactionRepository {
   async list(params?: {

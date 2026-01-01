@@ -1,10 +1,10 @@
-import { PrismaClient, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import { WalletRepository } from '../repositories/prisma/WalletRepository';
 import { OrderRepository } from '../repositories/prisma/OrderRepository';
 import { RazorpayService } from './razorpay.service';
 import { StripeService } from './stripe.service';
+import { prisma } from '../config/prismaClient';
 
-const prisma = new PrismaClient();
 
 export interface PaymentRequest {
   orderId: string;

@@ -1,4 +1,5 @@
-import { PrismaClient, Order, OrderStatus, PaymentStatus, Prisma, $Enums } from '@prisma/client';
+import { Order, OrderStatus, PaymentStatus, Prisma, $Enums } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import {
   IOrderRepository,
   CreateOrderData,
@@ -11,7 +12,6 @@ import {
   RevenueStats,
 } from '../interfaces/IOrderRepository';
 
-const prisma = new PrismaClient();
 
 export class OrderRepository implements IOrderRepository {
   async createOrder(data: CreateOrderData): Promise<Order> {

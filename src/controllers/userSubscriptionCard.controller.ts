@@ -5,13 +5,13 @@ import { ReferralCodeRepository } from '../repositories/prisma/ReferralCodeRepos
 import { SubscriptionCardRepository } from '../repositories/prisma/SubscriptionCardRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
-import { PrismaClient, ReferralStatus, TransactionType, TransactionReason, TransactionStatus, CardSubscriptionStatus } from '@prisma/client';
+import { ReferralStatus, TransactionType, TransactionReason, TransactionStatus, CardSubscriptionStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PaymentService } from '../services/payment.service';
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
+import { prisma } from '../config/prismaClient';
 
-const prisma = new PrismaClient();
 const userSubscriptionCardRepo = new UserSubscriptionCardRepository();
 const referralCodeRepo = new ReferralCodeRepository();
 const subscriptionCardRepo = new SubscriptionCardRepository();

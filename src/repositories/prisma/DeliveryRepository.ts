@@ -1,7 +1,8 @@
-import { PrismaClient, Delivery } from '@prisma/client';
+import { Delivery } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IDeliveryRepository } from '../interfaces/IDeliveryRepository';
 
-const prisma = new PrismaClient();
+
 
 export class DeliveryRepository implements IDeliveryRepository {
   async create(data: any): Promise<Delivery> {

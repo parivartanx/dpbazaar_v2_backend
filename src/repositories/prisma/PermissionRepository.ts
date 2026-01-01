@@ -1,7 +1,8 @@
-import { PrismaClient, Permission, Prisma } from '@prisma/client';
+import { Permission, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IPermissionRepository } from '../interfaces/IPermissionRepository';
 
-const prisma = new PrismaClient();
+
 
 export class PermissionRepository implements IPermissionRepository {
   async create(data: Prisma.PermissionCreateInput): Promise<Permission> {

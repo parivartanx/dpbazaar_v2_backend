@@ -1,7 +1,8 @@
-import { PrismaClient, Warehouse } from '@prisma/client';
+import { Warehouse } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IWarehouseRepository } from '../interfaces/IWarehouseRepository';
 
-const prisma = new PrismaClient();
+
 
 export class WarehouseRepository implements IWarehouseRepository {
   async create(data: any): Promise<Warehouse> {

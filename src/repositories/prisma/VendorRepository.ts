@@ -1,7 +1,8 @@
-import { PrismaClient, Vendor } from '@prisma/client';
+import { Vendor } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IVendorRepository } from '../interfaces/IVendorRepository';
 
-const prisma = new PrismaClient();
+
 
 export class VendorRepository implements IVendorRepository {
   async getAll(filters?: any): Promise<Vendor[]> {

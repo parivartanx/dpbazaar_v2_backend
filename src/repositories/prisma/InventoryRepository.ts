@@ -1,7 +1,7 @@
-import { PrismaClient, Inventory } from '@prisma/client';
+import { Inventory } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IInventoryRepository } from '../interfaces/IInventoryRepository';
 
-const prisma = new PrismaClient();
 
 export class InventoryRepository implements IInventoryRepository {
   async create(data: any): Promise<Inventory> {

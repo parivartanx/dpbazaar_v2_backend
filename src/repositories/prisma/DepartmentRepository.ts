@@ -1,7 +1,8 @@
-import { PrismaClient, Department, Prisma } from '@prisma/client';
+import { Department, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IDepartmentRepository } from '../interfaces/IDepartmentRepository';
 
-const prisma = new PrismaClient();
+
 
 export class DepartmentRepository implements IDepartmentRepository {
   async create(data: Prisma.DepartmentCreateInput): Promise<Department> {

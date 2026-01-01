@@ -1,7 +1,6 @@
-import { PrismaClient, Address, Prisma } from '@prisma/client';
+import { Address, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IAddressRepository } from '../interfaces/IAddressRepository';
-
-const prisma = new PrismaClient();
 
 export class AddressRepository implements IAddressRepository {
   async list(params?: {

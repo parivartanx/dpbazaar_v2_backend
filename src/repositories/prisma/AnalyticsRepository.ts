@@ -1,7 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import { IAnalyticsRepository } from "../interfaces/IAnalyticsRepository";
+import { prisma } from '../../config/prismaClient';
 
-const prisma = new PrismaClient();
 
 export class AnalyticsRepository implements IAnalyticsRepository {
 

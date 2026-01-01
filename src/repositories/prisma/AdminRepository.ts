@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import { IAdminRepository } from "../interfaces/IAdminRepository";
-
-const prisma = new PrismaClient();
+import { prisma } from '../../config/prismaClient';
 
 export class AdminRepository implements IAdminRepository {
   

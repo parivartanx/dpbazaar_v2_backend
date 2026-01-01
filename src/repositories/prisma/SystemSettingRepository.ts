@@ -1,7 +1,7 @@
-import { PrismaClient, SystemSetting, Prisma } from '@prisma/client';
-import { ISystemSettingRepository } from '../interfaces/ISystemSettingRepository';
+import { SystemSetting, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 
-const prisma = new PrismaClient();
+import { ISystemSettingRepository } from '../interfaces/ISystemSettingRepository';
 
 export class SystemSettingRepository implements ISystemSettingRepository {
   async create(data: Prisma.SystemSettingCreateInput): Promise<SystemSetting> {

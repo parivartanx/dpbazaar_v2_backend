@@ -1,7 +1,7 @@
-import { PrismaClient, ProductVariant } from '@prisma/client';
+import { ProductVariant } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IVariantRepository } from '../interfaces/IVariantsRepository';
 
-const prisma = new PrismaClient();
 
 export class VariantRepository implements IVariantRepository {
   async getByProduct(productId: string): Promise<ProductVariant[]> {

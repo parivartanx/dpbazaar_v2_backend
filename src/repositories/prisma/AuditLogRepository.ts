@@ -1,7 +1,6 @@
-import { PrismaClient, AuditLog, Prisma } from '@prisma/client';
+import { AuditLog, Prisma } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IAuditLogRepository } from '../interfaces/IAuditLogRepository';
-
-const prisma = new PrismaClient();
 
 export class AuditLogRepository implements IAuditLogRepository {
   async create(data: Prisma.AuditLogCreateInput): Promise<AuditLog> {

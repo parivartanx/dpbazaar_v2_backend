@@ -1,8 +1,9 @@
 // src/repositories/prisma/WalletRepository.ts
-import { PrismaClient, Wallet, WalletType } from '@prisma/client';
+import { Wallet, WalletType } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IWalletRepository } from '../interfaces/IWalletRepository';
 
-const prisma = new PrismaClient();
+
 
 export class WalletRepository implements IWalletRepository {
   async list(params?: {

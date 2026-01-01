@@ -1,12 +1,11 @@
 import {
-  PrismaClient,
   AttributeType,
   ProductAttribute,
   CategoryAttribute,
 } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IAttributeRepository } from '../interfaces/IAttributeRepository';
 
-const prisma = new PrismaClient();
 
 export class AttributeRepository implements IAttributeRepository {
   async getAllTypes(): Promise<AttributeType[]> {

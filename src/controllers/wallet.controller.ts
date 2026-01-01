@@ -4,9 +4,8 @@ import { WalletRepository } from '../repositories/prisma/WalletRepository';
 import { WalletTransactionRepository } from '../repositories/prisma/WalletTransactionRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prismaClient';
 
-const prisma = new PrismaClient();
 const walletRepo = new WalletRepository();
 const walletTransactionRepo = new WalletTransactionRepository();
 

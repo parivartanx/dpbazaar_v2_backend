@@ -1,7 +1,8 @@
-import { PrismaClient, EmployeeActivity } from '@prisma/client';
+import { EmployeeActivity } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IEmployeeActivityRepository } from '../interfaces/employeeActivity.repository.interface';
 
-const prisma = new PrismaClient();
+
 
 export class EmployeeActivityRepository implements IEmployeeActivityRepository {
   async findById(id: string): Promise<EmployeeActivity | null> {

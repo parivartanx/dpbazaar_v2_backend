@@ -1,7 +1,8 @@
-import { PrismaClient, Review } from '@prisma/client';
+import { Review } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IReviewRepository } from '../interfaces/IReviewRepository';
 
-const prisma = new PrismaClient();
+
 
 export class ReviewRepository implements IReviewRepository {
   async getAll(filters?: any): Promise<Review[]> {

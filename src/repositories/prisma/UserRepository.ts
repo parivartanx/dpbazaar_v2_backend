@@ -1,9 +1,10 @@
 import { IUserRepository } from '../interfaces/IUserRepository';
-import { PrismaClient, User, UserRole, UserStatus } from '@prisma/client';
+import { User, UserRole, UserStatus } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import bcrypt from 'bcryptjs';
 
 
-const prisma = new PrismaClient();
+
 
 export class UserRepository implements IUserRepository {
   /** Find user by email */

@@ -1,7 +1,7 @@
-import { PrismaClient, Banner } from '@prisma/client';
+import { Banner } from '@prisma/client';
+import { prisma } from '../../config/prismaClient';
 import { IBannerRepository } from '../interfaces/IBannerRepository';
 
-const prisma = new PrismaClient();
 
 export class BannerRepository implements IBannerRepository {
   async create(data: any): Promise<Banner> {
