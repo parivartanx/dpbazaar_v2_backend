@@ -25,7 +25,7 @@ export class SubscriptionCardController {
       });
 
       // Transform image keys to public URLs in the cards response
-      const transformedCards = this.imageUrlTransformer.transformCommonImageFields(cards);
+      const transformedCards = await this.imageUrlTransformer.transformCommonImageFields(cards);
       
       const response: ApiResponse = {
         success: true,
@@ -67,7 +67,7 @@ export class SubscriptionCardController {
         return;
       }
       // Transform image keys to public URLs in the card response
-      const transformedCard = this.imageUrlTransformer.transformCommonImageFields(card);
+      const transformedCard = await this.imageUrlTransformer.transformCommonImageFields(card);
       
       res.status(200).json({
         success: true,
@@ -90,7 +90,7 @@ export class SubscriptionCardController {
     try {
       const card = await subscriptionCardRepo.create(req.body);
       // Transform image keys to public URLs in the card response
-      const transformedCard = this.imageUrlTransformer.transformCommonImageFields(card);
+      const transformedCard = await this.imageUrlTransformer.transformCommonImageFields(card);
       
       res.status(201).json({
         success: true,
@@ -123,7 +123,7 @@ export class SubscriptionCardController {
     try {
       const card = await subscriptionCardRepo.update(id, req.body);
       // Transform image keys to public URLs in the card response
-      const transformedCard = this.imageUrlTransformer.transformCommonImageFields(card);
+      const transformedCard = await this.imageUrlTransformer.transformCommonImageFields(card);
       
       res.status(200).json({
         success: true,
@@ -186,7 +186,7 @@ export class SubscriptionCardController {
     try {
       const card = await subscriptionCardRepo.restore(id);
       // Transform image keys to public URLs in the card response
-      const transformedCard = this.imageUrlTransformer.transformCommonImageFields(card);
+      const transformedCard = await this.imageUrlTransformer.transformCommonImageFields(card);
       
       res.status(200).json({
         success: true,

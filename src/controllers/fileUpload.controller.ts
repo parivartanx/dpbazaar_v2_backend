@@ -55,8 +55,8 @@ export class FileUploadController {
 
 
 
-  // Get public URL for a file key
-  getPublicUrl = async (req: Request, res: Response): Promise<void> => {
+  // Get signed URL for a file key
+  getSignedUrl = async (req: Request, res: Response): Promise<void> => {
     try {
       const { key } = req.params;
 
@@ -69,22 +69,22 @@ export class FileUploadController {
         return;
       }
 
-      const publicUrl = this.r2Service.generatePublicUrl(key);
+      const signedUrl = await this.r2Service.generatePresignedDownloadUrl(key);
 
       const response: ApiResponse = {
         success: true,
-        data: { publicUrl, key },
-        message: 'Public URL generated successfully',
+        data: { signedUrl, key },
+        message: 'Signed URL generated successfully',
         timestamp: new Date().toISOString(),
       };
 
       res.status(200).json(response);
     } catch (error) {
-      logger.error(`Error generating public URL: ${error}`);
+      logger.error(`Error generating signed URL: ${error}`);
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Failed to generate public URL',
+        message: 'Failed to generate signed URL',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);

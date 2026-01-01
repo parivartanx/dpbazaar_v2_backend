@@ -10,8 +10,8 @@ const fileUploadController = new FileUploadController();
 // Public routes - for pre-signed URL generation
 router.post('/presigned-url', validateJoi(fileUploadValidation.generatePresignedUrl), fileUploadController.generatePresignedUploadUrl);
 
-// Get public URL for a file key
-router.get('/public-url/:key', fileUploadController.getPublicUrl);
+// Get signed URL for a file key
+router.get('/signed-url/:key', fileUploadController.getSignedUrl);
 
 // Delete file (admin only)
 router.delete('/:key', 

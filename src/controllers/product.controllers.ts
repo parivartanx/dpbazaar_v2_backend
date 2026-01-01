@@ -29,7 +29,7 @@ export class ProductController {
       const products = await this.repo.getAll();
       
       // Transform image keys to public URLs in the products response
-      const transformedProducts = this.imageUrlTransformer.transformCommonImageFields(products);
+      const transformedProducts = await this.imageUrlTransformer.transformCommonImageFields(products);
       
       const response: ApiResponse = {
         success: true,
@@ -141,7 +141,7 @@ export class ProductController {
       const totalPages = Math.ceil(totalCount / limit);
       
       // Transform image keys to public URLs in the products response
-      const transformedProducts = this.imageUrlTransformer.transformCommonImageFields(products);
+      const transformedProducts = await this.imageUrlTransformer.transformCommonImageFields(products);
       
       const response: ApiResponse = {
         success: true,
@@ -195,8 +195,8 @@ export class ProductController {
         return;
       }
 
-      // Transform image keys to public URLs in the product response
-      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      // Transform image keys to signed URLs in the product response
+      const transformedProduct = await this.imageUrlTransformer.transformCommonImageFields(product);
       
       res.status(200).json({
         success: true,
@@ -241,7 +241,7 @@ export class ProductController {
       }
 
       // Transform image keys to public URLs in the product response
-      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      const transformedProduct = await this.imageUrlTransformer.transformCommonImageFields(product);
       
       res.status(200).json({
         success: true,
@@ -296,8 +296,8 @@ export class ProductController {
 
       const product = await this.repo.update(id, req.body);
       
-      // Transform image keys to public URLs in the product response
-      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      // Transform image keys to signed URLs in the product response
+      const transformedProduct = await this.imageUrlTransformer.transformImageKeysToSignedUrls(product);
       
       res.status(200).json({
         success: true,
@@ -331,8 +331,8 @@ export class ProductController {
 
       const product = await this.repo.softDelete(id);
       
-      // Transform image keys to public URLs in the product response
-      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      // Transform image keys to signed URLs in the product response
+      const transformedProduct = await this.imageUrlTransformer.transformCommonImageFields(product);
       
       res.status(200).json({
         success: true,
@@ -366,8 +366,8 @@ export class ProductController {
 
       const product = await this.repo.restore(id);
       
-      // Transform image keys to public URLs in the product response
-      const transformedProduct = this.imageUrlTransformer.transformCommonImageFields(product);
+      // Transform image keys to signed URLs in the product response
+      const transformedProduct = await this.imageUrlTransformer.transformCommonImageFields(product);
       
       res.status(200).json({
         success: true,
@@ -415,7 +415,7 @@ export class ProductController {
       const image = await this.repo.addProductImage(productId, imageKey, isPrimary);
       
       // Transform the response to include public URL instead of key
-      const transformedImage = this.imageUrlTransformer.transformCommonImageFields(image);
+      const transformedImage = await this.imageUrlTransformer.transformCommonImageFields(image);
       
       res.status(201).json({
         success: true,
@@ -462,7 +462,7 @@ export class ProductController {
       const images = await this.repo.addProductImagesBulk(productId, imageKeys);
       
       // Transform the response to include public URLs instead of keys
-      const transformedImages = this.imageUrlTransformer.transformCommonImageFields(images);
+      const transformedImages = await this.imageUrlTransformer.transformCommonImageFields(images);
       
       res.status(201).json({
         success: true,
@@ -565,7 +565,7 @@ export class VariantController {
       const variants = await this.repo.getByProduct(id);
       
       // Transform image keys to public URLs in the variants response
-      const transformedVariants = this.imageUrlTransformer.transformCommonImageFields(variants);
+      const transformedVariants = await this.imageUrlTransformer.transformCommonImageFields(variants);
       
       res.status(200).json({
         success: true,
@@ -599,7 +599,7 @@ export class VariantController {
       const variant = await this.repo.create(id, req.body);
       
       // Transform image keys to public URLs in the variant response
-      const transformedVariant = this.imageUrlTransformer.transformCommonImageFields(variant);
+      const transformedVariant = await this.imageUrlTransformer.transformCommonImageFields(variant);
       
       res.status(201).json({
         success: true,
@@ -633,7 +633,7 @@ export class VariantController {
       const variant = await this.repo.update(id, req.body);
       
       // Transform image keys to public URLs in the variant response
-      const transformedVariant = this.imageUrlTransformer.transformCommonImageFields(variant);
+      const transformedVariant = await this.imageUrlTransformer.transformCommonImageFields(variant);
       
       res.status(200).json({
         success: true,
@@ -696,7 +696,7 @@ export class VariantController {
       const variant = await this.repo.toggleActive(id, req.body.isActive);
       
       // Transform image keys to public URLs in the variant response
-      const transformedVariant = this.imageUrlTransformer.transformCommonImageFields(variant);
+      const transformedVariant = await this.imageUrlTransformer.transformCommonImageFields(variant);
       
       res.status(200).json({
         success: true,

@@ -90,7 +90,7 @@ export class ProductReviewController {
       await this.updateProductAverageRating(productId);
 
       // Transform image keys to public URLs in the review response
-      const transformedReview = this.imageUrlTransformer.transformCommonImageFields(review);
+      const transformedReview = await this.imageUrlTransformer.transformCommonImageFields(review);
       
       const response: ApiResponse = {
         success: true,
@@ -169,7 +169,7 @@ export class ProductReviewController {
       });
 
       // Transform image keys to public URLs in the reviews response
-      const transformedReviews = this.imageUrlTransformer.transformCommonImageFields(reviews);
+      const transformedReviews = await this.imageUrlTransformer.transformCommonImageFields(reviews);
       
       const response: ApiResponse = {
         success: true,
@@ -242,7 +242,7 @@ export class ProductReviewController {
       const reviews = await reviewRepository.getAll(filters);
       
       // Transform image keys to public URLs in the reviews response
-      const transformedReviews = this.imageUrlTransformer.transformCommonImageFields(reviews);
+      const transformedReviews = await this.imageUrlTransformer.transformCommonImageFields(reviews);
       
       const response: ApiResponse = {
         success: true,
@@ -291,7 +291,7 @@ export class ProductReviewController {
 
       const review = await reviewRepository.approve(id, adminId);
       // Transform image keys to public URLs in the review response
-      const transformedReview = this.imageUrlTransformer.transformCommonImageFields(review);
+      const transformedReview = await this.imageUrlTransformer.transformCommonImageFields(review);
       
       const response: ApiResponse = {
         success: true,
@@ -328,7 +328,7 @@ export class ProductReviewController {
 
       const review = await reviewRepository.reject(id);
       // Transform image keys to public URLs in the review response
-      const transformedReview = this.imageUrlTransformer.transformCommonImageFields(review);
+      const transformedReview = await this.imageUrlTransformer.transformCommonImageFields(review);
       
       const response: ApiResponse = {
         success: true,
@@ -410,7 +410,7 @@ export class ProductReviewController {
 
       const review = await reviewRepository.reply(id, reply);
       // Transform image keys to public URLs in the review response
-      const transformedReview = this.imageUrlTransformer.transformCommonImageFields(review);
+      const transformedReview = await this.imageUrlTransformer.transformCommonImageFields(review);
       
       const response: ApiResponse = {
         success: true,

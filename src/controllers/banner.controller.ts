@@ -29,7 +29,7 @@ export class BannerController {
       const banner = await bannerRepo.create(bannerData);
       
       // Transform image keys to public URLs in the banner response
-      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      const transformedBanner = await imageUrlTransformer.transformCommonImageFields(banner);
       
       const response: ApiResponse = {
         success: true,
@@ -75,7 +75,7 @@ export class BannerController {
       }
 
       // Transform image keys to public URLs in the banner response
-      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      const transformedBanner = await imageUrlTransformer.transformCommonImageFields(banner);
       
       const response: ApiResponse = {
         success: true,
@@ -122,7 +122,7 @@ export class BannerController {
       );
       
       // Transform image keys to public URLs in the banners response
-      const transformedBanners = imageUrlTransformer.transformCommonImageFields(result.data);
+      const transformedBanners = await imageUrlTransformer.transformCommonImageFields(result.data);
       
       const response: ApiResponse = {
         success: true,
@@ -169,7 +169,7 @@ export class BannerController {
       const banner = await bannerRepo.update(id, updateData);
       
       // Transform image keys to public URLs in the banner response
-      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      const transformedBanner = await imageUrlTransformer.transformCommonImageFields(banner);
       
       const response: ApiResponse = {
         success: true,
@@ -206,7 +206,7 @@ export class BannerController {
       const banner = await bannerRepo.delete(id);
       
       // Transform image keys to public URLs in the banner response
-      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      const transformedBanner = await imageUrlTransformer.transformCommonImageFields(banner);
       
       const response: ApiResponse = {
         success: true,
@@ -235,7 +235,7 @@ export class BannerController {
       const banners = await bannerRepo.getActiveBanners();
       
       // Transform image keys to public URLs in the banners response
-      const transformedBanners = imageUrlTransformer.transformCommonImageFields(banners);
+      const transformedBanners = await imageUrlTransformer.transformCommonImageFields(banners);
       
       const response: ApiResponse = {
         success: true,
@@ -273,7 +273,7 @@ export class BannerController {
       const banner = await bannerRepo.incrementImpressions(id);
       
       // Transform image keys to public URLs in the banner response
-      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      const transformedBanner = await imageUrlTransformer.transformCommonImageFields(banner);
       
       const response: ApiResponse = {
         success: true,
@@ -311,7 +311,7 @@ export class BannerController {
       const banner = await bannerRepo.incrementClicks(id);
       
       // Transform image keys to public URLs in the banner response
-      const transformedBanner = imageUrlTransformer.transformCommonImageFields(banner);
+      const transformedBanner = await imageUrlTransformer.transformCommonImageFields(banner);
       
       const response: ApiResponse = {
         success: true,

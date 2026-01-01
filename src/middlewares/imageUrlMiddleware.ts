@@ -18,7 +18,7 @@ export const transformImageUrls = () => {
     res.json = function(data: any) {
       try {
         // Transform common image fields in the response data
-        const transformedData = imageUrlTransformer.transformCommonImageFields(data);
+        const transformedData = await imageUrlTransformer.transformCommonImageFields(data);
         return originalJson.call(this, transformedData);
       } catch (error) {
         // If transformation fails, send original data

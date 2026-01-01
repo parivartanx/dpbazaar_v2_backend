@@ -17,7 +17,7 @@ export class ReturnController {
       const returnRequest = await returnRepository.create(req.body);
       
       // Transform image keys to public URLs in the return response
-      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      const transformedReturn = await this.imageUrlTransformer.transformCommonImageFields(returnRequest);
       
       const response: ApiResponse = {
         success: true,
@@ -47,7 +47,7 @@ export class ReturnController {
       const total = await returnRepository.count(filters);
 
       // Transform image keys to public URLs in the returns response
-      const transformedReturns = this.imageUrlTransformer.transformCommonImageFields(returns);
+      const transformedReturns = await this.imageUrlTransformer.transformCommonImageFields(returns);
       
       const response: ApiResponse = {
         success: true,
@@ -77,7 +77,7 @@ export class ReturnController {
       }
 
       // Transform image keys to public URLs in the return response
-      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      const transformedReturn = await this.imageUrlTransformer.transformCommonImageFields(returnRequest);
       
       const response: ApiResponse = {
         success: true,
@@ -102,7 +102,7 @@ export class ReturnController {
       const returnRequest = await returnRepository.update(id, req.body);
       
       // Transform image keys to public URLs in the return response
-      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      const transformedReturn = await this.imageUrlTransformer.transformCommonImageFields(returnRequest);
       
       const response: ApiResponse = {
         success: true,

@@ -26,7 +26,7 @@ export class OrderController {
       const order = await this.repo.createOrder(req.body);
       
       // Transform image keys to public URLs in the order response
-      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      const transformedOrder = await this.imageUrlTransformer.transformCommonImageFields(order);
       
       const response: ApiResponse = {
         success: true,
@@ -100,7 +100,7 @@ export class OrderController {
       const result = await this.repo.getAllOrders(filters, pagination);
 
       // Transform image keys to public URLs in the orders response
-      const transformedOrders = this.imageUrlTransformer.transformCommonImageFields(result.orders);
+      const transformedOrders = await this.imageUrlTransformer.transformCommonImageFields(result.orders);
       
       const response: ApiResponse = {
         success: true,
@@ -195,7 +195,7 @@ export class OrderController {
       }
 
       // Transform image keys to public URLs in the order response
-      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      const transformedOrder = await this.imageUrlTransformer.transformCommonImageFields(order);
       
       const response: ApiResponse = {
         success: true,
@@ -267,7 +267,7 @@ export class OrderController {
       }
 
       // Transform image keys to public URLs in the order response
-      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      const transformedOrder = await this.imageUrlTransformer.transformCommonImageFields(order);
       
       const response: ApiResponse = {
         success: true,
@@ -304,7 +304,7 @@ export class OrderController {
       const order = await this.repo.updateOrder(id, req.body);
       
       // Transform image keys to public URLs in the order response
-      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      const transformedOrder = await this.imageUrlTransformer.transformCommonImageFields(order);
       
       const response: ApiResponse = {
         success: true,
@@ -343,7 +343,7 @@ export class OrderController {
       const order = await this.repo.updateOrderStatus(id, status);
       
       // Transform image keys to public URLs in the order response
-      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      const transformedOrder = await this.imageUrlTransformer.transformCommonImageFields(order);
       
       const response: ApiResponse = {
         success: true,
@@ -380,7 +380,7 @@ export class OrderController {
       const order = await this.repo.deleteOrder(id);
       
       // Transform image keys to public URLs in the order response
-      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      const transformedOrder = await this.imageUrlTransformer.transformCommonImageFields(order);
       
       const response: ApiResponse = {
         success: true,
@@ -417,7 +417,7 @@ export class OrderController {
       const order = await this.repo.restoreOrder(id);
       
       // Transform image keys to public URLs in the order response
-      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      const transformedOrder = await this.imageUrlTransformer.transformCommonImageFields(order);
       
       const response: ApiResponse = {
         success: true,
@@ -637,7 +637,7 @@ export class OrderController {
       }
       
       // Transform image keys to public URLs in the order response
-      const transformedOrder = this.imageUrlTransformer.transformCommonImageFields(order);
+      const transformedOrder = await this.imageUrlTransformer.transformCommonImageFields(order);
       
       const response: ApiResponse = {
         success: true,
@@ -726,7 +726,7 @@ export class OrderController {
       });
       
       // Transform image keys to public URLs in the return response
-      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      const transformedReturn = await this.imageUrlTransformer.transformCommonImageFields(returnRequest);
       
       const response: ApiResponse = {
         success: true,
@@ -774,7 +774,7 @@ export class OrderController {
       }
 
       // Transform image keys to public URLs in the return response
-      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      const transformedReturn = await this.imageUrlTransformer.transformCommonImageFields(returnRequest);
       
       const response: ApiResponse = {
         success: true,
@@ -838,7 +838,7 @@ export class OrderController {
       const result = await this.repo.getAllReturns(filters, pagination);
 
       // Transform image keys to public URLs in the returns response
-      const transformedReturns = this.imageUrlTransformer.transformCommonImageFields(result.returns);
+      const transformedReturns = await this.imageUrlTransformer.transformCommonImageFields(result.returns);
       
       const response: ApiResponse = {
         success: true,
@@ -898,7 +898,7 @@ export class OrderController {
       });
 
       // Transform image keys to public URLs in the return response
-      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      const transformedReturn = await this.imageUrlTransformer.transformCommonImageFields(returnRequest);
       
       const response: ApiResponse = {
         success: true,
@@ -947,7 +947,7 @@ export class OrderController {
       );
 
       // Transform image keys to public URLs in the orders response
-      const transformedOrders = this.imageUrlTransformer.transformCommonImageFields(result.orders);
+      const transformedOrders = await this.imageUrlTransformer.transformCommonImageFields(result.orders);
       
       const response: ApiResponse = {
         success: true,
@@ -1026,7 +1026,7 @@ export class OrderController {
       }
 
       // Transform image keys to public URLs in the return response
-      const transformedReturn = this.imageUrlTransformer.transformCommonImageFields(returnRequest);
+      const transformedReturn = await this.imageUrlTransformer.transformCommonImageFields(returnRequest);
       
       const response: ApiResponse = {
         success: true,
@@ -1073,7 +1073,7 @@ export class OrderController {
       );
 
       // Transform image keys to public URLs in the orders response
-      const transformedOrders = this.imageUrlTransformer.transformCommonImageFields(result.orders);
+      const transformedOrders = await this.imageUrlTransformer.transformCommonImageFields(result.orders);
       
       const response: ApiResponse = {
         success: true,
@@ -1124,7 +1124,7 @@ export class OrderController {
       const result = await this.repo.getAllReturns(filters, pagination);
 
       // Transform image keys to public URLs in the returns response
-      const transformedReturns = this.imageUrlTransformer.transformCommonImageFields(result.returns);
+      const transformedReturns = await this.imageUrlTransformer.transformCommonImageFields(result.returns);
       
       const response: ApiResponse = {
         success: true,

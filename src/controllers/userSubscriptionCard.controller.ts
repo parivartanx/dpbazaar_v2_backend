@@ -73,7 +73,7 @@ export class UserSubscriptionCardController {
         return;
       }
       // Transform image keys to public URLs in the user card response
-      const transformedUserCard = this.imageUrlTransformer.transformCommonImageFields(userCard);
+      const transformedUserCard = await this.imageUrlTransformer.transformCommonImageFields(userCard);
       
       res.status(200).json({
         success: true,
@@ -96,7 +96,7 @@ export class UserSubscriptionCardController {
     try {
       const userCard = await userSubscriptionCardRepo.create(req.body);
       // Transform image keys to public URLs in the user card response
-      const transformedUserCard = this.imageUrlTransformer.transformCommonImageFields(userCard);
+      const transformedUserCard = await this.imageUrlTransformer.transformCommonImageFields(userCard);
       
       res.status(201).json({
         success: true,
@@ -129,7 +129,7 @@ export class UserSubscriptionCardController {
     try {
       const userCard = await userSubscriptionCardRepo.update(id, req.body);
       // Transform image keys to public URLs in the user card response
-      const transformedUserCard = this.imageUrlTransformer.transformCommonImageFields(userCard);
+      const transformedUserCard = await this.imageUrlTransformer.transformCommonImageFields(userCard);
       
       res.status(200).json({
         success: true,
@@ -400,7 +400,7 @@ export class UserSubscriptionCardController {
       });
       
       // Transform image keys to public URLs in the user subscription card response
-      const transformedResult = this.imageUrlTransformer.transformCommonImageFields(result);
+      const transformedResult = await this.imageUrlTransformer.transformCommonImageFields(result);
       
       res.status(201).json({
         success: true,
@@ -446,7 +446,7 @@ export class UserSubscriptionCardController {
       });
 
       // Transform image keys to public URLs in the user cards response
-      const transformedUserCards = this.imageUrlTransformer.transformCommonImageFields(userCards);
+      const transformedUserCards = await this.imageUrlTransformer.transformCommonImageFields(userCards);
       
       res.status(200).json({
         success: true,
@@ -511,7 +511,7 @@ export class UserSubscriptionCardController {
       }
 
       // Transform image keys to public URLs in the user card response
-      const transformedUserCard = this.imageUrlTransformer.transformCommonImageFields(userCard);
+      const transformedUserCard = await this.imageUrlTransformer.transformCommonImageFields(userCard);
       
       res.status(200).json({
         success: true,
