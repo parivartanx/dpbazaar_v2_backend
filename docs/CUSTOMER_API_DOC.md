@@ -608,6 +608,97 @@ Authorization: Bearer <token>
 }
 ```
 
+## Banner Endpoints
+
+### GET /public/banners
+**Description:** Retrieves all banners with optional filtering and pagination support
+
+**Request:**
+- Method: `GET`
+- Route: `/public/banners`
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10)
+- `status` (optional): Filter by banner status (ACTIVE, INACTIVE, etc.)
+- `type` (optional): Filter by banner type (IMAGE, VIDEO, HTML)
+- `placement` (optional): Filter by banner placement (HOME_TOP, HOME_MIDDLE, etc.)
+- `search` (optional): Search term to filter banners
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Banners retrieved successfully",
+  "data": {
+    "banners": [
+      {
+        "id": "string",
+        "title": "string",
+        "subtitle": "string",
+        "imageUrl": "string",
+        "targetUrl": "string",
+        "type": "IMAGE|VIDEO|HTML",
+        "placement": "HOME_TOP|HOME_MIDDLE|etc",
+        "status": "ACTIVE|INACTIVE|etc",
+        "priority": 0,
+        "startDate": "date",
+        "endDate": "date",
+        "impressions": 0,
+        "clicks": 0,
+        "metadata": {},
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 0,
+      "totalPages": 1
+    }
+  },
+  "timestamp": "datetime"
+}
+```
+
+### GET /public/banners/:id
+**Description:** Retrieves a specific banner by its ID
+
+**Request:**
+- Method: `GET`
+- Route: `/public/banners/{id}`
+
+**Path Parameters:**
+- `id`: The unique identifier of the banner
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Banner retrieved successfully",
+  "data": {
+    "id": "string",
+    "title": "string",
+    "subtitle": "string",
+    "imageUrl": "string",
+    "targetUrl": "string",
+    "type": "IMAGE|VIDEO|HTML",
+    "placement": "HOME_TOP|HOME_MIDDLE|etc",
+    "status": "ACTIVE|INACTIVE|etc",
+    "priority": 0,
+    "startDate": "date",
+    "endDate": "date",
+    "impressions": 0,
+    "clicks": 0,
+    "metadata": {},
+    "createdAt": "datetime",
+    "updatedAt": "datetime"
+  },
+  "timestamp": "datetime"
+}
+```
+
 ## Product Endpoints
 
 ### GET /product/brands
