@@ -188,7 +188,164 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
+  
+  // Bill history Excel export API
+  getBillHistoryExcel = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {
+        search,
+        userId,
+        startDate,
+        endDate
+      } = req.query;
 
+      // Build filters for orders
+      const filters: any = {
+        source: 'SYSTEM' // Only system-generated bills for desktop app
+      };
+
+      // Add date filters if provided
+      if (startDate) {
+        filters.startDate = new Date(startDate as string);
+      }
+      if (endDate) {
+        filters.endDate = new Date(endDate as string);
+      }
+
+      // Add search term if provided
+      if (search) {
+        filters.search = search as string;
+      }
+
+      // If userId is provided, filter by createdBy (the user who created the order)
+      if (userId) {
+        filters.createdBy = userId as string;
+      }
+      
+      // Get all bills without pagination for Excel export
+      const pagination = {
+        page: 1,
+        limit: 10000, // Large limit for export
+      };
+      
+      const result = await this.orderRepo.getAllOrders(filters, pagination);
+      
+      // Transform orders to include only essential fields for desktop bill history
+      const simplifiedBills = result.orders.map(order => {
+        // Type assertion to handle the limited fields from the repository
+        const typedOrder: any = order;
+        
+        // Calculate item count from the items array
+        const itemCount = Array.isArray(typedOrder.items) ? typedOrder.items.length : 0;
+        
+        // Try to determine payment method from the order data
+        // Since we don't have direct payment method in the limited order, 
+        // we can infer it from the source (SYSTEM orders are typically cash)
+        const paymentMethod = typedOrder.source === 'SYSTEM' ? 'CASH' : 'OTHER';
+        
+        return {
+          id: typedOrder.id,
+          orderNumber: typedOrder.orderNumber,
+          customerName: typedOrder.customerName,
+          customerPhone: typedOrder.customerPhone,
+          itemsTotal: typedOrder.itemsTotal,
+          taxAmount: typedOrder.taxAmount,
+          shippingCharges: typedOrder.shippingCharges,
+          discount: typedOrder.discount,
+          totalAmount: typedOrder.totalAmount,
+          status: typedOrder.status,
+          paymentStatus: typedOrder.paymentStatus,
+          paymentMethod: paymentMethod, // Add payment method
+          itemCount: itemCount, // Just the count instead of full items array
+          createdAt: typedOrder.createdAt,
+          updatedAt: typedOrder.updatedAt,
+        };
+      });
+      
+      // Format dates to IST
+      const formatISTDate = (date: Date | string | null | undefined) => {
+        if (!date) return '';
+        const d = new Date(date);
+        // Convert to IST (GMT+5:30)
+        const istDate = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
+        return istDate.toLocaleString('en-IN', { 
+          timeZone: 'Asia/Kolkata',
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: true
+        });
+      };
+      
+      // Prepare Excel data
+      const excelData = simplifiedBills.map(bill => [
+        bill.orderNumber,
+        bill.customerName,
+        bill.customerPhone,
+        bill.itemsTotal,
+        bill.taxAmount,
+        bill.shippingCharges,
+        bill.discount,
+        bill.totalAmount,
+        bill.status,
+        bill.paymentStatus,
+        bill.paymentMethod,
+        bill.itemCount,
+        formatISTDate(bill.createdAt),
+        formatISTDate(bill.updatedAt),
+      ]);
+      
+      // Define headers for CSV
+      const headers = [
+        'Order Number',
+        'Customer Name',
+        'Customer Phone',
+        'Items Total',
+        'Tax Amount',
+        'Shipping Charges',
+        'Discount',
+        'Total Amount',
+        'Status',
+        'Payment Status',
+        'Payment Method',
+        'Item Count',
+        'Created At',
+        'Updated At'
+      ];
+      
+      // Convert to CSV format for Excel
+      const csvContent = [
+        headers.join(','),
+        ...excelData.map(row => row.map(value => {
+          if (value === null || value === undefined) {
+            value = '';
+          }
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        }).join(','))
+      ].join('\n');
+      
+      // Set response headers for Excel download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=bill-history.csv');
+      
+      res.status(200).send(csvContent);
+    } catch (error) {
+      logger.error(`Error in getBillHistoryExcel: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in exporting bill history to Excel',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+  
   // Dashboard data API
   getDashboardData = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -827,8 +984,14 @@ export class DesktopController {
       }
     });
     
-    // Update order payment status
+    // Update order status to CONFIRMED
     await this.orderRepo.updateOrderStatus(orderId, 'CONFIRMED');
+    
+    // Update order's payment status to SUCCESS
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { paymentStatus: 'SUCCESS' },
+    });
   }
   
   // Top selling products API
@@ -1595,6 +1758,131 @@ export class DesktopController {
         success: false,
         error: (error as Error).message,
         message: 'Problem in fetching returns',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+  
+  // Get returns data in Excel format
+  getReturnsExcel = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {
+        status,
+        orderId,
+        type,
+        search,
+        startDate,
+        endDate
+      } = req.query;
+
+      const filters: any = {};
+      if (status) filters.status = status;
+      if (orderId) filters.orderId = orderId as string;
+      if (type) filters.type = type as string;
+      if (search) filters.search = search as string;
+        
+      // Add date filters if provided
+      if (startDate) {
+        filters.startDate = new Date(startDate as string);
+      }
+      if (endDate) {
+        filters.endDate = new Date(endDate as string);
+      }
+        
+      // For desktop, we might want to filter by the user who created the return
+      const createdBy = (req as any).user?.userId || null;
+      if (createdBy) {
+        filters.createdBy = createdBy;
+      }
+            
+      // Only return SYSTEM sourced returns for desktop (counter returns)
+      filters.source = 'SYSTEM';
+      
+      // Get all returns without pagination for Excel export
+      const pagination = {
+        page: 1,
+        limit: 10000, // Large limit for export
+      };
+      
+      const result = await this.orderRepo.getDesktopReturns(filters, pagination);
+      
+      // Prepare Excel data
+      const excelData = result.returns.map((returnItem: any) => {
+        // Format dates to IST
+        const formatISTDate = (date: Date | string | null | undefined) => {
+          if (!date) return '';
+          const d = new Date(date);
+          // Convert to IST (GMT+5:30)
+          const istDate = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
+          return istDate.toLocaleString('en-IN', { 
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true
+          });
+        };
+        
+        return [
+          returnItem.returnNumber,
+          returnItem.type,
+          returnItem.reason,
+          returnItem.status,
+          returnItem.refundAmount,
+          returnItem.refundMethod,
+          returnItem.order?.orderNumber,
+          returnItem.order?.totalAmount,
+          returnItem.order?.customerName,
+          returnItem.order?.customerPhone,
+          formatISTDate(returnItem.createdAt),
+          formatISTDate(returnItem.updatedAt),
+        ];
+      });
+      
+      // Define headers for CSV
+      const headers = [
+        'Return Number',
+        'Type',
+        'Reason',
+        'Status',
+        'Refund Amount',
+        'Refund Method',
+        'Order Number',
+        'Order Total',
+        'Customer Name',
+        'Customer Phone',
+        'Created At',
+        'Updated At'
+      ];
+      
+      // Convert to CSV format for Excel
+      const csvContent = [
+        headers.join(','),
+        ...excelData.map(row => row.map(value => {
+          if (value === null || value === undefined) {
+            value = '';
+          }
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        }).join(','))
+      ].join('\n');
+      
+      // Set response headers for Excel download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=returns.csv');
+      
+      res.status(200).send(csvContent);
+    } catch (error) {
+      logger.error(`Returns Excel export error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in exporting returns to Excel',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);

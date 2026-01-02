@@ -10,7 +10,7 @@ import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
-  user?: { id: string };
+  user?: { userId: string };
 }
 
 export class OrderController {
@@ -220,7 +220,7 @@ export class OrderController {
   getCustomerOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       
       if (!id) {
         const response: ApiResponse = {
@@ -606,7 +606,7 @@ export class OrderController {
   // Customer-specific method to buy products (create order with payment)
   createCustomerOrder = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       
       if (!customerId) {
         const response: ApiResponse = {
@@ -797,7 +797,7 @@ export class OrderController {
 
   getCustomerReturns = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       const {
         status,
         orderId,
@@ -923,7 +923,7 @@ export class OrderController {
 
   getCustomerOrders = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       const { page, limit } = req.query;
       
       if (!customerId) {
@@ -977,7 +977,7 @@ export class OrderController {
   getCustomerReturnById = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params; // Using 'id' to match the route parameter
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       
       if (!id) {
         const response: ApiResponse = {

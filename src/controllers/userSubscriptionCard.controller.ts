@@ -182,7 +182,7 @@ export class UserSubscriptionCardController {
    * Purchase subscription card with optional referral code
    */
   purchaseSubscriptionCard = async (req: Request, res: Response): Promise<void> => {
-    const customerId = (req as any).user?.userId || (req as any).user?.id;
+    const customerId = (req as any).user?.userId || (req as any).user?.userId;
     
     if (!customerId) {
       res.status(401).json({
@@ -430,7 +430,7 @@ export class UserSubscriptionCardController {
 
   getCustomerCards = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.userId || (req as any).user?.id;
+      const customerId = (req as any).user?.userId || (req as any).user?.userId;
       
       if (!customerId) {
         res.status(401).json({
@@ -467,7 +467,7 @@ export class UserSubscriptionCardController {
 
   getCustomerCardById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.userId || (req as any).user?.id;
+      const customerId = (req as any).user?.userId || (req as any).user?.userId;
       const cardId = req.params.id as string;
       
       if (!customerId) {
