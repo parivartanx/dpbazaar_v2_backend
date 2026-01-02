@@ -19,6 +19,7 @@ This document provides comprehensive API documentation for all admin routes in t
 - [Employee Activity Management](#employee-activity-management)
 
 ### 3. Product & Category Management
+- [Banner Management](#banner-management)
 - [Brand Management](#brand-management)
 - [Category Management](#category-management)
 - [Product Management](#product-management)
@@ -1247,6 +1248,280 @@ This document provides comprehensive API documentation for all admin routes in t
       "expiresAt": "string"
     }
   },
+  "timestamp": "string"
+}
+```
+
+## Banner Management
+
+### GET /org/banners
+
+**Description:** Get all banners with pagination and filtering.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/org/banners`
+- Query Parameters:
+  - `page`: number (default: 1)
+  - `limit`: number (default: 20)
+  - `status`: string (ACTIVE, INACTIVE, etc.)
+  - `type`: string (IMAGE, VIDEO, HTML)
+  - `placement`: string (HOME_TOP, HOME_MIDDLE, etc.)
+  - `search`: string
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Banners retrieved successfully",
+  "data": {
+    "banners": [
+      {
+        "id": "string",
+        "title": "string",
+        "subtitle": "string",
+        "imageUrl": "string",
+        "targetUrl": "string",
+        "type": "IMAGE|VIDEO|HTML",
+        "placement": "HOME_TOP|HOME_MIDDLE|etc",
+        "status": "ACTIVE|INACTIVE|etc",
+        "priority": 0,
+        "startDate": "date",
+        "endDate": "date",
+        "impressions": 0,
+        "clicks": 0,
+        "metadata": {},
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    ],
+    "pagination": {
+      "currentPage": "number",
+      "totalPages": "number",
+      "totalItems": "number",
+      "itemsPerPage": "number"
+    }
+  },
+  "timestamp": "string"
+}
+```
+
+### GET /org/banners/:id
+
+**Description:** Get a specific banner by ID.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/org/banners/:id`
+- Path Parameter: `id` (banner ID)
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Banner retrieved successfully",
+  "data": {
+    "banner": {
+      "id": "string",
+      "title": "string",
+      "subtitle": "string",
+      "imageUrl": "string",
+      "targetUrl": "string",
+      "type": "IMAGE|VIDEO|HTML",
+      "placement": "HOME_TOP|HOME_MIDDLE|etc",
+      "status": "ACTIVE|INACTIVE|etc",
+      "priority": 0,
+      "startDate": "date",
+      "endDate": "date",
+      "impressions": 0,
+      "clicks": 0,
+      "metadata": {},
+      "createdAt": "datetime",
+      "updatedAt": "datetime"
+    }
+  },
+  "timestamp": "string"
+}
+```
+
+### POST /org/banners
+
+**Description:** Create a new banner.
+
+**Request:**
+- Method: `POST`
+- Endpoint: `/org/banners`
+- Content-Type: `application/json`
+- Body: `{ title: string, subtitle: string, imageUrl: string, targetUrl: string, type: string, placement: string, status: string, priority: number, startDate: date, endDate: date, metadata: object }`
+
+**Response:**
+- Success: `201 Created`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Banner created successfully",
+  "data": {
+    "banner": {
+      "id": "string",
+      "title": "string",
+      "subtitle": "string",
+      "imageUrl": "string",
+      "targetUrl": "string",
+      "type": "IMAGE|VIDEO|HTML",
+      "placement": "HOME_TOP|HOME_MIDDLE|etc",
+      "status": "ACTIVE|INACTIVE|etc",
+      "priority": 0,
+      "startDate": "date",
+      "endDate": "date",
+      "impressions": 0,
+      "clicks": 0,
+      "metadata": {},
+      "createdAt": "datetime",
+      "updatedAt": "datetime"
+    }
+  },
+  "timestamp": "string"
+}
+```
+
+### PUT /org/banners/:id
+
+**Description:** Update a banner.
+
+**Request:**
+- Method: `PUT`
+- Endpoint: `/org/banners/:id`
+- Path Parameter: `id` (banner ID)
+- Content-Type: `application/json`
+- Body: `{ title: string, subtitle: string, imageUrl: string, targetUrl: string, type: string, placement: string, status: string, priority: number, startDate: date, endDate: date, metadata: object }`
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Banner updated successfully",
+  "data": {
+    "banner": {
+      "id": "string",
+      "title": "string",
+      "subtitle": "string",
+      "imageUrl": "string",
+      "targetUrl": "string",
+      "type": "IMAGE|VIDEO|HTML",
+      "placement": "HOME_TOP|HOME_MIDDLE|etc",
+      "status": "ACTIVE|INACTIVE|etc",
+      "priority": 0,
+      "startDate": "date",
+      "endDate": "date",
+      "impressions": 0,
+      "clicks": 0,
+      "metadata": {},
+      "createdAt": "datetime",
+      "updatedAt": "datetime"
+    }
+  },
+  "timestamp": "string"
+}
+```
+
+### DELETE /org/banners/:id
+
+**Description:** Delete a banner.
+
+**Request:**
+- Method: `DELETE`
+- Endpoint: `/org/banners/:id`
+- Path Parameter: `id` (banner ID)
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Banner deleted successfully",
+  "data": {
+    "banner": {
+      "id": "string",
+      "title": "string",
+      "subtitle": "string",
+      "imageUrl": "string",
+      "targetUrl": "string",
+      "type": "IMAGE|VIDEO|HTML",
+      "placement": "HOME_TOP|HOME_MIDDLE|etc",
+      "status": "ACTIVE|INACTIVE|etc",
+      "priority": 0,
+      "startDate": "date",
+      "endDate": "date",
+      "impressions": 0,
+      "clicks": 0,
+      "metadata": {},
+      "createdAt": "datetime",
+      "updatedAt": "datetime"
+    }
+  },
+  "timestamp": "string"
+}
+```
+
+
+### POST /org/login
+
+**Description:** Admin login to access the admin panel.
+
+**Request:**
+- Method: `POST`
+- Endpoint: `/org/login`
+- Content-Type: `application/json`
+- Body: `{ email: string, password: string }`
+
+**Response:**
+- Success: `200 OK`
+- Error: `401 Unauthorized`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "email": "string",
+      "role": "string",
+      "status": "string"
+    },
+    "token": "string"
+  },
+  "message": "Admin login successful",
+  "timestamp": "string"
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "string",
+  "message": "Admin login failed",
   "timestamp": "string"
 }
 ```
