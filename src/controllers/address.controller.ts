@@ -7,7 +7,7 @@ const addressRepo = new AddressRepository();
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
-  user?: { id: string };
+  user?: { userId: string };
 }
 
 export class AddressController {
@@ -213,7 +213,7 @@ export class AddressController {
 
   getMyAddresses = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -247,7 +247,7 @@ export class AddressController {
   createMyAddress = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       console.log(req.body);
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       // const customerId = "cmi3n88fr0002112pw1evn7z9";
       if (!customerId) {
         const response: ApiResponse = {
@@ -289,7 +289,7 @@ export class AddressController {
 
   updateMyAddress = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -345,7 +345,7 @@ export class AddressController {
 
   deleteMyAddress = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,

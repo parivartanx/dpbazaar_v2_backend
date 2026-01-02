@@ -9,7 +9,7 @@ export class WishlistController {
   // Get customer's wishlists
   getCustomerWishlists = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id;
+      const customerId = (req as any).user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -43,7 +43,7 @@ export class WishlistController {
   // Get customer's default wishlist
   getDefaultWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id;
+      const customerId = (req as any).user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -86,7 +86,7 @@ export class WishlistController {
   // Create a new wishlist
   createWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id;
+      const customerId = (req as any).user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -137,7 +137,7 @@ export class WishlistController {
   // Update a wishlist
   updateWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id;
+      const customerId = (req as any).user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -199,7 +199,7 @@ export class WishlistController {
   // Delete a wishlist
   deleteWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id;
+      const customerId = (req as any).user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -244,7 +244,7 @@ export class WishlistController {
   // Add product to wishlist
   addToWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id;
+      const customerId = (req as any).user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -314,7 +314,7 @@ export class WishlistController {
   // Remove product from wishlist
   removeFromWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id;
+      const customerId = (req as any).user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -359,7 +359,7 @@ export class WishlistController {
   // Get wishlist items
   getWishlistItems = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id;
+      const customerId = (req as any).user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,

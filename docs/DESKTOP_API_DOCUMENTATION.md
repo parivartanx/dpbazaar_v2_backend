@@ -416,6 +416,46 @@ This document provides comprehensive documentation for the desktop application A
 
 ## Bill Management Endpoints
 
+### GET /api/desktop/bills-excel
+**Description:** Retrieves bill history data in Excel format
+
+**Request:**
+- Method: `GET`
+- Route: `/api/desktop/bills-excel`
+
+**Query Parameters:**
+- `search` (optional): Search term for order number or customer
+- `userId` (optional): User ID to filter bills created by specific user
+- `startDate` (optional): Date string in ISO format
+- `endDate` (optional): Date string in ISO format
+
+**Response:**
+- Success: `200 OK` (CSV file download)
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+CSV file with columns: Order Number, Customer Name, Customer Phone, Items Total, Tax Amount, Shipping Charges, Discount, Total Amount, Status, Payment Status, Payment Method, Item Count, Created At, Updated At
+
+### GET /api/desktop/bills-excel
+**Description:** Retrieves bill history data in Excel format
+
+**Request:**
+- Method: `GET`
+- Route: `/api/desktop/bills-excel`
+
+**Query Parameters:**
+- `search` (optional): Search term for order number or customer
+- `userId` (optional): User ID to filter bills created by specific user
+- `startDate` (optional): Date string in ISO format
+- `endDate` (optional): Date string in ISO format
+
+**Response:**
+- Success: `200 OK` (CSV file download)
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+CSV file with columns: Order Number, Customer Name, Customer Phone, Items Total, Tax Amount, Shipping Charges, Discount, Total Amount, Status, Payment Status, Payment Method, Item Count, Created At, Updated At
+
 ### GET /api/desktop/bills
 **Description:** Retrieves bill history with pagination support
 
@@ -893,6 +933,29 @@ This document provides comprehensive documentation for the desktop application A
   "timestamp": "2025-12-28T19:26:23.989Z"
 }
 ```
+
+
+### GET /api/desktop/get-returns-excel
+**Description:** Retrieves return history data in Excel format
+
+**Request:**
+- Method: `GET`
+- Route: `/api/desktop/get-returns-excel`
+
+**Query Parameters:**
+- `status` (optional): Filter by return status (PENDING|APPROVED|REJECTED)
+- `orderId` (optional): Filter by specific order ID
+- `type` (optional): Filter by return type (RETURN|EXCHANGE)
+- `startDate` (optional): Date string in ISO format
+- `endDate` (optional): Date string in ISO format
+
+**Response:**
+- Success: `200 OK` (CSV file download)
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+CSV file with columns: Return Number, Type, Reason, Status, Refund Amount, Refund Method, Order Number, Order Total, Customer Name, Customer Phone, Created At, Updated At
+
 
 ## Error Responses
 

@@ -27,12 +27,14 @@ router.post('/generate-bill', desktopController.createOrder);
 
 // Bill history API
 router.get('/bills', desktopController.getBillHistory);
+router.get('/bills-excel', desktopController.getBillHistoryExcel);
 // Get bill by order number API
 router.get('/bills/:orderNumber', desktopController.getBillByOrderNumber);
 
 // Return APIs
 router.post('/create-return-request', desktopController.createReturnRequest);
 router.get('/get-returns', desktopController.getReturns);
+router.get('/get-returns-excel', desktopController.getReturnsExcel);
 
 // Analytics APIs
 router.get('/analytics/daily-sales', desktopController.getDailySales);

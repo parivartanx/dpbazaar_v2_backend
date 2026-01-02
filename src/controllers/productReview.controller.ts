@@ -15,7 +15,7 @@ export class ProductReviewController {
   createProductReview = async (req: Request, res: Response): Promise<void> => {
     try {
       const { productId, rating, title, comment, orderId } = req.body;
-      const userId = (req as any).user?.id; // Assuming user ID is attached by authentication middleware
+      const userId = (req as any).user?.userId; // Assuming user ID is attached by authentication middleware
 
       if (!productId || !rating) {
         const response: ApiResponse = {
@@ -266,7 +266,7 @@ export class ProductReviewController {
   approveReview = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const adminId = (req as any).user?.id; // Assuming auth middleware adds user
+      const adminId = (req as any).user?.userId; // Assuming auth middleware adds user
 
       if (!id) {
         const response: ApiResponse = {

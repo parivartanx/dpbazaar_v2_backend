@@ -383,7 +383,7 @@ export class WalletController {
 
   withdrawFromWallet = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.id; // Assuming user ID is attached by authentication middleware
+      const customerId = (req as any).user?.userId; // Assuming user ID is attached by authentication middleware
       if (!customerId) {
         res.status(401).json({
           success: false,

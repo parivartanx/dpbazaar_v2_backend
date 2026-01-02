@@ -7,7 +7,7 @@ const customerRepo = new CustomerRepository();
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
-  user?: { id: string };
+  user?: { userId: string; email: string; role: string };
 }
 
 export class CustomerController {
@@ -210,7 +210,7 @@ export class CustomerController {
 
   getMyProfile = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         const response: ApiResponse = {
           success: false,
@@ -253,7 +253,7 @@ export class CustomerController {
 
   updateMyProfile = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         const response: ApiResponse = {
           success: false,

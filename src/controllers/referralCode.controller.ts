@@ -6,7 +6,7 @@ import { ApiResponse } from '@/types/common';
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
-  user?: { id: string };
+  user?: { userId: string };
 }
 
 const referralCodeRepo = new ReferralCodeRepository();
@@ -239,7 +239,7 @@ export class ReferralCodeController {
   // Create a referral code for the authenticated customer
   createCustomerReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         res.status(401).json({
           success: false,
@@ -290,7 +290,7 @@ export class ReferralCodeController {
 
   getCustomerReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         res.status(401).json({
           success: false,

@@ -13,7 +13,7 @@ const paymentService = new PaymentService();
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
-  user?: { id: string };
+  user?: { userId: string };
 }
 
 export class CartController {
@@ -21,7 +21,7 @@ export class CartController {
 
   getCustomerCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -84,7 +84,7 @@ export class CartController {
 
   addToCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -200,7 +200,7 @@ export class CartController {
 
   updateCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -284,7 +284,7 @@ export class CartController {
 
   removeFromCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -365,7 +365,7 @@ export class CartController {
 
   clearCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         const response: ApiResponse = {
           success: false,
@@ -418,7 +418,7 @@ export class CartController {
   // Customer-specific method to buy products from cart
   buyProductsFromCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       
       if (!customerId) {
         const response: ApiResponse = {

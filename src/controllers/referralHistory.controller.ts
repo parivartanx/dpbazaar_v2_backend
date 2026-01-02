@@ -7,7 +7,7 @@ import { ApiResponse } from '@/types/common';
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
-  user?: { id: string };
+  user?: { userId: string };
 }
 
 const referralHistoryRepo = new ReferralHistoryRepository();
@@ -167,7 +167,7 @@ export class ReferralHistoryController {
 
   getCustomerReferralHistory = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         res.status(401).json({
           success: false,
@@ -200,7 +200,7 @@ export class ReferralHistoryController {
 
   getReferredUserHistory = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({
           success: false,
@@ -240,7 +240,7 @@ export class ReferralHistoryController {
   // Use a referral code
   useReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.id;
+      const customerId = req.user?.userId;
       if (!customerId) {
         res.status(401).json({
           success: false,
