@@ -369,8 +369,6 @@ export class AuthController {
         // Create customer profile
         await this.authService.userRepository.createCustomer({
           userId: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName || '',
           customerCode: `CUST${Date.now()}`,
         });
         
@@ -495,8 +493,6 @@ export class AuthController {
         // Create customer profile
         await this.authService.userRepository.createCustomer({
           userId: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName || '',
           customerCode: `CUST${Date.now()}`,
         });
         

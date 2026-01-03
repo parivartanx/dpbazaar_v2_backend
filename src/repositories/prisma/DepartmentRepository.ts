@@ -1,6 +1,7 @@
 import { Department, Prisma } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IDepartmentRepository } from '../interfaces/IDepartmentRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 
 
@@ -13,7 +14,16 @@ export class DepartmentRepository implements IDepartmentRepository {
     return prisma.department.findMany({
       skip,
       take,
-      include: { employees: true, children: true },
+      include: {
+        employees: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        children: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -21,7 +31,17 @@ export class DepartmentRepository implements IDepartmentRepository {
   async findById(id: string): Promise<Department | null> {
     return prisma.department.findUnique({
       where: { id },
-      include: { employees: true, children: true, parent: true },
+      include: {
+        employees: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        children: true,
+        parent: true,
+      },
     });
   }
 

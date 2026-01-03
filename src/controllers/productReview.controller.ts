@@ -146,11 +146,15 @@ export class ProductReviewController {
         },
         include: {
           customer: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              avatar: true,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  avatar: true,
+                }
+              }
             }
           },
           product: {

@@ -16,12 +16,17 @@ export interface IUserRepository {
     data: Partial<{
       firstName: string;
       lastName: string;
+      middleName?: string;
       email: string;
       role: UserRole;
       status: UserStatus;
       isEmailVerified: boolean;
       isPhoneVerified: boolean;
       phone?: string;
+      dateOfBirth?: Date;
+      gender?: string;
+      avatar?: string;
+      bio?: string;
     }>
   ): Promise<User>;
   delete(id: string): Promise<User>;
@@ -59,8 +64,6 @@ export interface IUserRepository {
   
   createCustomer(data: {
     userId: string;
-    firstName: string;
-    lastName: string;
     customerCode: string;
   }): Promise<any>;
 }

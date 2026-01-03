@@ -2,6 +2,7 @@
 import { ReferralHistory, ReferralStatus } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IReferralHistoryRepository } from '../interfaces/IReferralHistoryRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 
 
@@ -27,8 +28,20 @@ export class ReferralHistoryRepository implements IReferralHistoryRepository {
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
-        referrer: true,
-        referredUser: true
+        referrer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        referredUser: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -37,8 +50,20 @@ export class ReferralHistoryRepository implements IReferralHistoryRepository {
     return prisma.referralHistory.findUnique({ 
       where: { id },
       include: {
-        referrer: true,
-        referredUser: true
+        referrer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        referredUser: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -47,8 +72,20 @@ export class ReferralHistoryRepository implements IReferralHistoryRepository {
     return prisma.referralHistory.findUnique({ 
       where: { referredUserId },
       include: {
-        referrer: true,
-        referredUser: true
+        referrer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        referredUser: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -59,8 +96,20 @@ export class ReferralHistoryRepository implements IReferralHistoryRepository {
     return prisma.referralHistory.create({ 
       data,
       include: {
-        referrer: true,
-        referredUser: true
+        referrer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        referredUser: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -75,8 +124,20 @@ export class ReferralHistoryRepository implements IReferralHistoryRepository {
       where: { id },
       data,
       include: {
-        referrer: true,
-        referredUser: true
+        referrer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        referredUser: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -85,8 +146,20 @@ export class ReferralHistoryRepository implements IReferralHistoryRepository {
     return prisma.referralHistory.delete({
       where: { id },
       include: {
-        referrer: true,
-        referredUser: true
+        referrer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        referredUser: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }

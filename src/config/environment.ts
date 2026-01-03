@@ -105,8 +105,8 @@ class EnvironmentConfig implements IEnvironmentConfig {
     this.jwt = {
       secret: this.getStringFromEnv('JWT_SECRET', 'your-super-secret-jwt-key-change-in-production'),
       refreshSecret: this.getStringFromEnv('JWT_REFRESH_SECRET', 'your-super-secret-refresh-key-change-in-production'),
-      accessTokenExpiry: this.getStringFromEnv('JWT_ACCESS_EXPIRY', '15m'),
-      refreshTokenExpiry: this.getStringFromEnv('JWT_REFRESH_EXPIRY', '7d'),
+      accessTokenExpiry: this.getStringFromEnv('JWT_ACCESS_EXPIRY', '7d'),
+      refreshTokenExpiry: this.getStringFromEnv('JWT_REFRESH_EXPIRY', '30d'),
     };
     
     this.email = {

@@ -2,6 +2,7 @@ import { prisma } from '../config/prismaClient';
 import cron from 'node-cron';
 import { Decimal } from '@prisma/client/runtime/library';
 import { logger } from '../utils/logger';
+import { USER_FIELDS_SELECT } from '../repositories/constants';
 
 
 
@@ -59,7 +60,13 @@ async function distributeSubscriptionRewards() {
         endDate: { gte: new Date() }, // Not expired
       },
       include: {
-        customer: true,
+        customer: {
+          include: {
+                user: {
+                  select: USER_FIELDS_SELECT,
+                },
+          },
+        },
         card: {
           select: {
             rewardPercent: true,

@@ -27,21 +27,38 @@ Authorization: Bearer <token>
     "customer": {
       "id": "string",
       "userId": "string",
+      "customerCode": "string",
       "firstName": "string",
       "lastName": "string",
       "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "CUSTOMER",
+      "status": "ACTIVE|INACTIVE|SUSPENDED",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
       "dateOfBirth": "2023-12-25",
       "gender": "MALE|FEMALE|OTHER",
       "avatar": "string",
       "bio": "string",
+      "lastLoginAt": "2023-12-25T10:30:00.000Z",
+      "lastLoginIp": "string",
       "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+      "loyaltyPoints": 0,
+      "lifetimeValue": "0.00",
       "preferences": {},
+      "totalOrders": 0,
+      "totalSpent": "0.00",
+      "lastOrderAt": "2023-12-25T10:30:00.000Z",
       "metadata": {},
+      "deletedAt": null,
       "createdAt": "2023-12-25T10:30:00.000Z",
       "updatedAt": "2023-12-25T10:30:00.000Z"
     }
   },
-  "message": "Customer profile retrieved successfully",
+  "message": "Customer profile fetched successfully",
   "timestamp": "2023-12-25T10:30:00.000Z"
 }
 ```
@@ -59,6 +76,7 @@ Authorization: Bearer <token>
   "firstName": "string",
   "lastName": "string",
   "middleName": "string",
+  "phone": "string",
   "dateOfBirth": "2023-12-25",
   "gender": "MALE|FEMALE|OTHER",
   "avatar": "string",
@@ -69,6 +87,11 @@ Authorization: Bearer <token>
 }
 ```
 
+**Note:** 
+- User profile fields (`firstName`, `lastName`, `middleName`, `phone`, `dateOfBirth`, `gender`, `avatar`, `bio`) are updated in the User model
+- Customer-specific fields (`tier`, `preferences`, `metadata`) are updated in the Customer model
+- Email cannot be updated through this endpoint
+
 **Response:**
 ```json
 {
@@ -77,16 +100,33 @@ Authorization: Bearer <token>
     "customer": {
       "id": "string",
       "userId": "string",
+      "customerCode": "string",
       "firstName": "string",
       "lastName": "string",
       "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "CUSTOMER",
+      "status": "ACTIVE|INACTIVE|SUSPENDED",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
       "dateOfBirth": "2023-12-25",
       "gender": "MALE|FEMALE|OTHER",
       "avatar": "string",
       "bio": "string",
+      "lastLoginAt": "2023-12-25T10:30:00.000Z",
+      "lastLoginIp": "string",
       "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+      "loyaltyPoints": 0,
+      "lifetimeValue": "0.00",
       "preferences": {},
+      "totalOrders": 0,
+      "totalSpent": "0.00",
+      "lastOrderAt": "2023-12-25T10:30:00.000Z",
       "metadata": {},
+      "deletedAt": null,
       "createdAt": "2023-12-25T10:30:00.000Z",
       "updatedAt": "2023-12-25T10:30:00.000Z"
     }
@@ -945,16 +985,34 @@ Authorization: Bearer <token>
         "notHelpfulCount": 0,
         "status": "PENDING|APPROVED|REJECTED",
         "createdAt": "2023-12-25T10:30:00.000Z",
-        "updatedAt": "2023-12-25T10:30:00.000Z"
+        "updatedAt": "2023-12-25T10:30:00.000Z",
+        "customer": {
+          "id": "string",
+          "firstName": "string",
+          "lastName": "string",
+          "avatar": "string"
+        },
+        "product": {
+          "id": "string",
+          "name": "string",
+          "slug": "string"
+        }
       }
     ],
-    "averageRating": 4.5,
-    "totalReviews": 10
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 1,
+      "totalCount": 10,
+      "hasNextPage": false,
+      "hasPrevPage": false
+    }
   },
-  "message": "Product reviews retrieved successfully",
+  "message": "Reviews retrieved successfully",
   "timestamp": "2023-12-25T10:30:00.000Z"
 }
 ```
+
+**Note:** The `customer` object in reviews includes basic user profile information (`firstName`, `lastName`, `avatar`) from the User model.
 
 ### GET /product/discounts
 **Description:** Retrieves discount offers with filtering and pagination

@@ -2,6 +2,7 @@
 import { UserSubscriptionCard, CardSubscriptionStatus } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IUserSubscriptionCardRepository } from '../interfaces/IUserSubscriptionCardRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepository {
   async list(params?: {
@@ -29,7 +30,13 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
     return prisma.userSubscriptionCard.findUnique({ 
       where: { id },
       include: {
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
         card: true
       }
     });
@@ -42,7 +49,13 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
         status
       },
       include: {
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
         card: true
       }
     });
@@ -54,7 +67,13 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
     return prisma.userSubscriptionCard.create({ 
       data,
       include: {
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
         card: true
       }
     });
@@ -70,7 +89,13 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
       where: { id },
       data,
       include: {
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
         card: true
       }
     });
@@ -80,7 +105,13 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
     return prisma.userSubscriptionCard.delete({
       where: { id },
       include: {
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
         card: true
       }
     });

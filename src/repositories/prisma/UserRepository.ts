@@ -47,12 +47,17 @@ export class UserRepository implements IUserRepository {
     data: Partial<{
       firstName: string;
       lastName: string;
+      middleName?: string;
       email: string;
       role: UserRole;
       status: UserStatus;
       isEmailVerified: boolean;
       isPhoneVerified: boolean;
       phone?: string;
+      dateOfBirth?: Date;
+      gender?: string;
+      avatar?: string;
+      bio?: string;
     }>
   ): Promise<User> {
     return prisma.user.update({ where: { id }, data });
@@ -190,17 +195,39 @@ export class UserRepository implements IUserRepository {
   
   async createCustomer(data: {
     userId: string;
-    firstName: string;
-    lastName: string;
     customerCode: string;
   }) {
     return prisma.customer.create({
       data: {
         userId: data.userId,
-        firstName: data.firstName,
-        lastName: data.lastName,
         customerCode: data.customerCode,
-      }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+            email: true,
+            phone: true,
+            username: true,
+            role: true,
+            status: true,
+            isEmailVerified: true,
+            isPhoneVerified: true,
+            isTwoFactorEnabled: true,
+            dateOfBirth: true,
+            gender: true,
+            avatar: true,
+            bio: true,
+            lastLoginAt: true,
+            lastLoginIp: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
     });
   }
 }

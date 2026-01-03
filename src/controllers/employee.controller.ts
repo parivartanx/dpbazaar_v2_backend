@@ -168,6 +168,29 @@ export class EmployeeController {
   private r2Service = new R2Service();
   private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
+  /**
+   * Helper function to flatten employee response by merging user fields into employee object
+   * Excludes user.id to avoid overwriting employee.id, since userId already exists
+   */
+  private flattenEmployeeResponse(employee: any): any {
+    if (!employee || !employee.user) {
+      return employee;
+    }
+    const { user: userData, ...employeeFields } = employee;
+    const { id: userId, ...userFields } = userData; // Exclude user.id to avoid conflict
+    return {
+      ...employeeFields,
+      ...userFields,
+    };
+  }
+
+  /**
+   * Helper function to flatten array of employee responses
+   */
+  private flattenEmployeeArray(employees: any[]): any[] {
+    return employees.map(employee => this.flattenEmployeeResponse(employee));
+  }
+
   createEmployee = async (req: Request, res: Response) => {
     try {
       const employee = await this.repo.create(req.body);
@@ -175,10 +198,13 @@ export class EmployeeController {
       // Transform image keys to public URLs in the employee response
       const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(employee);
       
+      // Flatten employee response by merging user fields
+      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
+      
       return res.status(201).json({
         success: true,
         message: 'Employee created successfully',
-        data: { employee: transformedEmployee },
+        data: { employee: flattenedEmployee },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -200,10 +226,13 @@ export class EmployeeController {
       // Transform image keys to public URLs in the employees response
       const transformedEmployees = await this.imageUrlTransformer.transformCommonImageFields(employees);
       
+      // Flatten employee responses by merging user fields
+      const flattenedEmployees = this.flattenEmployeeArray(transformedEmployees);
+      
       return res.status(200).json({
         success: true,
         message: 'Employees fetched successfully',
-        data: { employees: transformedEmployees },
+        data: { employees: flattenedEmployees },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -243,10 +272,13 @@ export class EmployeeController {
       // Transform image keys to public URLs in the employee response
       const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(employee);
       
+      // Flatten employee response by merging user fields
+      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
+      
       return res.status(200).json({
         success: true,
         message: 'Employee fetched successfully',
-        data: { employee: transformedEmployee },
+        data: { employee: flattenedEmployee },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -278,10 +310,13 @@ export class EmployeeController {
       // Transform image keys to public URLs in the employee response
       const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(updated);
       
+      // Flatten employee response by merging user fields
+      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
+      
       return res.status(200).json({
         success: true,
         message: 'Employee updated successfully',
-        data: { updated: transformedEmployee },
+        data: { employee: flattenedEmployee },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -340,10 +375,17 @@ export class EmployeeController {
           });
 
       const updated = await this.repo.updateStatus(id, status);
+      
+      // Transform image keys to public URLs in the employee response
+      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(updated);
+      
+      // Flatten employee response by merging user fields
+      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
+      
       return res.status(200).json({
         success: true,
         message: 'Employee status updated successfully',
-        data: { updated },
+        data: { employee: flattenedEmployee },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -372,10 +414,17 @@ export class EmployeeController {
           });
 
       const updated = await this.repo.assignDepartment(id, departmentId);
+      
+      // Transform image keys to public URLs in the employee response
+      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(updated);
+      
+      // Flatten employee response by merging user fields
+      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
+      
       return res.status(200).json({
         success: true,
         message: 'Employee department assigned successfully',
-        data: { updated },
+        data: { employee: flattenedEmployee },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {

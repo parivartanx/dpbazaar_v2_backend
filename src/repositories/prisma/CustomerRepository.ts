@@ -1,5 +1,6 @@
 import { PrismaClient, Customer, Prisma } from '@prisma/client';
 import { ICustomerRepository } from '../interfaces/ICustomerRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 const prisma = new PrismaClient();
 
@@ -16,8 +17,8 @@ export class CustomerRepository implements ICustomerRepository {
     if (tier) where.tier = tier;
     if (search) {
       where.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
+        { user: { firstName: { contains: search, mode: 'insensitive' } } },
+        { user: { lastName: { contains: search, mode: 'insensitive' } } },
         { customerCode: { contains: search } },
       ];
     }
@@ -27,15 +28,34 @@ export class CustomerRepository implements ICustomerRepository {
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: USER_FIELDS_SELECT,
+        },
+      },
     });
   }
 
   async findById(id: string): Promise<Customer | null> {
-    return prisma.customer.findUnique({ where: { id } });
+    return prisma.customer.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: USER_FIELDS_SELECT,
+        },
+      },
+    });
   }
 
   async findByUserId(userId: string): Promise<Customer | null> {
-    return prisma.customer.findUnique({ where: { userId } });
+    return prisma.customer.findUnique({
+      where: { userId },
+      include: {
+        user: {
+          select: USER_FIELDS_SELECT,
+        },
+      },
+    });
   }
 
   async create(
@@ -44,20 +64,40 @@ export class CustomerRepository implements ICustomerRepository {
       'id' | 'createdAt' | 'updatedAt'
     >
   ): Promise<Customer> {
-    return prisma.customer.create({ data });
+    return prisma.customer.create({
+      data,
+      include: {
+        user: {
+          select: USER_FIELDS_SELECT,
+        },
+      },
+    });
   }
 
   async update(
     id: string,
     data: Prisma.CustomerUpdateInput
   ): Promise<Customer> {
-    return prisma.customer.update({ where: { id }, data });
+    return prisma.customer.update({
+      where: { id },
+      data,
+      include: {
+        user: {
+          select: USER_FIELDS_SELECT,
+        },
+      },
+    });
   }
 
   async softDelete(id: string): Promise<Customer> {
     return prisma.customer.update({
       where: { id },
       data: { deletedAt: new Date() },
+      include: {
+        user: {
+          select: USER_FIELDS_SELECT,
+        },
+      },
     });
   }
 
@@ -65,6 +105,11 @@ export class CustomerRepository implements ICustomerRepository {
     return prisma.customer.update({
       where: { id },
       data: { deletedAt: null },
+      include: {
+        user: {
+          select: USER_FIELDS_SELECT,
+        },
+      },
     });
   }
 }
