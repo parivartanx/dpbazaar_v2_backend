@@ -1,6 +1,7 @@
 import { EmployeeActivity } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IEmployeeActivityRepository } from '../interfaces/employeeActivity.repository.interface';
+import { USER_FIELDS_SELECT } from '../constants';
 
 
 
@@ -9,7 +10,13 @@ export class EmployeeActivityRepository implements IEmployeeActivityRepository {
     return prisma.employeeActivity.findUnique({
       where: { id },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       },
     });
   }
@@ -27,7 +34,13 @@ export class EmployeeActivityRepository implements IEmployeeActivityRepository {
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       },
     });
   }

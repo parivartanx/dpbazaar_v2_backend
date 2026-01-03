@@ -10,6 +10,7 @@ import { prisma } from '../config/prismaClient';
 import { Decimal } from '@prisma/client/runtime/library';
 import bcrypt from 'bcryptjs';
 import { smsService } from '../services/sms.service';
+import { USER_FIELDS_SELECT } from '../repositories/constants';
 
 export class DesktopController {
   private productRepo = new ProductRepository();
@@ -839,7 +840,15 @@ export class DesktopController {
           // Verify customer exists and has sufficient wallet balance
           const user = await prisma.user.findFirst({
             where: { phone: customerPhone },
-            include: { customer: true }
+            include: {
+              customer: {
+                include: {
+                  user: {
+                    select: USER_FIELDS_SELECT,
+                  },
+                },
+              },
+            },
           });
           
           if (!user || !user.customer) {
@@ -919,7 +928,36 @@ export class DesktopController {
     // Try to find existing customer by phone
     const existingUsers = await prisma.user.findMany({
       where: { phone },
-      include: { customer: true }
+      include: {
+        customer: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                middleName: true,
+                email: true,
+                phone: true,
+                username: true,
+                role: true,
+                status: true,
+                isEmailVerified: true,
+                isPhoneVerified: true,
+                isTwoFactorEnabled: true,
+                dateOfBirth: true,
+                gender: true,
+                avatar: true,
+                bio: true,
+                lastLoginAt: true,
+                lastLoginIp: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+          },
+        },
+      },
     });
     
     const existingCustomer = existingUsers.find(user => user.customer);
@@ -943,13 +981,11 @@ export class DesktopController {
       }
     });
     
-    // Create customer record
+    // Create customer record (firstName/lastName are now in User, not Customer)
     const customer = await prisma.customer.create({
       data: {
         userId: newUser.id,
         customerCode: `CUST${Date.now()}`,
-        firstName: counterCustomerName,
-        lastName: '',
       }
     });
     
@@ -1259,8 +1295,14 @@ export class DesktopController {
           phone: mobileNumber || '',
         },
         include: {
-          customer: true
-        }
+          customer: {
+            include: {
+              user: {
+                select: USER_FIELDS_SELECT,
+              },
+            },
+          },
+        },
       });
       
       if (!user || !user.customer) {
@@ -1476,8 +1518,14 @@ export class DesktopController {
           phone: mobileNumber || '',
         },
         include: {
-          customer: true
-        }
+          customer: {
+            include: {
+              user: {
+                select: USER_FIELDS_SELECT,
+              },
+            },
+          },
+        },
       });
       
       if (!user || !user.customer) {
@@ -1912,8 +1960,14 @@ export class DesktopController {
           phone: mobileNumber || '',
         },
         include: {
-          customer: true
-        }
+          customer: {
+            include: {
+              user: {
+                select: USER_FIELDS_SELECT,
+              },
+            },
+          },
+        },
       });
       
       if (!user || !user.customer) {

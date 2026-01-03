@@ -1,6 +1,7 @@
 import { Warehouse } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IWarehouseRepository } from '../interfaces/IWarehouseRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 
 
@@ -20,7 +21,15 @@ export class WarehouseRepository implements IWarehouseRepository {
   async getById(id: string): Promise<Warehouse | null> {
     return prisma.warehouse.findUnique({ 
       where: { id }, 
-      include: { manager: true } 
+      include: {
+        manager: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+      },
     });
   }
 
@@ -39,7 +48,15 @@ export class WarehouseRepository implements IWarehouseRepository {
 
     const query: any = {
       where,
-      include: { manager: true },
+      include: {
+        manager: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' }
     };
 

@@ -11,6 +11,7 @@ import {
   OrderCountByStatus,
   RevenueStats,
 } from '../interfaces/IOrderRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 
 export class OrderRepository implements IOrderRepository {
@@ -21,6 +22,8 @@ export class OrderRepository implements IOrderRepository {
       include: {
         user: {
           select: {
+            firstName: true,
+            lastName: true,
             email: true,
             phone: true,
           },
@@ -31,12 +34,12 @@ export class OrderRepository implements IOrderRepository {
       },
     });
 
-    if (!customer) {
+    if (!customer || !customer.user) {
       throw new Error(`Customer with ID ${data.customerId} not found`);
     }
 
-    // Extract customer info
-    const customerName = `${customer.firstName} ${customer.lastName}`.trim();
+    // Extract customer info from User
+    const customerName = `${customer.user.firstName} ${customer.user.lastName}`.trim();
     const customerEmail = customer.user.email || '';
     const customerPhone = customer.user.phone || '';
 
@@ -271,7 +274,13 @@ export class OrderRepository implements IOrderRepository {
       },
       include: {
         items: true,
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       },
     });
 
@@ -371,9 +380,13 @@ export class OrderRepository implements IOrderRepository {
           customer: {
             select: {
               id: true,
-              firstName: true,
-              lastName: true,
               customerCode: true,
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
             },
           },
         },
@@ -400,7 +413,9 @@ export class OrderRepository implements IOrderRepository {
         },
         customer: {
           include: {
-            user: true,
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
             addresses: true,
           },
         },
@@ -436,7 +451,9 @@ export class OrderRepository implements IOrderRepository {
         },
         customer: {
           include: {
-            user: true,
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
             addresses: true,
           },
         },
@@ -462,7 +479,13 @@ export class OrderRepository implements IOrderRepository {
       data,
       include: {
         items: true,
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       },
     });
   }
@@ -514,7 +537,13 @@ export class OrderRepository implements IOrderRepository {
       data: updateData,
       include: {
         items: true,
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
         statusHistory: true,
       },
     });
@@ -841,6 +870,13 @@ export class OrderRepository implements IOrderRepository {
           },
         },
         payments: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -856,7 +892,13 @@ export class OrderRepository implements IOrderRepository {
             variant: true,
           },
         },
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
         payments: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -885,7 +927,13 @@ export class OrderRepository implements IOrderRepository {
       },
       include: {
         items: true,
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       },
     });
 
@@ -1147,7 +1195,13 @@ export class OrderRepository implements IOrderRepository {
       include: {
         order: {
           include: {
-            customer: true,
+            customer: {
+              include: {
+                user: {
+                  select: USER_FIELDS_SELECT,
+                },
+              },
+            },
             items: true,
           },
         },
@@ -1191,9 +1245,13 @@ export class OrderRepository implements IOrderRepository {
               customer: {
                 select: {
                   id: true,
-                  firstName: true,
-                  lastName: true,
                   customerCode: true,
+                  user: {
+                    select: {
+                      firstName: true,
+                      lastName: true,
+                    },
+                  },
                 },
               },
               items: true,

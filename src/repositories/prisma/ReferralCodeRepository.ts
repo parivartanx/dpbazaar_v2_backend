@@ -2,6 +2,7 @@
 import { ReferralCode } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IReferralCodeRepository } from '../interfaces/IReferralCodeRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 
 
@@ -31,7 +32,13 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.findUnique({ 
       where: { id },
       include: {
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -40,7 +47,13 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.findUnique({ 
       where: { code },
       include: {
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -49,7 +62,13 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.findFirst({ 
       where: { customerId },
       include: {
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -60,7 +79,13 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.create({ 
       data,
       include: {
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -75,7 +100,13 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
       where: { id },
       data,
       include: {
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -84,7 +115,13 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
     return prisma.referralCode.delete({
       where: { id },
       include: {
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -97,7 +134,13 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
         deactivatedAt: new Date()
       },
       include: {
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }

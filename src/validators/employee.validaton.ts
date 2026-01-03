@@ -19,13 +19,8 @@ export const updateDepartmentSchema = Joi.object({
 export const createEmployeeSchema = Joi.object({
   userId: Joi.string().required(),
   employeeCode: Joi.string().required(),
-  firstName: Joi.string().required(),
-  lastName: Joi.string().required(),
-  middleName: Joi.string().allow(null, ''),
-
-  // Contact
-  personalEmail: Joi.string().email().allow(null, ''),
-  workPhone: Joi.string().allow(null, ''),
+  // Note: firstName, lastName, middleName are now in User model
+  // Note: personalEmail, workPhone removed - use User.email and User.phone
 
   // Employment details
   departmentId: Joi.string().allow(null, ''),
@@ -48,7 +43,7 @@ export const createEmployeeSchema = Joi.object({
   currency: Joi.string().default('INR'),
 
   // Documents
-  profileImage: Joi.string().uri().allow(null, ''),
+  // Note: profileImage removed - use User.avatar
   documents: Joi.object().pattern(Joi.string(), Joi.string().uri()).allow(null),
 
   // Emergency contact
@@ -65,11 +60,8 @@ export const createEmployeeSchema = Joi.object({
 });
 
 export const updateEmployeeSchema = Joi.object({
-  firstName: Joi.string().optional(),
-  lastName: Joi.string().optional(),
-  middleName: Joi.string().allow(null, ''),
-  personalEmail: Joi.string().email().allow(null, ''),
-  workPhone: Joi.string().allow(null, ''),
+  // Note: firstName, lastName, middleName are now in User model
+  // Note: personalEmail, workPhone removed - use User.email and User.phone
   departmentId: Joi.string().allow(null, ''),
   designation: Joi.string().optional(),
   reportingTo: Joi.string().allow(null, ''),
@@ -80,7 +72,7 @@ export const updateEmployeeSchema = Joi.object({
   lastWorkingDate: Joi.date().optional(),
   salary: Joi.number().precision(2).allow(null),
   currency: Joi.string().optional(),
-  profileImage: Joi.string().uri().allow(null, ''),
+  // Note: profileImage removed - use User.avatar
   documents: Joi.object().pattern(Joi.string(), Joi.string().uri()).allow(null),
   emergencyContactName: Joi.string().allow(null, ''),
   emergencyContactPhone: Joi.string().allow(null, ''),

@@ -2,6 +2,7 @@
 import { WalletTransaction, TransactionType, TransactionReason, TransactionStatus } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IWalletTransactionRepository } from '../interfaces/IWalletTransactionRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 
 
@@ -32,7 +33,13 @@ export class WalletTransactionRepository implements IWalletTransactionRepository
       orderBy: { createdAt: 'desc' },
       include: {
         wallet: true,
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -42,7 +49,13 @@ export class WalletTransactionRepository implements IWalletTransactionRepository
       where: { id },
       include: {
         wallet: true,
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -54,7 +67,13 @@ export class WalletTransactionRepository implements IWalletTransactionRepository
       data: data as any,
       include: {
         wallet: true,
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -72,7 +91,13 @@ export class WalletTransactionRepository implements IWalletTransactionRepository
       data: updateData as any,
       include: {
         wallet: true,
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }
@@ -82,7 +107,13 @@ export class WalletTransactionRepository implements IWalletTransactionRepository
       where: { id },
       include: {
         wallet: true,
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }

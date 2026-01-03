@@ -1,5 +1,6 @@
 import { IAdminRepository } from "../interfaces/IAdminRepository";
 import { prisma } from '../../config/prismaClient';
+import { USER_FIELDS_SELECT } from '../constants';
 
 export class AdminRepository implements IAdminRepository {
   
@@ -70,7 +71,13 @@ export class AdminRepository implements IAdminRepository {
       take: 5,
 
       include: {
-        customer: true,
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
         items: {
           include: {
             product: true

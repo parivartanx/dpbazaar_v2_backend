@@ -1,6 +1,7 @@
 import { Review } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IReviewRepository } from '../interfaces/IReviewRepository';
+import { USER_FIELDS_SELECT } from '../constants';
 
 
 
@@ -10,7 +11,13 @@ export class ReviewRepository implements IReviewRepository {
       where: filters,
       include: { 
         product: { select: { name: true, slug: true, sku: true } }, 
-        customer: { select: { firstName: true, lastName: true } } 
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -21,7 +28,13 @@ export class ReviewRepository implements IReviewRepository {
       where: { id },
       include: {
         product: true,
-        customer: true
+        customer: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
       }
     });
   }

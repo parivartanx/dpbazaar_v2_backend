@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 import { CustomerRepository } from '../repositories/prisma/CustomerRepository';
+import { UserRepository } from '../repositories/prisma/UserRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
+import { prisma } from '../config/prismaClient';
 
 const customerRepo = new CustomerRepository();
+const userRepo = new UserRepository();
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
@@ -11,6 +14,29 @@ interface AuthRequest extends Request {
 }
 
 export class CustomerController {
+  /**
+   * Helper function to flatten customer response by merging user fields into customer object
+   * Excludes user.id to avoid overwriting customer.id, since userId already exists
+   */
+  private flattenCustomerResponse(customer: any): any {
+    if (!customer || !customer.user) {
+      return customer;
+    }
+    const { user: userData, ...customerFields } = customer;
+    const { id: userId, ...userFields } = userData; // Exclude user.id to avoid conflict
+    return {
+      ...customerFields,
+      ...userFields,
+    };
+  }
+
+  /**
+   * Helper function to flatten array of customer responses
+   */
+  private flattenCustomerArray(customers: any[]): any[] {
+    return customers.map(customer => this.flattenCustomerResponse(customer));
+  }
+
   /** ----------------- ADMIN END ----------------- */
 
   listCustomers = async (req: Request, res: Response): Promise<void> => {
@@ -23,10 +49,12 @@ export class CustomerController {
         search: search as string,
       });
 
+      const flattenedCustomers = this.flattenCustomerArray(customers);
+
       const response: ApiResponse = {
         success: true,
         message: 'Customers fetched successfully',
-        data: { customers },
+        data: { customers: flattenedCustomers },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -66,10 +94,12 @@ export class CustomerController {
         return;
       }
 
+      const flattenedCustomer = this.flattenCustomerResponse(customer);
+
       const response: ApiResponse = {
         success: true,
         message: 'Customer fetched successfully',
-        data: { customer },
+        data: { customer: flattenedCustomer },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -88,10 +118,12 @@ export class CustomerController {
   createCustomer = async (req: Request, res: Response): Promise<void> => {
     try {
       const customer = await customerRepo.create(req.body);
+      const flattenedCustomer = this.flattenCustomerResponse(customer);
+
       const response: ApiResponse = {
         success: true,
         message: 'Customer created successfully',
-        data: { customer },
+        data: { customer: flattenedCustomer },
         timestamp: new Date().toISOString(),
       };
       res.status(201).json(response);
@@ -121,10 +153,12 @@ export class CustomerController {
       }
 
       const customer = await customerRepo.update(id, req.body);
+      const flattenedCustomer = this.flattenCustomerResponse(customer);
+
       const response: ApiResponse = {
         success: true,
         message: 'Customer updated successfully',
-        data: { customer },
+        data: { customer: flattenedCustomer },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -154,10 +188,12 @@ export class CustomerController {
       }
 
       const customer = await customerRepo.softDelete(id);
+      const flattenedCustomer = this.flattenCustomerResponse(customer);
+
       const response: ApiResponse = {
         success: true,
         message: 'Customer deleted successfully',
-        data: { customer },
+        data: { customer: flattenedCustomer },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -187,10 +223,12 @@ export class CustomerController {
       }
 
       const customer = await customerRepo.restore(id);
+      const flattenedCustomer = this.flattenCustomerResponse(customer);
+
       const response: ApiResponse = {
         success: true,
         message: 'Customer restored successfully',
-        data: { customer },
+        data: { customer: flattenedCustomer },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -221,7 +259,9 @@ export class CustomerController {
         return;
       }
 
+      // Fetch customer with user relation (repository now includes full user data)
       const customer = await customerRepo.findByUserId(userId);
+
       if (!customer) {
         const response: ApiResponse = {
           success: false,
@@ -232,10 +272,12 @@ export class CustomerController {
         return;
       }
 
+      const flattenedCustomer = this.flattenCustomerResponse(customer);
+
       const response: ApiResponse = {
         success: true,
         message: 'Customer profile fetched successfully',
-        data: { customer },
+        data: { customer: flattenedCustomer },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -275,11 +317,75 @@ export class CustomerController {
         return;
       }
 
-      const updatedCustomer = await customerRepo.update(customer.id, req.body);
+      // Separate customer and user update data
+      // User profile fields: firstName, lastName, middleName, phone, dateOfBirth, gender, avatar, bio
+      const {
+        firstName: userFirstName,
+        lastName: userLastName,
+        middleName: userMiddleName,
+        phone: userPhone,
+        dateOfBirth: userDateOfBirth,
+        gender: userGender,
+        avatar: userAvatar,
+        bio: userBio,
+        ...customerData
+      } = req.body;
+
+      // Update customer data (customer-specific fields only)
+      const updatedCustomer = await customerRepo.update(customer.id, customerData);
+
+      // Update user profile data if provided
+      const userUpdateData: any = {};
+      if (userFirstName) userUpdateData.firstName = userFirstName;
+      if (userLastName) userUpdateData.lastName = userLastName;
+      if (userMiddleName !== undefined) userUpdateData.middleName = userMiddleName;
+      if (userPhone !== undefined) userUpdateData.phone = userPhone;
+      if (userDateOfBirth !== undefined) userUpdateData.dateOfBirth = userDateOfBirth;
+      if (userGender !== undefined) userUpdateData.gender = userGender;
+      if (userAvatar !== undefined) userUpdateData.avatar = userAvatar;
+      if (userBio !== undefined) userUpdateData.bio = userBio;
+
+      if (Object.keys(userUpdateData).length > 0) {
+        await userRepo.update(userId, userUpdateData);
+      }
+
+      // Fetch updated customer with user relation
+      const customerWithUser = await prisma.customer.findUnique({
+        where: { id: updatedCustomer.id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+              email: true,
+              phone: true,
+              username: true,
+              role: true,
+              status: true,
+              isEmailVerified: true,
+              isPhoneVerified: true,
+              isTwoFactorEnabled: true,
+              dateOfBirth: true,
+              gender: true,
+              avatar: true,
+              bio: true,
+              lastLoginAt: true,
+              lastLoginIp: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+        },
+      });
+
+      const flattenedCustomer = this.flattenCustomerResponse(customerWithUser);
+
       const response: ApiResponse = {
         success: true,
         message: 'Profile updated successfully',
-        data: { customer: updatedCustomer },
+        data: { customer: flattenedCustomer },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

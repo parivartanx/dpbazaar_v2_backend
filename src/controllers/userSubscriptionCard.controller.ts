@@ -11,6 +11,7 @@ import { PaymentService } from '../services/payment.service';
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 import { prisma } from '../config/prismaClient';
+import { USER_FIELDS_SELECT } from '../repositories/constants';
 
 const userSubscriptionCardRepo = new UserSubscriptionCardRepository();
 const referralCodeRepo = new ReferralCodeRepository();
@@ -327,7 +328,13 @@ export class UserSubscriptionCardController {
             currentAmount: 0,
           },
           include: {
-            customer: true,
+            customer: {
+              include: {
+                user: {
+                  select: USER_FIELDS_SELECT,
+                },
+              },
+            },
             card: true
           }
         });

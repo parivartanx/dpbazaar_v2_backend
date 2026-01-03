@@ -566,14 +566,36 @@ This document provides comprehensive API documentation for all admin routes in t
         "id": "string",
         "userId": "string",
         "employeeCode": "string",
-        "firstName": "string",
-        "lastName": "string",
         "department": {
           "id": "string",
           "name": "string"
         },
         "status": "string",
-        "designation": "string"
+        "designation": "string",
+        "reportingTo": "string",
+        "joiningDate": "string",
+        "salary": "number",
+        "metadata": {},
+        "deletedAt": null,
+        "createdAt": "string",
+        "updatedAt": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "middleName": "string",
+        "email": "string",
+        "phone": "string",
+        "username": "string",
+        "role": "EMPLOYEE",
+        "isEmailVerified": true,
+        "isPhoneVerified": true,
+        "isTwoFactorEnabled": false,
+        "dateOfBirth": "string",
+        "gender": "MALE|FEMALE|OTHER",
+        "avatar": "string",
+        "bio": "string",
+        "lastLoginAt": "string",
+        "lastLoginIp": "string",
+        "permissions": []
       }
     ]
   },
@@ -604,14 +626,36 @@ This document provides comprehensive API documentation for all admin routes in t
       "id": "string",
       "userId": "string",
       "employeeCode": "string",
-      "firstName": "string",
-      "lastName": "string",
       "department": {
         "id": "string",
         "name": "string"
       },
       "status": "string",
-      "designation": "string"
+      "designation": "string",
+      "reportingTo": "string",
+      "joiningDate": "string",
+      "salary": "number",
+      "metadata": {},
+      "deletedAt": null,
+      "createdAt": "string",
+      "updatedAt": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "EMPLOYEE",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
+      "dateOfBirth": "string",
+      "gender": "MALE|FEMALE|OTHER",
+      "avatar": "string",
+      "bio": "string",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "permissions": []
     }
   },
   "timestamp": "string"
@@ -642,14 +686,36 @@ This document provides comprehensive API documentation for all admin routes in t
       "id": "string",
       "userId": "string",
       "employeeCode": "string",
-      "firstName": "string",
-      "lastName": "string",
       "department": {
         "id": "string",
         "name": "string"
       },
       "status": "string",
-      "designation": "string"
+      "designation": "string",
+      "reportingTo": "string",
+      "joiningDate": "string",
+      "salary": "number",
+      "metadata": {},
+      "deletedAt": null,
+      "createdAt": "string",
+      "updatedAt": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "EMPLOYEE",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
+      "dateOfBirth": "string",
+      "gender": "MALE|FEMALE|OTHER",
+      "avatar": "string",
+      "bio": "string",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "permissions": []
     }
   },
   "timestamp": "string"
@@ -681,14 +747,36 @@ This document provides comprehensive API documentation for all admin routes in t
       "id": "string",
       "userId": "string",
       "employeeCode": "string",
-      "firstName": "string",
-      "lastName": "string",
       "department": {
         "id": "string",
         "name": "string"
       },
       "status": "string",
-      "designation": "string"
+      "designation": "string",
+      "reportingTo": "string",
+      "joiningDate": "string",
+      "salary": "number",
+      "metadata": {},
+      "deletedAt": null,
+      "createdAt": "string",
+      "updatedAt": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "EMPLOYEE",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
+      "dateOfBirth": "string",
+      "gender": "MALE|FEMALE|OTHER",
+      "avatar": "string",
+      "bio": "string",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "permissions": []
     }
   },
   "timestamp": "string"
@@ -718,14 +806,36 @@ This document provides comprehensive API documentation for all admin routes in t
       "id": "string",
       "userId": "string",
       "employeeCode": "string",
-      "firstName": "string",
-      "lastName": "string",
       "department": {
         "id": "string",
         "name": "string"
       },
       "status": "string",
-      "designation": "string"
+      "designation": "string",
+      "reportingTo": "string",
+      "joiningDate": "string",
+      "salary": "number",
+      "metadata": {},
+      "deletedAt": null,
+      "createdAt": "string",
+      "updatedAt": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "EMPLOYEE",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
+      "dateOfBirth": "string",
+      "gender": "MALE|FEMALE|OTHER",
+      "avatar": "string",
+      "bio": "string",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "permissions": []
     }
   },
   "timestamp": "string"
@@ -757,14 +867,36 @@ This document provides comprehensive API documentation for all admin routes in t
       "id": "string",
       "userId": "string",
       "employeeCode": "string",
-      "firstName": "string",
-      "lastName": "string",
       "department": {
         "id": "string",
         "name": "string"
       },
       "status": "string",
-      "designation": "string"
+      "designation": "string",
+      "reportingTo": "string",
+      "joiningDate": "string",
+      "salary": "number",
+      "metadata": {},
+      "deletedAt": null,
+      "createdAt": "string",
+      "updatedAt": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "EMPLOYEE",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
+      "dateOfBirth": "string",
+      "gender": "MALE|FEMALE|OTHER",
+      "avatar": "string",
+      "bio": "string",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "permissions": []
     }
   },
   "timestamp": "string"
@@ -796,14 +928,36 @@ This document provides comprehensive API documentation for all admin routes in t
       "id": "string",
       "userId": "string",
       "employeeCode": "string",
-      "firstName": "string",
-      "lastName": "string",
       "department": {
         "id": "string",
         "name": "string"
       },
       "status": "string",
-      "designation": "string"
+      "designation": "string",
+      "reportingTo": "string",
+      "joiningDate": "string",
+      "salary": "number",
+      "metadata": {},
+      "deletedAt": null,
+      "createdAt": "string",
+      "updatedAt": "string",
+      "firstName": "string",
+      "lastName": "string",
+      "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "EMPLOYEE",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
+      "dateOfBirth": "string",
+      "gender": "MALE|FEMALE|OTHER",
+      "avatar": "string",
+      "bio": "string",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "permissions": []
     }
   },
   "timestamp": "string"
@@ -3770,21 +3924,7 @@ This document provides comprehensive API documentation for all admin routes in t
         "purchasedAt": "string",
         "activatedAt": "string",
         "expiredAt": "string",
-        "currentAmount": "number",
-        "card": {
-          "id": "string",
-          "name": "string",
-          "price": "number",
-          "targetAmount": "number",
-          "rewardPercent": "number",
-          "validityDays": "number"
-        },
-        "customer": {
-          "id": "string",
-          "firstName": "string",
-          "lastName": "string",
-          "customerCode": "string"
-        }
+        "currentAmount": "number"
       }
     ]
   },
@@ -3885,9 +4025,41 @@ This document provides comprehensive API documentation for all admin routes in t
       },
       "customer": {
         "id": "string",
-        "firstName": "string",
-        "lastName": "string",
-        "customerCode": "string"
+        "userId": "string",
+        "customerCode": "string",
+        "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+        "loyaltyPoints": 0,
+        "lifetimeValue": "0.00",
+        "preferences": {},
+        "totalOrders": 0,
+        "totalSpent": "0.00",
+        "lastOrderAt": "string",
+        "metadata": {},
+        "deletedAt": null,
+        "createdAt": "string",
+        "updatedAt": "string",
+        "user": {
+          "id": "string",
+          "firstName": "string",
+          "lastName": "string",
+          "middleName": "string",
+          "email": "string",
+          "phone": "string",
+          "username": "string",
+          "role": "CUSTOMER",
+          "status": "ACTIVE|INACTIVE|SUSPENDED",
+          "isEmailVerified": true,
+          "isPhoneVerified": true,
+          "isTwoFactorEnabled": false,
+          "dateOfBirth": "string",
+          "gender": "MALE|FEMALE|OTHER",
+          "avatar": "string",
+          "bio": "string",
+          "lastLoginAt": "string",
+          "lastLoginIp": "string",
+          "createdAt": "string",
+          "updatedAt": "string"
+        }
       }
     }
   },
@@ -3938,9 +4110,41 @@ This document provides comprehensive API documentation for all admin routes in t
       },
       "customer": {
         "id": "string",
-        "firstName": "string",
-        "lastName": "string",
-        "customerCode": "string"
+        "userId": "string",
+        "customerCode": "string",
+        "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+        "loyaltyPoints": 0,
+        "lifetimeValue": "0.00",
+        "preferences": {},
+        "totalOrders": 0,
+        "totalSpent": "0.00",
+        "lastOrderAt": "string",
+        "metadata": {},
+        "deletedAt": null,
+        "createdAt": "string",
+        "updatedAt": "string",
+        "user": {
+          "id": "string",
+          "firstName": "string",
+          "lastName": "string",
+          "middleName": "string",
+          "email": "string",
+          "phone": "string",
+          "username": "string",
+          "role": "CUSTOMER",
+          "status": "ACTIVE|INACTIVE|SUSPENDED",
+          "isEmailVerified": true,
+          "isPhoneVerified": true,
+          "isTwoFactorEnabled": false,
+          "dateOfBirth": "string",
+          "gender": "MALE|FEMALE|OTHER",
+          "avatar": "string",
+          "bio": "string",
+          "lastLoginAt": "string",
+          "lastLoginIp": "string",
+          "createdAt": "string",
+          "updatedAt": "string"
+        }
       }
     }
   },
@@ -4017,7 +4221,7 @@ This document provides comprehensive API documentation for all admin routes in t
 ```json
 {
   "success": true,
-  "message": "Customers retrieved successfully",
+  "message": "Customers fetched successfully",
   "data": {
     "customers": [
       {
@@ -4027,27 +4231,31 @@ This document provides comprehensive API documentation for all admin routes in t
         "firstName": "string",
         "lastName": "string",
         "middleName": "string",
+        "email": "string",
+        "phone": "string",
+        "username": "string",
+        "role": "CUSTOMER",
+        "status": "ACTIVE|INACTIVE|SUSPENDED",
+        "isEmailVerified": true,
+        "isPhoneVerified": true,
+        "isTwoFactorEnabled": false,
         "dateOfBirth": "string",
-        "gender": "string",
+        "gender": "MALE|FEMALE|OTHER",
         "avatar": "string",
         "bio": "string",
-        "tier": "string",
-        "loyaltyPoints": "number",
-        "lifetimeValue": "number",
-        "preferences": "object",
-        "totalOrders": "number",
-        "totalSpent": "number",
+        "lastLoginAt": "string",
+        "lastLoginIp": "string",
+        "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+        "loyaltyPoints": 0,
+        "lifetimeValue": "0.00",
+        "preferences": {},
+        "totalOrders": 0,
+        "totalSpent": "0.00",
         "lastOrderAt": "string",
-        "metadata": "object",
-        "deletedAt": "string",
+        "metadata": {},
+        "deletedAt": null,
         "createdAt": "string",
-        "updatedAt": "string",
-        "user": {
-          "id": "string",
-          "email": "string",
-          "role": "string",
-          "status": "string"
-        }
+        "updatedAt": "string"
       }
     ]
   },
@@ -4072,7 +4280,7 @@ This document provides comprehensive API documentation for all admin routes in t
 ```json
 {
   "success": true,
-  "message": "Customer retrieved successfully",
+  "message": "Customer fetched successfully",
   "data": {
     "customer": {
       "id": "string",
@@ -4081,27 +4289,31 @@ This document provides comprehensive API documentation for all admin routes in t
       "firstName": "string",
       "lastName": "string",
       "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "CUSTOMER",
+      "status": "ACTIVE|INACTIVE|SUSPENDED",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
       "dateOfBirth": "string",
-      "gender": "string",
+      "gender": "MALE|FEMALE|OTHER",
       "avatar": "string",
       "bio": "string",
-      "tier": "string",
-      "loyaltyPoints": "number",
-      "lifetimeValue": "number",
-      "preferences": "object",
-      "totalOrders": "number",
-      "totalSpent": "number",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+      "loyaltyPoints": 0,
+      "lifetimeValue": "0.00",
+      "preferences": {},
+      "totalOrders": 0,
+      "totalSpent": "0.00",
       "lastOrderAt": "string",
-      "metadata": "object",
-      "deletedAt": "string",
+      "metadata": {},
+      "deletedAt": null,
       "createdAt": "string",
-      "updatedAt": "string",
-      "user": {
-        "id": "string",
-        "email": "string",
-        "role": "string",
-        "status": "string"
-      }
+      "updatedAt": "string"
     }
   },
   "timestamp": "string"
@@ -4135,27 +4347,31 @@ This document provides comprehensive API documentation for all admin routes in t
       "firstName": "string",
       "lastName": "string",
       "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "CUSTOMER",
+      "status": "ACTIVE|INACTIVE|SUSPENDED",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
       "dateOfBirth": "string",
-      "gender": "string",
+      "gender": "MALE|FEMALE|OTHER",
       "avatar": "string",
       "bio": "string",
-      "tier": "string",
-      "loyaltyPoints": "number",
-      "lifetimeValue": "number",
-      "preferences": "object",
-      "totalOrders": "number",
-      "totalSpent": "number",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+      "loyaltyPoints": 0,
+      "lifetimeValue": "0.00",
+      "preferences": {},
+      "totalOrders": 0,
+      "totalSpent": "0.00",
       "lastOrderAt": "string",
-      "metadata": "object",
-      "deletedAt": "string",
+      "metadata": {},
+      "deletedAt": null,
       "createdAt": "string",
-      "updatedAt": "string",
-      "user": {
-        "id": "string",
-        "email": "string",
-        "role": "string",
-        "status": "string"
-      }
+      "updatedAt": "string"
     }
   },
   "timestamp": "string"
@@ -4190,27 +4406,31 @@ This document provides comprehensive API documentation for all admin routes in t
       "firstName": "string",
       "lastName": "string",
       "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "CUSTOMER",
+      "status": "ACTIVE|INACTIVE|SUSPENDED",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
       "dateOfBirth": "string",
-      "gender": "string",
+      "gender": "MALE|FEMALE|OTHER",
       "avatar": "string",
       "bio": "string",
-      "tier": "string",
-      "loyaltyPoints": "number",
-      "lifetimeValue": "number",
-      "preferences": "object",
-      "totalOrders": "number",
-      "totalSpent": "number",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+      "loyaltyPoints": 0,
+      "lifetimeValue": "0.00",
+      "preferences": {},
+      "totalOrders": 0,
+      "totalSpent": "0.00",
       "lastOrderAt": "string",
-      "metadata": "object",
-      "deletedAt": "string",
+      "metadata": {},
+      "deletedAt": null,
       "createdAt": "string",
-      "updatedAt": "string",
-      "user": {
-        "id": "string",
-        "email": "string",
-        "role": "string",
-        "status": "string"
-      }
+      "updatedAt": "string"
     }
   },
   "timestamp": "string"
@@ -4243,27 +4463,31 @@ This document provides comprehensive API documentation for all admin routes in t
       "firstName": "string",
       "lastName": "string",
       "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "CUSTOMER",
+      "status": "ACTIVE|INACTIVE|SUSPENDED",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
       "dateOfBirth": "string",
-      "gender": "string",
+      "gender": "MALE|FEMALE|OTHER",
       "avatar": "string",
       "bio": "string",
-      "tier": "string",
-      "loyaltyPoints": "number",
-      "lifetimeValue": "number",
-      "preferences": "object",
-      "totalOrders": "number",
-      "totalSpent": "number",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+      "loyaltyPoints": 0,
+      "lifetimeValue": "0.00",
+      "preferences": {},
+      "totalOrders": 0,
+      "totalSpent": "0.00",
       "lastOrderAt": "string",
-      "metadata": "object",
+      "metadata": {},
       "deletedAt": "string",
       "createdAt": "string",
-      "updatedAt": "string",
-      "user": {
-        "id": "string",
-        "email": "string",
-        "role": "string",
-        "status": "string"
-      }
+      "updatedAt": "string"
     }
   },
   "timestamp": "string"
@@ -4296,27 +4520,31 @@ This document provides comprehensive API documentation for all admin routes in t
       "firstName": "string",
       "lastName": "string",
       "middleName": "string",
+      "email": "string",
+      "phone": "string",
+      "username": "string",
+      "role": "CUSTOMER",
+      "status": "ACTIVE|INACTIVE|SUSPENDED",
+      "isEmailVerified": true,
+      "isPhoneVerified": true,
+      "isTwoFactorEnabled": false,
       "dateOfBirth": "string",
-      "gender": "string",
+      "gender": "MALE|FEMALE|OTHER",
       "avatar": "string",
       "bio": "string",
-      "tier": "string",
-      "loyaltyPoints": "number",
-      "lifetimeValue": "number",
-      "preferences": "object",
-      "totalOrders": "number",
-      "totalSpent": "number",
+      "lastLoginAt": "string",
+      "lastLoginIp": "string",
+      "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+      "loyaltyPoints": 0,
+      "lifetimeValue": "0.00",
+      "preferences": {},
+      "totalOrders": 0,
+      "totalSpent": "0.00",
       "lastOrderAt": "string",
-      "metadata": "object",
-      "deletedAt": "null",
+      "metadata": {},
+      "deletedAt": null,
       "createdAt": "string",
-      "updatedAt": "string",
-      "user": {
-        "id": "string",
-        "email": "string",
-        "role": "string",
-        "status": "string"
-      }
+      "updatedAt": "string"
     }
   },
   "timestamp": "string"
@@ -4473,13 +4701,7 @@ This document provides comprehensive API documentation for all admin routes in t
         "type": "string",
         "balance": "number",
         "createdAt": "string",
-        "updatedAt": "string",
-        "customer": {
-          "id": "string",
-          "firstName": "string",
-          "lastName": "string",
-          "customerCode": "string"
-        }
+        "updatedAt": "string"
       }
     ]
   },
@@ -4512,13 +4734,7 @@ This document provides comprehensive API documentation for all admin routes in t
       "type": "string",
       "balance": "number",
       "createdAt": "string",
-      "updatedAt": "string",
-      "customer": {
-        "id": "string",
-        "firstName": "string",
-        "lastName": "string",
-        "customerCode": "string"
-      }
+      "updatedAt": "string"
     }
   },
   "timestamp": "string"
@@ -4551,13 +4767,7 @@ This document provides comprehensive API documentation for all admin routes in t
       "type": "string",
       "balance": "number",
       "createdAt": "string",
-      "updatedAt": "string",
-      "customer": {
-        "id": "string",
-        "firstName": "string",
-        "lastName": "string",
-        "customerCode": "string"
-      }
+      "updatedAt": "string"
     }
   },
   "timestamp": "string"
@@ -4591,13 +4801,7 @@ This document provides comprehensive API documentation for all admin routes in t
       "type": "string",
       "balance": "number",
       "createdAt": "string",
-      "updatedAt": "string",
-      "customer": {
-        "id": "string",
-        "firstName": "string",
-        "lastName": "string",
-        "customerCode": "string"
-      }
+      "updatedAt": "string"
     }
   },
   "timestamp": "string"
@@ -4684,9 +4888,41 @@ This document provides comprehensive API documentation for all admin routes in t
         "createdAt": "string",
         "customer": {
           "id": "string",
-          "firstName": "string",
-          "lastName": "string",
-          "customerCode": "string"
+          "userId": "string",
+          "customerCode": "string",
+          "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+          "loyaltyPoints": 0,
+          "lifetimeValue": "0.00",
+          "preferences": {},
+          "totalOrders": 0,
+          "totalSpent": "0.00",
+          "lastOrderAt": "string",
+          "metadata": {},
+          "deletedAt": null,
+          "createdAt": "string",
+          "updatedAt": "string",
+          "user": {
+            "id": "string",
+            "firstName": "string",
+            "lastName": "string",
+            "middleName": "string",
+            "email": "string",
+            "phone": "string",
+            "username": "string",
+            "role": "CUSTOMER",
+            "status": "ACTIVE|INACTIVE|SUSPENDED",
+            "isEmailVerified": true,
+            "isPhoneVerified": true,
+            "isTwoFactorEnabled": false,
+            "dateOfBirth": "string",
+            "gender": "MALE|FEMALE|OTHER",
+            "avatar": "string",
+            "bio": "string",
+            "lastLoginAt": "string",
+            "lastLoginIp": "string",
+            "createdAt": "string",
+            "updatedAt": "string"
+          }
         }
       }
     ]
@@ -4965,9 +5201,11 @@ This document provides comprehensive API documentation for all admin routes in t
         "updatedAt": "string",
         "customer": {
           "id": "string",
-          "firstName": "string",
-          "lastName": "string",
-          "customerCode": "string"
+          "customerCode": "string",
+          "user": {
+            "firstName": "string",
+            "lastName": "string"
+          }
         },
         "vendor": {
           "id": "string",
@@ -5075,9 +5313,42 @@ This document provides comprehensive API documentation for all admin routes in t
       "updatedAt": "string",
       "customer": {
         "id": "string",
-        "firstName": "string",
-        "lastName": "string",
-        "customerCode": "string"
+        "userId": "string",
+        "customerCode": "string",
+        "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+        "loyaltyPoints": 0,
+        "lifetimeValue": "0.00",
+        "preferences": {},
+        "totalOrders": 0,
+        "totalSpent": "0.00",
+        "lastOrderAt": "string",
+        "metadata": {},
+        "deletedAt": null,
+        "createdAt": "string",
+        "updatedAt": "string",
+        "user": {
+          "id": "string",
+          "firstName": "string",
+          "lastName": "string",
+          "middleName": "string",
+          "email": "string",
+          "phone": "string",
+          "username": "string",
+          "role": "CUSTOMER",
+          "status": "ACTIVE|INACTIVE|SUSPENDED",
+          "isEmailVerified": true,
+          "isPhoneVerified": true,
+          "isTwoFactorEnabled": false,
+          "dateOfBirth": "string",
+          "gender": "MALE|FEMALE|OTHER",
+          "avatar": "string",
+          "bio": "string",
+          "lastLoginAt": "string",
+          "lastLoginIp": "string",
+          "createdAt": "string",
+          "updatedAt": "string"
+        },
+        "addresses": []
       },
       "vendor": {
         "id": "string",
@@ -6173,9 +6444,41 @@ This document provides comprehensive API documentation for all admin routes in t
         "updatedAt": "string",
         "customer": {
           "id": "string",
-          "firstName": "string",
-          "lastName": "string",
-          "customerCode": "string"
+          "userId": "string",
+          "customerCode": "string",
+          "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+          "loyaltyPoints": 0,
+          "lifetimeValue": "0.00",
+          "preferences": {},
+          "totalOrders": 0,
+          "totalSpent": "0.00",
+          "lastOrderAt": "string",
+          "metadata": {},
+          "deletedAt": null,
+          "createdAt": "string",
+          "updatedAt": "string",
+          "user": {
+            "id": "string",
+            "firstName": "string",
+            "lastName": "string",
+            "middleName": "string",
+            "email": "string",
+            "phone": "string",
+            "username": "string",
+            "role": "CUSTOMER",
+            "status": "ACTIVE|INACTIVE|SUSPENDED",
+            "isEmailVerified": true,
+            "isPhoneVerified": true,
+            "isTwoFactorEnabled": false,
+            "dateOfBirth": "string",
+            "gender": "MALE|FEMALE|OTHER",
+            "avatar": "string",
+            "bio": "string",
+            "lastLoginAt": "string",
+            "lastLoginIp": "string",
+            "createdAt": "string",
+            "updatedAt": "string"
+          }
         },
         "product": {
           "id": "string",
@@ -9644,10 +9947,36 @@ This document provides comprehensive API documentation for all admin routes in t
         "createdAt": "string",
         "employee": {
           "id": "string",
-          "firstName": "string",
-          "lastName": "string",
+          "userId": "string",
           "employeeCode": "string",
-          "designation": "string"
+          "designation": "string",
+          "status": "string",
+          "department": {
+            "id": "string",
+            "name": "string"
+          },
+          "user": {
+            "id": "string",
+            "firstName": "string",
+            "lastName": "string",
+            "middleName": "string",
+            "email": "string",
+            "phone": "string",
+            "username": "string",
+            "role": "EMPLOYEE",
+            "status": "ACTIVE|INACTIVE|SUSPENDED",
+            "isEmailVerified": true,
+            "isPhoneVerified": true,
+            "isTwoFactorEnabled": false,
+            "dateOfBirth": "string",
+            "gender": "MALE|FEMALE|OTHER",
+            "avatar": "string",
+            "bio": "string",
+            "lastLoginAt": "string",
+            "lastLoginIp": "string",
+            "createdAt": "string",
+            "updatedAt": "string"
+          }
         }
       }
     ]
