@@ -347,6 +347,11 @@ export class DesktopController {
     }
   };
   
+  // Helper function to round to 2 decimal places
+  private roundToTwoDecimals = (value: number): number => {
+    return Math.round(value * 100) / 100;
+  };
+
   // Dashboard data API
   getDashboardData = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -354,72 +359,295 @@ export class DesktopController {
 
       // Parse dates
       const start = startDate ? new Date(startDate as string) : new Date();
+      start.setHours(0, 0, 0, 0);
       start.setDate(start.getDate() - 30); // Default to last 30 days
       const end = endDate ? new Date(endDate as string) : new Date();
+      end.setHours(23, 59, 59, 999);
 
-      // Build filters for orders
-      const filters: any = {
+      // Calculate previous period for percentage changes
+      const periodDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      const prevStart = new Date(start);
+      prevStart.setDate(prevStart.getDate() - periodDays);
+      const prevEnd = new Date(start);
+      prevEnd.setTime(prevEnd.getTime() - 1);
+
+      // Build where clause for orders
+      const whereClause: any = {
         source: 'SYSTEM',
-        startDate: start,
-        endDate: end
+        createdAt: {
+          gte: start,
+          lte: end
+        }
       };
 
-      // If userId is provided, filter by createdBy
       if (userId) {
-        filters.createdBy = userId as string;
+        whereClause.createdBy = userId as string;
       }
 
-      // Get orders for the date range
-      const orderResult = await this.orderRepo.getAllOrders(filters);
+      // Build where clause for previous period
+      const prevWhereClause: any = {
+        source: 'SYSTEM',
+        createdAt: {
+          gte: prevStart,
+          lte: prevEnd
+        }
+      };
 
-      // Calculate dashboard metrics
+      if (userId) {
+        prevWhereClause.createdBy = userId as string;
+      }
+
+      // Fetch orders with payments and items for current period
+      const [orders, prevOrders, returns] = await Promise.all([
+        prisma.order.findMany({
+          where: whereClause,
+          include: {
+            items: {
+              select: {
+                quantity: true,
+                productName: true,
+                productId: true,
+                sellingPrice: true
+              }
+            },
+            payments: {
+              where: {
+                status: 'SUCCESS'
+              },
+              select: {
+                amount: true,
+                cash: true,
+                online: true,
+                method: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        }),
+        prisma.order.findMany({
+          where: prevWhereClause,
+          include: {
+            payments: {
+              where: {
+                status: 'SUCCESS'
+              },
+              select: {
+                amount: true
+              }
+            }
+          }
+        }),
+        prisma.return.findMany({
+          where: {
+            createdAt: {
+              gte: start,
+              lte: end
+            },
+            order: {
+              source: 'SYSTEM',
+              ...(userId ? {
+                createdBy: userId as string
+              } : {})
+            }
+          },
+          select: {
+            refundAmount: true,
+            status: true
+          }
+        })
+      ]);
+
+      // Calculate KPIs for current period
       let totalSales = 0;
-      let totalBills = 0;
+      let totalBills = orders.length;
       let itemsSold = 0;
       let cashPayments = 0;
       let onlinePayments = 0;
       let walletPayments = 0;
-      let totalReturns = 0;
-      let totalReturnAmount = 0;
 
       // Process orders to calculate metrics
-      orderResult.orders.forEach(order => {
+      orders.forEach(order => {
         totalSales += Number(order.totalAmount);
-        totalBills += 1;
         
-        // Sum items sold (if items are included)
-        if (Array.isArray((order as any).items)) {
-          (order as any).items.forEach((item: any) => {
-            itemsSold += item.quantity;
+        // Sum items sold
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach((item: any) => {
+            itemsSold += item.quantity || 0;
           });
         }
         
-        // Payment method distribution (simplified)
-        // In a real implementation, you would check actual payment records
-        if (order.source === 'SYSTEM') {
-          cashPayments += 1; // Simplified assumption
+        // Calculate payment breakdown
+        if (order.payments && order.payments.length > 0) {
+          order.payments.forEach((payment: any) => {
+            const amount = Number(payment.amount);
+            const cash = Number(payment.cash || 0);
+            const online = Number(payment.online || 0);
+
+            // Check payment method
+            if (payment.method === 'CASH' || payment.method === 'COD') {
+              cashPayments += amount;
+            } else if (payment.method === 'WALLET') {
+              walletPayments += amount;
+            } else {
+              // ONLINE payment methods (CREDIT_CARD, DEBIT_CARD, UPI, NET_BANKING, etc.)
+              onlinePayments += amount;
+            }
+
+            // Also check cash/online fields if method is SPLIT
+            if (payment.method === 'SPLIT') {
+              if (cash > 0) cashPayments += cash;
+              if (online > 0) onlinePayments += online;
+            }
+          });
         } else {
-          onlinePayments += 1;
+          // If no payment record, assume cash for SYSTEM orders
+          cashPayments += Number(order.totalAmount);
         }
       });
 
+      // Calculate returns
+      const totalReturns = returns.length;
+      const totalReturnAmount = returns.reduce((sum, ret) => {
+        return sum + Number(ret.refundAmount || 0);
+      }, 0);
+
+      // Calculate previous period KPIs for percentage changes
+      const prevTotalSales = prevOrders.reduce((sum, order) => {
+        return sum + Number(order.totalAmount);
+      }, 0);
+      const prevTotalBills = prevOrders.length;
+
+      // Calculate percentage changes
+      const salesChangePercent = prevTotalSales > 0 
+        ? ((totalSales - prevTotalSales) / prevTotalSales) * 100 
+        : 0;
+      const billsChangePercent = prevTotalBills > 0 
+        ? ((totalBills - prevTotalBills) / prevTotalBills) * 100 
+        : 0;
+
       // Calculate average bill value
       const avgBillValue = totalBills > 0 ? totalSales / totalBills : 0;
+
+      // Generate daily sales data (last 7 days including today)
+      const dailySales: { day: string; sales: number }[] = [];
+      const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(end);
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+
+        const daySales = orders
+          .filter(order => {
+            const orderDate = new Date(order.createdAt);
+            return orderDate >= date && orderDate < nextDate;
+          })
+          .reduce((sum, order) => sum + Number(order.totalAmount), 0);
+
+        dailySales.push({
+          day: daysOfWeek[date.getDay()] || 'Sun',
+          sales: this.roundToTwoDecimals(daySales)
+        });
+      }
+
+      // Generate monthly trend data (last 12 months)
+      const monthlyTrend: { month: string; sales: number }[] = [];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(end);
+        date.setMonth(date.getMonth() - i);
+        date.setDate(1);
+        date.setHours(0, 0, 0, 0);
+        const nextDate = new Date(date);
+        nextDate.setMonth(nextDate.getMonth() + 1);
+
+        const monthSales = orders
+          .filter(order => {
+            const orderDate = new Date(order.createdAt);
+            return orderDate >= date && orderDate < nextDate;
+          })
+          .reduce((sum, order) => sum + Number(order.totalAmount), 0);
+
+        monthlyTrend.push({
+          month: `${monthNames[date.getMonth()]} ${date.getFullYear().toString().slice(-2)}`,
+          sales: this.roundToTwoDecimals(monthSales)
+        });
+      }
+
+      // Calculate top selling products from order items in the date range
+      const productSalesMap: { [key: string]: { name: string; quantity: number; price: number } } = {};
+      
+      orders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach((item: any) => {
+            const productId = item.productId;
+            if (!productSalesMap[productId]) {
+              productSalesMap[productId] = {
+                name: item.productName || 'Unknown Product',
+                quantity: 0,
+                price: Number(item.sellingPrice || 0)
+              };
+            }
+            productSalesMap[productId].quantity += item.quantity || 0;
+          });
+        }
+      });
+
+      // Convert to array, sort by quantity, and take top 10
+      const topSellingProducts = Object.entries(productSalesMap)
+        .map(([productId, data]) => ({
+          id: productId,
+          name: data.name,
+          quantity: data.quantity,
+          price: this.roundToTwoDecimals(data.price)
+        }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10);
+
+      // Payment methods breakdown for donut chart
+      const paymentMethodsBreakdown = [
+        {
+          method: 'Cash',
+          amount: this.roundToTwoDecimals(cashPayments),
+          percentage: this.roundToTwoDecimals(totalSales > 0 ? (cashPayments / totalSales) * 100 : 0)
+        },
+        {
+          method: 'Online',
+          amount: this.roundToTwoDecimals(onlinePayments),
+          percentage: this.roundToTwoDecimals(totalSales > 0 ? (onlinePayments / totalSales) * 100 : 0)
+        },
+        {
+          method: 'Wallet',
+          amount: this.roundToTwoDecimals(walletPayments),
+          percentage: this.roundToTwoDecimals(totalSales > 0 ? (walletPayments / totalSales) * 100 : 0)
+        }
+      ].filter(pm => pm.amount > 0); // Only include methods with payments
 
       const response: ApiResponse = {
         success: true,
         data: {
           kpis: {
-            totalSales,
+            totalSales: this.roundToTwoDecimals(totalSales),
             totalBills,
-            avgBillValue,
+            avgBillValue: this.roundToTwoDecimals(avgBillValue),
             itemsSold,
-            cashPayments,
-            onlinePayments,
-            walletPayments,
-            totalReturns,
-            totalReturnAmount
+            salesChangePercent: this.roundToTwoDecimals(salesChangePercent),
+            billsChangePercent: this.roundToTwoDecimals(billsChangePercent)
           },
+          paymentBreakdown: {
+            cashPayments: this.roundToTwoDecimals(cashPayments),
+            onlinePayments: this.roundToTwoDecimals(onlinePayments),
+            walletPayments: this.roundToTwoDecimals(walletPayments),
+            totalReturns,
+            totalReturnAmount: this.roundToTwoDecimals(totalReturnAmount)
+          },
+          dailySales,
+          monthlyTrend,
+          topSellingProducts,
+          paymentMethods: paymentMethodsBreakdown,
           dateRange: {
             startDate: start.toISOString(),
             endDate: end.toISOString()
