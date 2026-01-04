@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { DesktopController } from '../controllers/desktop.controller';
+import { isAccessAllowed } from '../middlewares/isAccessAllowed';
 
 const router = Router();
 const desktopController = new DesktopController();
@@ -10,37 +11,37 @@ router.post('/auth/logout', desktopController.logout);
 router.post('/auth/refresh', desktopController.refreshToken);
 
 // Dashboard API
-router.get('/dashboard', desktopController.getDashboardData);
+router.get('/dashboard', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getDashboardData);
 
 // Product search API
-router.get('/products', desktopController.searchProducts);
+router.get('/products', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.searchProducts);
 
 // Discount APIs
-router.get('/discounts', desktopController.getAllDiscounts);
+router.get('/discounts', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getAllDiscounts);
 
 // Wallet APIs
-router.post('/verify-otp-and-get-wallet', desktopController.verifyOtpAndGetWalletDetails);
-router.post('/send-otp', desktopController.sendOtpForWalletPayment);
+router.post('/verify-otp-and-get-wallet', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.verifyOtpAndGetWalletDetails);
+router.post('/send-otp', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.sendOtpForWalletPayment);
 
 // Order creation API for desktop sales
-router.post('/generate-bill', desktopController.createOrder);
+router.post('/generate-bill', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.createOrder);
 
 // Bill history API
-router.get('/bills', desktopController.getBillHistory);
-router.get('/bills-excel', desktopController.getBillHistoryExcel);
+router.get('/bills', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillHistory);
+router.get('/bills-excel', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillHistoryExcel);
 // Get bill by order number API
-router.get('/bills/:orderNumber', desktopController.getBillByOrderNumber);
+router.get('/bills/:orderNumber', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillByOrderNumber);
 
 // Return APIs
-router.post('/create-return-request', desktopController.createReturnRequest);
-router.get('/get-returns', desktopController.getReturns);
-router.get('/get-returns-excel', desktopController.getReturnsExcel);
+router.post('/create-return-request', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.createReturnRequest);
+router.get('/get-returns', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getReturns);
+router.get('/get-returns-excel', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getReturnsExcel);
 
 // Analytics APIs
-router.get('/analytics/daily-sales', desktopController.getDailySales);
-router.get('/analytics/payment-methods', desktopController.getPaymentMethods);
-router.get('/analytics/monthly-trend', desktopController.getMonthlyTrend);
-router.get('/analytics/top-products', desktopController.getTopSellingProducts);
+router.get('/analytics/daily-sales', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getDailySales);
+router.get('/analytics/payment-methods', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getPaymentMethods);
+router.get('/analytics/monthly-trend', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getMonthlyTrend);
+router.get('/analytics/top-products', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getTopSellingProducts);
 
 
 export { router as desktopRoutes };
