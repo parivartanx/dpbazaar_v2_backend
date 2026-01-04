@@ -4,6 +4,7 @@ import { ReferralHistoryRepository } from '../repositories/prisma/ReferralHistor
 import { ReferralCodeRepository } from '../repositories/prisma/ReferralCodeRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
+import { getCustomerIdFromUserId } from '../utils/customerHelper';
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
@@ -167,8 +168,8 @@ export class ReferralHistoryController {
 
   getCustomerReferralHistory = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         res.status(401).json({
           success: false,
           message: 'Customer authentication required',
@@ -177,6 +178,7 @@ export class ReferralHistoryController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const referralHistories = await referralHistoryRepo.list({
         referrerId: customerId,
       });
@@ -210,7 +212,8 @@ export class ReferralHistoryController {
         return;
       }
 
-      const referralHistory = await referralHistoryRepo.findByReferredUserId(userId);
+      const customerId = await getCustomerIdFromUserId(userId);
+      const referralHistory = await referralHistoryRepo.findByReferredUserId(customerId);
       if (!referralHistory) {
         res.status(404).json({
           success: false,
@@ -240,8 +243,8 @@ export class ReferralHistoryController {
   // Use a referral code
   useReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         res.status(401).json({
           success: false,
           message: 'Customer authentication required',
@@ -250,6 +253,7 @@ export class ReferralHistoryController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const { code } = req.body;
       if (!code) {
         res.status(400).json({

@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { ReferralCodeRepository } from '../repositories/prisma/ReferralCodeRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
+import { getCustomerIdFromUserId } from '../utils/customerHelper';
 
 // ✅ Extend Request type to include `user`
 interface AuthRequest extends Request {
@@ -239,8 +240,8 @@ export class ReferralCodeController {
   // Create a referral code for the authenticated customer
   createCustomerReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         res.status(401).json({
           success: false,
           message: 'Customer authentication required',
@@ -248,6 +249,8 @@ export class ReferralCodeController {
         });
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       // Check if customer already has a referral code
       const existingReferralCode = await referralCodeRepo.findByCustomerId(customerId);
@@ -290,8 +293,8 @@ export class ReferralCodeController {
 
   getCustomerReferralCode = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         res.status(401).json({
           success: false,
           message: 'Customer authentication required',
@@ -300,6 +303,7 @@ export class ReferralCodeController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const referralCode = await referralCodeRepo.findByCustomerId(customerId);
       if (!referralCode) {
         res.status(404).json({

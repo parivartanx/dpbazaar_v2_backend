@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { WishlistRepository } from '../repositories/prisma/WishlistRepository';
+import { getCustomerIdFromUserId } from '../utils/customerHelper';
 
 export class WishlistController {
   private repo = new WishlistRepository();
@@ -9,8 +10,8 @@ export class WishlistController {
   // Get customer's wishlists
   getCustomerWishlists = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.userId;
-      if (!customerId) {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer ID is required',
@@ -20,6 +21,7 @@ export class WishlistController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const wishlists = await this.repo.getCustomerWishlists(customerId);
       
       res.status(200).json({
@@ -43,8 +45,8 @@ export class WishlistController {
   // Get customer's default wishlist
   getDefaultWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.userId;
-      if (!customerId) {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer ID is required',
@@ -54,6 +56,7 @@ export class WishlistController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const wishlist = await this.repo.getDefaultWishlist(customerId);
       if (!wishlist) {
         const response: ApiResponse = {
@@ -86,8 +89,8 @@ export class WishlistController {
   // Create a new wishlist
   createWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.userId;
-      if (!customerId) {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer ID is required',
@@ -97,6 +100,7 @@ export class WishlistController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const { name, isPublic } = req.body;
       
       if (!name) {
@@ -244,8 +248,8 @@ export class WishlistController {
   // Add product to wishlist
   addToWishlist = async (req: Request, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.userId;
-      if (!customerId) {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer ID is required',
@@ -255,6 +259,7 @@ export class WishlistController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const { wishlistId } = req.params;
       const { productId, priority, notes } = req.body;
 

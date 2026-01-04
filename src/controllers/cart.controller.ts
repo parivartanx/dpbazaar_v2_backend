@@ -6,6 +6,7 @@ import { PaymentMethod } from '@prisma/client';
 import { OrderRepository } from '../repositories/prisma/OrderRepository';
 import { PaymentService } from '../services/payment.service';
 import { prisma } from '../config/prismaClient';
+import { getCustomerIdFromUserId } from '../utils/customerHelper';
 
 const cartRepo = new CartRepository();
 const orderRepo = new OrderRepository();
@@ -21,8 +22,8 @@ export class CartController {
 
   getCustomerCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -32,6 +33,7 @@ export class CartController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const cart = await cartRepo.findByCustomerId(customerId);
       if (!cart) {
         // Create an empty cart if it doesn't exist
@@ -84,8 +86,8 @@ export class CartController {
 
   addToCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -94,6 +96,8 @@ export class CartController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       // First, check if cart exists, create if not
       let cart = await prisma.cart.findUnique({
@@ -200,8 +204,8 @@ export class CartController {
 
   updateCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -210,6 +214,8 @@ export class CartController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       const cart = await prisma.cart.findUnique({
         where: { customerId },
@@ -284,8 +290,8 @@ export class CartController {
 
   removeFromCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -294,6 +300,8 @@ export class CartController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       const cart = await prisma.cart.findUnique({
         where: { customerId },
@@ -365,8 +373,8 @@ export class CartController {
 
   clearCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -375,6 +383,8 @@ export class CartController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       await prisma.cartItem.deleteMany({
         where: {
@@ -418,9 +428,9 @@ export class CartController {
   // Customer-specific method to buy products from cart
   buyProductsFromCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
+      const userId = req.user?.userId;
       
-      if (!customerId) {
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -429,6 +439,8 @@ export class CartController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       // Get the customer's cart
       const cart = await prisma.cart.findUnique({

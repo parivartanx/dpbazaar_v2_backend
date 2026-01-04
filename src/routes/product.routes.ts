@@ -10,6 +10,9 @@ import { WishlistController } from '../controllers/wishlist.controller';
 import { DiscountController } from '../controllers/discount.controller';
 import { ProductReviewController } from '../controllers/productReview.controller';
 
+// Middlewares
+import { isAccessAllowed } from '../middlewares/isAccessAllowed';
+
 
 const router = Router();
 
@@ -41,30 +44,30 @@ router.get('/discounts/:code', discountCtrl.getDiscountOfferByCode);
 // ---------- CUSTOMER PRIVATE PRODUCT ROUTES --------------
 
 // Customer Wishlist
-router.post('/wishlist/items', wishlistCtrl.addToWishlist);
-router.delete('/wishlist/items/:productId', wishlistCtrl.removeFromWishlist);
-router.get('/wishlist/items', wishlistCtrl.getWishlistItems);
+router.post('/wishlist/items', isAccessAllowed('CUSTOMER'), wishlistCtrl.addToWishlist);
+router.delete('/wishlist/items/:productId', isAccessAllowed('CUSTOMER'), wishlistCtrl.removeFromWishlist);
+router.get('/wishlist/items', isAccessAllowed('CUSTOMER'), wishlistCtrl.getWishlistItems);
 
 // Customer Cart
-router.get('/cart', cartCtrl.getCustomerCart);
-router.post('/cart', cartCtrl.addToCart);
-router.put('/cart', cartCtrl.updateCart);
-router.delete('/cart', cartCtrl.clearCart);
-router.delete('/cart/items/:productId/:variantId?', cartCtrl.removeFromCart);
-router.post('/cart/buy', cartCtrl.buyProductsFromCart);
+router.get('/cart', isAccessAllowed('CUSTOMER'), cartCtrl.getCustomerCart);
+router.post('/cart', isAccessAllowed('CUSTOMER'), cartCtrl.addToCart);
+router.put('/cart', isAccessAllowed('CUSTOMER'), cartCtrl.updateCart);
+router.delete('/cart', isAccessAllowed('CUSTOMER'), cartCtrl.clearCart);
+router.delete('/cart/items/:productId/:variantId?', isAccessAllowed('CUSTOMER'), cartCtrl.removeFromCart);
+router.post('/cart/buy', isAccessAllowed('CUSTOMER'), cartCtrl.buyProductsFromCart);
 
 // Customer Buy Products - ORDERS
-router.post('/orders', orderCtrl.createCustomerOrder);
-router.get('/orders', orderCtrl.getCustomerOrders);
-router.get('/orders/:id', orderCtrl.getCustomerOrderById);
+router.post('/orders', isAccessAllowed('CUSTOMER'), orderCtrl.createCustomerOrder);
+router.get('/orders', isAccessAllowed('CUSTOMER'), orderCtrl.getCustomerOrders);
+router.get('/orders/:id', isAccessAllowed('CUSTOMER'), orderCtrl.getCustomerOrderById);
 
 // Return Requests
-router.post('/returns', orderCtrl.createReturnRequest);
-router.get('/returns', orderCtrl.getCustomerReturns);
-router.get('/returns/:id', orderCtrl.getCustomerReturnById);
+router.post('/returns', isAccessAllowed('CUSTOMER'), orderCtrl.createReturnRequest);
+router.get('/returns', isAccessAllowed('CUSTOMER'), orderCtrl.getCustomerReturns);
+router.get('/returns/:id', isAccessAllowed('CUSTOMER'), orderCtrl.getCustomerReturnById);
 
 // Product Review
-router.post('/reviews', productReviewCtrl.createProductReview);
+router.post('/reviews', isAccessAllowed('CUSTOMER'), productReviewCtrl.createProductReview);
 
 
 export { router as productRoutes };

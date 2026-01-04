@@ -5,6 +5,7 @@ import { ReviewRepository } from '../repositories/prisma/ReviewRepository';
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
 import { prisma } from '../config/prismaClient';
+import { getCustomerIdFromUserId } from '../utils/customerHelper';
 
 const reviewRepository = new ReviewRepository();
 
@@ -47,6 +48,8 @@ export class ProductReviewController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
+
       // Check if user has purchased the product (if order ID is provided)
       if (orderId) {
         const order = await prisma.order.findUnique({
@@ -75,7 +78,7 @@ export class ProductReviewController {
       const review = await prisma.review.create({
         data: {
           productId,
-          customerId: userId, // Use customerId as per schema
+          customerId, // Use customerId from helper method
           orderId: orderId || null, // Use orderId if provided
           rating: Number(rating),
           title,

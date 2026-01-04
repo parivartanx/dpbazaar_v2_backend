@@ -741,12 +741,12 @@ Authorization: Bearer <token>
 
 ## Product Endpoints
 
-### GET /product/brands
+### GET /products/brands
 **Description:** Retrieves all product brands
 
 **Request:**
 - Method: `GET`
-- Route: `/product/brands`
+- Route: `/products/brands`
 
 **Response:**
 ```json
@@ -777,12 +777,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/categories
+### GET /products/categories
 **Description:** Retrieves all product categories
 
 **Request:**
 - Method: `GET`
-- Route: `/product/categories`
+- Route: `/products/categories`
 
 **Response:**
 ```json
@@ -811,12 +811,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/
+### GET /products/
 **Description:** Retrieves all products with pagination and filtering
 
 **Request:**
 - Method: `GET`
-- Route: `/product/`
+- Route: `/products/`
 - Query Parameters:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 20)
@@ -893,12 +893,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/slug/:slug
+### GET /products/slug/:slug
 **Description:** Retrieves a product by its slug
 
 **Request:**
 - Method: `GET`
-- Route: `/product/slug/:slug`
+- Route: `/products/slug/:slug`
 - Parameters: `slug` (required)
 
 **Response:**
@@ -958,12 +958,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/:id/reviews
+### GET /products/:id/reviews
 **Description:** Retrieves product reviews for a specific product
 
 **Request:**
 - Method: `GET`
-- Route: `/product/:id/reviews`
+- Route: `/products/:id/reviews`
 - Parameters: `id` (required)
 
 **Response:**
@@ -1014,12 +1014,12 @@ Authorization: Bearer <token>
 
 **Note:** The `customer` object in reviews includes basic user profile information (`firstName`, `lastName`, `avatar`) from the User model.
 
-### GET /product/discounts
+### GET /products/discounts
 **Description:** Retrieves discount offers with filtering and pagination
 
 **Request:**
 - Method: `GET`
-- Route: `/product/discounts`
+- Route: `/products/discounts`
 - Query Parameters:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 20)
@@ -1088,12 +1088,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/discounts/:code
+### GET /products/discounts/:code
 **Description:** Retrieves a specific discount offer by code
 
 **Request:**
 - Method: `GET`
-- Route: `/product/discounts/:code`
+- Route: `/products/discounts/:code`
 - Parameters: `code` (required)
 
 **Response:**
@@ -1149,12 +1149,12 @@ Authorization: Bearer <token>
 
 ## Wishlist Endpoints
 
-### POST /product/wishlist/items
+### POST /products/wishlist/items
 **Description:** Adds a product to the customer's wishlist
 
 **Request:**
 - Method: `POST`
-- Route: `/product/wishlist/items`
+- Route: `/products/wishlist/items`
 - Headers: `Authorization: Bearer <token>`
 - Request Body:
 ```json
@@ -1182,12 +1182,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### DELETE /product/wishlist/items/:productId
+### DELETE /products/wishlist/items/:productId
 **Description:** Removes a product from the customer's wishlist
 
 **Request:**
 - Method: `DELETE`
-- Route: `/product/wishlist/items/:productId`
+- Route: `/products/wishlist/items/:productId`
 - Headers: `Authorization: Bearer <token>`
 - Parameters: `productId` (required)
 
@@ -1209,12 +1209,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/wishlist/items
+### GET /products/wishlist/items
 **Description:** Retrieves all items in the customer's wishlist
 
 **Request:**
 - Method: `GET`
-- Route: `/product/wishlist/items`
+- Route: `/products/wishlist/items`
 - Headers: `Authorization: Bearer <token>`
 
 **Response:**
@@ -1246,12 +1246,12 @@ Authorization: Bearer <token>
 
 ## Cart Endpoints
 
-### GET /product/cart
+### GET /products/cart
 **Description:** Retrieves the customer's cart
 
 **Request:**
 - Method: `GET`
-- Route: `/product/cart`
+- Route: `/products/cart`
 - Headers: `Authorization: Bearer <token>`
 
 **Response:**
@@ -1299,12 +1299,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### POST /product/cart
+### POST /products/cart
 **Description:** Adds an item to the customer's cart
 
 **Request:**
 - Method: `POST`
-- Route: `/product/cart`
+- Route: `/products/cart`
 - Headers: `Authorization: Bearer <token>`
 - Request Body:
 ```json
@@ -1360,12 +1360,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### PUT /product/cart
+### PUT /products/cart
 **Description:** Updates the quantity of an item in the customer's cart
 
 **Request:**
 - Method: `PUT`
-- Route: `/product/cart`
+- Route: `/products/cart`
 - Headers: `Authorization: Bearer <token>`
 - Request Body:
 ```json
@@ -1421,12 +1421,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### DELETE /product/cart
+### DELETE /products/cart
 **Description:** Clears all items from the customer's cart
 
 **Request:**
 - Method: `DELETE`
-- Route: `/product/cart`
+- Route: `/products/cart`
 - Headers: `Authorization: Bearer <token>`
 
 **Response:**
@@ -1451,12 +1451,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### DELETE /product/cart/items/:productId/:variantId
+### DELETE /products/cart/items/:productId/:variantId
 **Description:** Removes a specific item from the customer's cart
 
 **Request:**
 - Method: `DELETE`
-- Route: `/product/cart/items/:productId/:variantId`
+- Route: `/products/cart/items/:productId/:variantId`
 - Headers: `Authorization: Bearer <token>`
 - Parameters: `productId` (required), `variantId` (required)
 
@@ -1505,12 +1505,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### POST /product/cart/buy
+### POST /products/cart/buy
 **Description:** Creates an order from the customer's cart
 
 **Request:**
 - Method: `POST`
-- Route: `/product/cart/buy`
+- Route: `/products/cart/buy`
 - Headers: `Authorization: Bearer <token>`
 - Request Body:
 ```json
@@ -1555,12 +1555,12 @@ Authorization: Bearer <token>
 
 ## Order Management Endpoints
 
-### POST /product/orders
+### POST /products/orders
 **Description:** Creates a new order for the authenticated customer
 
 **Request:**
 - Method: `POST`
-- Route: `/product/orders`
+- Route: `/products/orders`
 - Headers: `Authorization: Bearer <token>`
 - Request Body:
 ```json
@@ -1610,12 +1610,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/orders
+### GET /products/orders
 **Description:** Retrieves all orders for the authenticated customer
 
 **Request:**
 - Method: `GET`
-- Route: `/product/orders`
+- Route: `/products/orders`
 - Headers: `Authorization: Bearer <token>`
 - Query Parameters:
   - `page` (optional): Page number (default: 1)
@@ -1662,12 +1662,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/orders/:id
+### GET /products/orders/:id
 **Description:** Retrieves a specific order for the authenticated customer
 
 **Request:**
 - Method: `GET`
-- Route: `/product/orders/:id`
+- Route: `/products/orders/:id`
 - Headers: `Authorization: Bearer <token>`
 - Parameters: `id` (required)
 
@@ -1741,12 +1741,12 @@ Authorization: Bearer <token>
 
 ## Return Management Endpoints
 
-### POST /product/returns
+### POST /products/returns
 **Description:** Creates a return request for a customer order
 
 **Request:**
 - Method: `POST`
-- Route: `/product/returns`
+- Route: `/products/returns`
 - Headers: `Authorization: Bearer <token>`
 - Request Body:
 ```json
@@ -1790,12 +1790,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/returns
+### GET /products/returns
 **Description:** Retrieves return requests for the authenticated customer
 
 **Request:**
 - Method: `GET`
-- Route: `/product/returns`
+- Route: `/products/returns`
 - Headers: `Authorization: Bearer <token>`
 - Query Parameters:
   - `page` (optional): Page number (default: 1)
@@ -1852,12 +1852,12 @@ Authorization: Bearer <token>
 }
 ```
 
-### GET /product/returns/:id
+### GET /products/returns/:id
 **Description:** Retrieves a specific return request for the authenticated customer
 
 **Request:**
 - Method: `GET`
-- Route: `/product/returns/:id`
+- Route: `/products/returns/:id`
 - Headers: `Authorization: Bearer <token>`
 - Parameters: `id` (required)
 
@@ -1902,12 +1902,12 @@ Authorization: Bearer <token>
 
 ## Product Review Endpoints
 
-### POST /product/reviews
+### POST /products/reviews
 **Description:** Creates a product review for the authenticated customer
 
 **Request:**
 - Method: `POST`
-- Route: `/product/reviews`
+- Route: `/products/reviews`
 - Headers: `Authorization: Bearer <token>`
 - Request Body:
 ```json
