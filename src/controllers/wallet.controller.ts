@@ -5,9 +5,15 @@ import { WalletTransactionRepository } from '../repositories/prisma/WalletTransa
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { prisma } from '../config/prismaClient';
+import { getCustomerIdFromUserId } from '../utils/customerHelper';
 
 const walletRepo = new WalletRepository();
 const walletTransactionRepo = new WalletTransactionRepository();
+
+// ✅ Extend Request type to include `user`
+interface AuthRequest extends Request {
+  user?: { userId: string };
+}
 
 export class WalletController {
   /** ----------------- ADMIN END ----------------- */
@@ -160,18 +166,19 @@ export class WalletController {
 
   /** ----------------- CUSTOMER END ----------------- */
 
-  getCustomerWallets = async (req: Request, res: Response): Promise<void> => {
+  getCustomerWallets = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.params.customerId as string;
-      if (!customerId) {
-        res.status(400).json({
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        res.status(401).json({
           success: false,
-          message: 'Customer ID is required',
+          message: 'Customer authentication required',
           timestamp: new Date().toISOString(),
         });
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const wallets = await walletRepo.list({
         customerId,
       });
@@ -193,18 +200,19 @@ export class WalletController {
     }
   };
 
-  getCustomerWalletTransactions = async (req: Request, res: Response): Promise<void> => {
+  getCustomerWalletTransactions = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.params.customerId as string;
-      if (!customerId) {
-        res.status(400).json({
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        res.status(401).json({
           success: false,
-          message: 'Customer ID is required',
+          message: 'Customer authentication required',
           timestamp: new Date().toISOString(),
         });
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const { page, limit } = req.query;
       const transactions = await walletTransactionRepo.list({
         customerId,
@@ -229,17 +237,19 @@ export class WalletController {
     }
   };
 
-  transferBetweenWallets = async (req: Request, res: Response): Promise<void> => {
+  transferBetweenWallets = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.params.customerId as string;
-      if (!customerId) {
-        res.status(400).json({
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        res.status(401).json({
           success: false,
-          message: 'Customer ID is required',
+          message: 'Customer authentication required',
           timestamp: new Date().toISOString(),
         });
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       const { fromWalletType, toWalletType, amount, description } = req.body;
 
@@ -381,10 +391,10 @@ export class WalletController {
     }
   };
 
-  withdrawFromWallet = async (req: Request, res: Response): Promise<void> => {
+  withdrawFromWallet = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = (req as any).user?.userId; // Assuming user ID is attached by authentication middleware
-      if (!customerId) {
+      const userId = (req as any).user?.userId;
+      if (!userId) {
         res.status(401).json({
           success: false,
           message: 'Customer authentication required',
@@ -392,6 +402,8 @@ export class WalletController {
         });
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       const { walletType, amount, accountNumber, ifscCode, accountHolderName, upiId, bankName, description } = req.body;
 

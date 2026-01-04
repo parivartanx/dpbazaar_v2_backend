@@ -6,6 +6,7 @@ import { PaymentService } from '../services/payment.service';
 import { PaymentMethod } from '@prisma/client';
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
+import { getCustomerIdFromUserId } from '../utils/customerHelper';
 // import { OrderStatus } from '@prisma/client';
 
 // ✅ Extend Request type to include `user`
@@ -220,7 +221,7 @@ export class OrderController {
   getCustomerOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const customerId = req.user?.userId;
+      const userId = req.user?.userId;
       
       if (!id) {
         const response: ApiResponse = {
@@ -232,7 +233,7 @@ export class OrderController {
         return;
       }
       
-      if (!customerId) {
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -241,6 +242,8 @@ export class OrderController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       // Get the order and verify it belongs to the customer
       const order = await this.repo.getOrderById(id);
@@ -606,9 +609,9 @@ export class OrderController {
   // Customer-specific method to buy products (create order with payment)
   createCustomerOrder = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
+      const userId = req.user?.userId;
       
-      if (!customerId) {
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -617,6 +620,8 @@ export class OrderController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       // Prepare order data with customer ID
       const orderData = {
@@ -797,7 +802,7 @@ export class OrderController {
 
   getCustomerReturns = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
+      const userId = req.user?.userId;
       const {
         status,
         orderId,
@@ -806,7 +811,7 @@ export class OrderController {
         limit,
       } = req.query;
 
-      if (!customerId) {
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -815,6 +820,8 @@ export class OrderController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       const filters: any = {
         orderId,
@@ -923,10 +930,10 @@ export class OrderController {
 
   getCustomerOrders = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
+      const userId = req.user?.userId;
       const { page, limit } = req.query;
       
-      if (!customerId) {
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -935,6 +942,8 @@ export class OrderController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       const pagination = {
         page: page ? parseInt(page as string) : 1,
@@ -977,7 +986,7 @@ export class OrderController {
   getCustomerReturnById = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params; // Using 'id' to match the route parameter
-      const customerId = req.user?.userId;
+      const userId = req.user?.userId;
       
       if (!id) {
         const response: ApiResponse = {
@@ -989,7 +998,7 @@ export class OrderController {
         return;
       }
       
-      if (!customerId) {
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -998,6 +1007,8 @@ export class OrderController {
         res.status(401).json(response);
         return;
       }
+
+      const customerId = await getCustomerIdFromUserId(userId);
 
       // Get the return and verify it belongs to the customer's orders
       const returnRequest = await this.repo.getReturnById(id);

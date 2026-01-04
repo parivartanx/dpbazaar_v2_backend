@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AddressRepository } from '../repositories/prisma/AddressRepository';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
+import { getCustomerIdFromUserId } from '../utils/customerHelper';
 
 const addressRepo = new AddressRepository();
 
@@ -213,8 +214,8 @@ export class AddressController {
 
   getMyAddresses = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -224,6 +225,7 @@ export class AddressController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const addresses = await addressRepo.findByCustomerId(customerId);
       const response: ApiResponse = {
         success: true,
@@ -247,9 +249,8 @@ export class AddressController {
   createMyAddress = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       console.log(req.body);
-      const customerId = req.user?.userId;
-      // const customerId = "cmi3n88fr0002112pw1evn7z9";
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -259,6 +260,7 @@ export class AddressController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const addressData = {
         ...req.body,
         customerId,
@@ -289,8 +291,8 @@ export class AddressController {
 
   updateMyAddress = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -300,6 +302,7 @@ export class AddressController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const { id } = req.params;
       if (!id) {
         const response: ApiResponse = {
@@ -345,8 +348,8 @@ export class AddressController {
 
   deleteMyAddress = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const customerId = req.user?.userId;
-      if (!customerId) {
+      const userId = req.user?.userId;
+      if (!userId) {
         const response: ApiResponse = {
           success: false,
           message: 'Customer not authenticated',
@@ -356,6 +359,7 @@ export class AddressController {
         return;
       }
 
+      const customerId = await getCustomerIdFromUserId(userId);
       const { id } = req.params;
       if (!id) {
         const response: ApiResponse = {
