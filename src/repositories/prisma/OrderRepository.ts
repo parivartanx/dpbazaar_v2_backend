@@ -199,6 +199,7 @@ export class OrderRepository implements IOrderRepository {
     );
 
     // Calculate order totals
+    // itemsTotal uses sellingPrice which is already discounted (MRP - discount)
     const itemsTotal = itemsWithDetails.reduce(
       (sum, item) => sum + Number(item.sellingPrice) * item.quantity,
       0
@@ -207,13 +208,15 @@ export class OrderRepository implements IOrderRepository {
       (sum, item) => sum + Number(item.taxAmount),
       0
     );
-    const discount = itemsWithDetails.reduce(
+    // Base discount (MRP - sellingPrice) - stored for informational purposes only
+    const baseDiscount = itemsWithDetails.reduce(
       (sum, item) => sum + Number(item.discount) * item.quantity,
       0
     );
 
     // Apply discount code if provided
-    let discountAmount = discount;
+    // Only coupon discounts should be subtracted from totalAmount
+    let couponDiscount = 0;
     if (data.discountCode) {
       const discountCoupon = await prisma.discount.findUnique({
         where: { code: data.discountCode },
@@ -226,22 +229,26 @@ export class OrderRepository implements IOrderRepository {
           discountCoupon.validUntil >= now
         ) {
           if (discountCoupon.type === 'PERCENTAGE') {
-            const couponDiscount =
+            couponDiscount =
               (itemsTotal * Number(discountCoupon.value)) / 100;
-            discountAmount += Math.min(
+            couponDiscount = Math.min(
               couponDiscount,
               Number(discountCoupon.maxDiscountAmount || couponDiscount)
             );
           } else if (discountCoupon.type === 'FIXED_AMOUNT') {
-            discountAmount += Number(discountCoupon.value);
+            couponDiscount = Number(discountCoupon.value);
           }
         }
       }
     }
 
+    // Total discount = base discount (informational) + coupon discount (applied)
+    const totalDiscount = baseDiscount + couponDiscount;
+
     const shippingCharges = 0; // Calculate based on your logic
     const codCharges = 0; // Calculate if COD is selected
-    const totalAmount = itemsTotal + taxAmount + shippingCharges + codCharges - discountAmount;
+    // Only subtract coupon discount, not base discount (since itemsTotal already uses discounted price)
+    const totalAmount = itemsTotal + taxAmount + shippingCharges + codCharges - couponDiscount;
 
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -255,7 +262,7 @@ export class OrderRepository implements IOrderRepository {
         itemsTotal,
         taxAmount,
         shippingCharges,
-        discount,
+        discount: totalDiscount, // Total discount (base + coupon) for informational purposes
         totalAmount,
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
