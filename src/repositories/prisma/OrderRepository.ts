@@ -170,8 +170,10 @@ export class OrderRepository implements IOrderRepository {
         }
 
         const discount = Number(mrp) - Number(price);
+        // Tax is already included in selling price, so calculate for informational purposes only
         const taxAmount = (Number(price) * Number(product.taxRate)) / 100;
-        const totalAmount = Number(price) * item.quantity + taxAmount;
+        // Total amount is just price * quantity since tax is already included in price
+        const totalAmount = Number(price) * item.quantity;
 
         // Get primary image
         const primaryImage = await prisma.productImage.findFirst({
@@ -199,11 +201,13 @@ export class OrderRepository implements IOrderRepository {
     );
 
     // Calculate order totals
-    // itemsTotal uses sellingPrice which is already discounted (MRP - discount)
+    // itemsTotal uses sellingPrice which is already discounted (MRP - discount) and includes tax
     const itemsTotal = itemsWithDetails.reduce(
       (sum, item) => sum + Number(item.sellingPrice) * item.quantity,
       0
     );
+    // Tax amount is calculated for informational/reporting purposes only
+    // Tax is already included in selling price, so don't add it to totalAmount
     const taxAmount = itemsWithDetails.reduce(
       (sum, item) => sum + Number(item.taxAmount),
       0
@@ -247,8 +251,9 @@ export class OrderRepository implements IOrderRepository {
 
     const shippingCharges = 0; // Calculate based on your logic
     const codCharges = 0; // Calculate if COD is selected
+    // Tax is already included in selling price (itemsTotal), so don't add taxAmount again
     // Only subtract coupon discount, not base discount (since itemsTotal already uses discounted price)
-    const totalAmount = itemsTotal + taxAmount + shippingCharges + codCharges - couponDiscount;
+    const totalAmount = itemsTotal + shippingCharges + codCharges - couponDiscount;
 
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
