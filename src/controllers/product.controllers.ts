@@ -23,17 +23,315 @@ export class ProductController {
   private r2Service = new R2Service();
   private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
+  /**
+   * Extracts only essential fields for product card/list view
+   * Optimized for displaying products in a grid/list, not full product details
+   */
+  private extractProductCardFields(product: any): any {
+    // First sanitize to remove internal fields and convert Decimals
+    const sanitized = this.sanitizeProductForPublic(product);
+    
+    // Get primary image or first image
+    const primaryImage = sanitized.images && sanitized.images.length > 0
+      ? sanitized.images.find((img: any) => img.isPrimary) || sanitized.images[0]
+      : null;
+    
+    // Get prices - use product prices, or fallback to first variant prices if product prices are null
+    let mrp = sanitized.mrp;
+    let sellingPrice = sanitized.sellingPrice;
+    
+    // If product prices are null, try to get from first active variant
+    if ((mrp === null || mrp === undefined) && sanitized.variants && sanitized.variants.length > 0) {
+      const firstActiveVariant = sanitized.variants.find((v: any) => v.isActive !== false) || sanitized.variants[0];
+      if (firstActiveVariant) {
+        mrp = firstActiveVariant.mrp || mrp;
+        sellingPrice = firstActiveVariant.sellingPrice || sellingPrice;
+      }
+    }
+    
+    // Calculate discount if prices are available
+    let discount = null;
+    if (mrp !== null && mrp !== undefined && 
+        sellingPrice !== null && sellingPrice !== undefined) {
+      const mrpNum = Number(mrp);
+      const sellingPriceNum = Number(sellingPrice);
+      if (!isNaN(mrpNum) && !isNaN(sellingPriceNum) && mrpNum > 0) {
+        const discountAmount = mrpNum - sellingPriceNum;
+        const discountPercent = ((discountAmount / mrpNum) * 100);
+        discount = {
+          amount: discountAmount,
+          percent: parseFloat(discountPercent.toFixed(2))
+        };
+      }
+    }
+    
+    // Extract category names only
+    const categoryNames = sanitized.categories
+      ? sanitized.categories.map((cat: any) => cat.category?.name || cat.name).filter(Boolean)
+      : [];
+    
+    // Extract brand name and logo only
+    const brand = sanitized.brand
+      ? {
+          id: sanitized.brand.id,
+          name: sanitized.brand.name,
+          logo: sanitized.brand.logo,
+          slug: sanitized.brand.slug
+        }
+      : null;
+    
+    // Return only essential fields for product cards
+    return {
+      id: sanitized.id,
+      sku: sanitized.sku,
+      name: sanitized.name,
+      slug: sanitized.slug,
+      shortDescription: sanitized.shortDescription || (sanitized.description ? sanitized.description.substring(0, 100) : null),
+      mrp: mrp,
+      sellingPrice: sellingPrice,
+      discount: discount,
+      image: primaryImage ? {
+        url: primaryImage.url,
+        thumbnailUrl: primaryImage.thumbnailUrl,
+        alt: primaryImage.alt
+      } : null,
+      brand: brand,
+      categories: categoryNames,
+      stockStatus: sanitized.stockStatus,
+      status: sanitized.status,
+      isFeatured: sanitized.isFeatured,
+      isNewArrival: sanitized.isNewArrival,
+      isBestSeller: sanitized.isBestSeller,
+      avgRating: sanitized.avgRating,
+      totalReviews: sanitized.totalReviews
+    };
+  }
+
+  /**
+   * Sanitizes product data for public e-commerce API by removing internal/admin-only fields
+   */
+  private sanitizeProductForPublic(product: any): any {
+    const {
+      costPrice,
+      vendorId,
+      vendor,
+      metadata,
+      deletedAt,
+      createdAt,
+      updatedAt,
+      publishedAt,
+      viewCount,
+      salesCount,
+      metaTitle,
+      metaDescription,
+      metaKeywords,
+      ...sanitizedProduct
+    } = product;
+
+    // Convert Decimal fields to numbers (should already be numbers from getAllProducts, but handle as fallback)
+    // Handle both Decimal instances and already-converted numbers
+    const convertDecimal = (value: any): number | null => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'number') return isNaN(value) ? null : value;
+      
+      // If already a number, return it
+      if (typeof value === 'number') return value;
+      
+      // Try toNumber() if available (Decimal instance)
+      if (value && typeof value === 'object' && 'toNumber' in value && typeof value.toNumber === 'function') {
+        try {
+          const num = value.toNumber();
+          return isNaN(num) ? null : num;
+        } catch {
+          // Fall through to next method
+        }
+      }
+      
+      // Handle serialized Decimal format: {s: 1, e: 4, d: [15995]}
+      if (value && typeof value === 'object' && 'd' in value && Array.isArray(value.d) && 'e' in value) {
+        try {
+          // Reconstruct from serialized format
+          const digits = value.d;
+          const exponent = value.e || 0;
+          const sign = value.s === -1 ? -1 : 1;
+          
+          // For simple single-digit cases: {d: [15995], e: 4} means 15995 * 10^4
+          // But actually, Decimal.js uses base-1e7, so this is more complex
+          // For now, try simple reconstruction
+          if (digits.length === 1) {
+            const num = digits[0];
+            // If exponent is 0, the number is just the digit
+            if (exponent === 0) {
+              return sign * num;
+            }
+            // Otherwise, apply exponent (this is approximate)
+            return sign * num * Math.pow(10, exponent);
+          }
+          
+          // For multiple digits, reconstruct properly
+          let result = 0;
+          for (let i = 0; i < digits.length; i++) {
+            result += digits[i] * Math.pow(1e7, digits.length - 1 - i);
+          }
+          result *= Math.pow(10, exponent);
+          return sign * result;
+        } catch {
+          // Fall through
+        }
+      }
+      
+      // Try direct Number() conversion
+      try {
+        const num = Number(value);
+        return isNaN(num) ? null : num;
+      } catch {
+        return null;
+      }
+    };
+    
+    sanitizedProduct.mrp = convertDecimal(sanitizedProduct.mrp);
+    sanitizedProduct.sellingPrice = convertDecimal(sanitizedProduct.sellingPrice);
+    sanitizedProduct.taxRate = convertDecimal(sanitizedProduct.taxRate);
+    sanitizedProduct.weight = convertDecimal(sanitizedProduct.weight);
+    sanitizedProduct.avgRating = convertDecimal(sanitizedProduct.avgRating);
+
+    // Also sanitize nested relations if they exist
+    if (sanitizedProduct.brand) {
+      const { createdAt: brandCreatedAt, updatedAt: brandUpdatedAt, ...sanitizedBrand } = sanitizedProduct.brand;
+      sanitizedProduct.brand = sanitizedBrand;
+    }
+
+    if (sanitizedProduct.categories) {
+      sanitizedProduct.categories = sanitizedProduct.categories.map((cat: any) => {
+        if (cat.category) {
+          const { createdAt: catCreatedAt, updatedAt: catUpdatedAt, ...sanitizedCategory } = cat.category;
+          return { ...cat, category: sanitizedCategory };
+        }
+        return cat;
+      });
+    }
+
+    if (sanitizedProduct.variants) {
+      sanitizedProduct.variants = sanitizedProduct.variants.map((variant: any) => {
+        const {
+          createdAt: variantCreatedAt,
+          updatedAt: variantUpdatedAt,
+          ...sanitizedVariant
+        } = variant;
+        
+        // Convert Decimal fields in variants
+        const convertDecimal = (value: any): number | null => {
+          if (value === null || value === undefined) return null;
+          if (typeof value === 'number') return isNaN(value) ? null : value;
+          try {
+            const num = Number(value);
+            return isNaN(num) ? null : num;
+          } catch {
+            return null;
+          }
+        };
+        
+        sanitizedVariant.mrp = convertDecimal(sanitizedVariant.mrp);
+        sanitizedVariant.sellingPrice = convertDecimal(sanitizedVariant.sellingPrice);
+        sanitizedVariant.weight = convertDecimal(sanitizedVariant.weight);
+        
+        return sanitizedVariant;
+      });
+    }
+
+    if (sanitizedProduct.images) {
+      sanitizedProduct.images = sanitizedProduct.images.map((image: any) => {
+        const {
+          createdAt: imageCreatedAt,
+          updatedAt: imageUpdatedAt,
+          ...sanitizedImage
+        } = image;
+        return sanitizedImage;
+      });
+    }
+
+    return sanitizedProduct;
+  }
+
   // Products
   getAllProducts = async (req: Request, res: Response): Promise<void> => {
     try {
       const products = await this.repo.getAll();
       
+      // Convert Decimal fields to numbers BEFORE image transformation
+      // This prevents serialization issues with Decimal objects
+      const productsWithConvertedDecimals = products.map(product => {
+        const converted = { ...product } as any;
+        
+        // Convert product-level Decimal fields
+        if (converted.mrp != null && typeof converted.mrp === 'object' && 'toNumber' in converted.mrp) {
+          converted.mrp = converted.mrp.toNumber();
+        } else if (converted.mrp != null) {
+          converted.mrp = Number(converted.mrp);
+        }
+        
+        if (converted.sellingPrice != null && typeof converted.sellingPrice === 'object' && 'toNumber' in converted.sellingPrice) {
+          converted.sellingPrice = converted.sellingPrice.toNumber();
+        } else if (converted.sellingPrice != null) {
+          converted.sellingPrice = Number(converted.sellingPrice);
+        }
+        
+        if (converted.taxRate != null && typeof converted.taxRate === 'object' && 'toNumber' in converted.taxRate) {
+          converted.taxRate = converted.taxRate.toNumber();
+        } else if (converted.taxRate != null) {
+          converted.taxRate = Number(converted.taxRate);
+        }
+        
+        if (converted.weight != null && typeof converted.weight === 'object' && 'toNumber' in converted.weight) {
+          converted.weight = converted.weight.toNumber();
+        } else if (converted.weight != null) {
+          converted.weight = Number(converted.weight);
+        }
+        
+        if (converted.avgRating != null && typeof converted.avgRating === 'object' && 'toNumber' in converted.avgRating) {
+          converted.avgRating = converted.avgRating.toNumber();
+        } else if (converted.avgRating != null) {
+          converted.avgRating = Number(converted.avgRating);
+        }
+        
+        // Convert variant-level Decimal fields
+        if (converted.variants && Array.isArray(converted.variants)) {
+          converted.variants = converted.variants.map((variant: any) => {
+            const convertedVariant = { ...variant };
+            if (convertedVariant.mrp != null && typeof convertedVariant.mrp === 'object' && 'toNumber' in convertedVariant.mrp) {
+              convertedVariant.mrp = convertedVariant.mrp.toNumber();
+            } else if (convertedVariant.mrp != null) {
+              convertedVariant.mrp = Number(convertedVariant.mrp);
+            }
+            
+            if (convertedVariant.sellingPrice != null && typeof convertedVariant.sellingPrice === 'object' && 'toNumber' in convertedVariant.sellingPrice) {
+              convertedVariant.sellingPrice = convertedVariant.sellingPrice.toNumber();
+            } else if (convertedVariant.sellingPrice != null) {
+              convertedVariant.sellingPrice = Number(convertedVariant.sellingPrice);
+            }
+            
+            if (convertedVariant.weight != null && typeof convertedVariant.weight === 'object' && 'toNumber' in convertedVariant.weight) {
+              convertedVariant.weight = convertedVariant.weight.toNumber();
+            } else if (convertedVariant.weight != null) {
+              convertedVariant.weight = Number(convertedVariant.weight);
+            }
+            
+            return convertedVariant;
+          });
+        }
+        
+        return converted;
+      });
+      
       // Transform image keys to public URLs in the products response
-      const transformedProducts = await this.imageUrlTransformer.transformCommonImageFields(products);
+      const transformedProducts = await this.imageUrlTransformer.transformCommonImageFields(productsWithConvertedDecimals);
+      
+      // Extract only essential fields for product cards/list view (optimized for performance)
+      const productCards = transformedProducts.map(product => this.extractProductCardFields(product));
       
       const response: ApiResponse = {
         success: true,
-        data: { products: transformedProducts },
+        data: { products: productCards },
         message: 'Products Found',
         timestamp: new Date().toISOString(),
       };
@@ -243,10 +541,13 @@ export class ProductController {
       // Transform image keys to public URLs in the product response
       const transformedProduct = await this.imageUrlTransformer.transformCommonImageFields(product);
       
+      // Sanitize product to remove internal/admin-only fields
+      const sanitizedProduct = this.sanitizeProductForPublic(transformedProduct);
+      
       res.status(200).json({
         success: true,
         message: 'Product Found',
-        data: { product: transformedProduct },
+        data: { product: sanitizedProduct },
         timeStamp: new Date().toISOString(),
       });
     } catch (error) {
