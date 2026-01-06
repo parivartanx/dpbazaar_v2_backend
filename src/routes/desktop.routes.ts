@@ -27,10 +27,10 @@ router.post('/send-otp', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.
 router.post('/generate-bill', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.createOrder);
 
 // Bill history API
-router.get('/bills', desktopController.getBillHistory);
+router.get('/bills', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillHistory);
 router.get('/bills-excel', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillHistoryExcel);
 // Get bill by order number API
-router.get('/bills/:orderNumber', desktopController.getBillByOrderNumber);
+router.get('/bills/:orderNumber', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillByOrderNumber);
 
 // Return APIs
 router.post('/create-return-request', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.createReturnRequest);

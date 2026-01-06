@@ -1865,7 +1865,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### GET /categories
 
-**Description:** Get all categories.
+**Description:** Get all categories in hierarchical structure. Returns only root categories (level 0) with nested children. Each category includes only essential fields for efficient rendering.
 
 **Request:**
 - Method: `GET`
@@ -1879,32 +1879,40 @@ This document provides comprehensive API documentation for all admin routes in t
 ```json
 {
   "success": true,
-  "message": "Categories retrieved successfully",
+  "message": "Categories fetched successfully",
   "data": {
     "categories": [
       {
         "id": "string",
         "name": "string",
         "slug": "string",
-        "description": "string",
-        "image": "string",
-        "icon": "string",
-        "parentId": "string",
-        "level": "number",
-        "path": "string",
-        "metaTitle": "string",
-        "metaDescription": "string",
-        "metaKeywords": "string[]",
-        "displayOrder": "number",
-        "isActive": "boolean",
-        "isFeatured": "boolean",
-        "commissionRate": "number",
-        "createdAt": "string",
-        "updatedAt": "string",
-        "parent": {
-          "id": "string",
-          "name": "string"
-        }
+        "level": 0,
+        "path": "/string",
+        "children": [
+          {
+            "id": "string",
+            "name": "string",
+            "slug": "string",
+            "level": 1,
+            "path": "/string/string",
+            "parent": {
+              "id": "string",
+              "name": "string",
+              "slug": "string",
+              "level": 0,
+              "path": "/string"
+            },
+            "children": [
+              {
+                "id": "string",
+                "name": "string",
+                "slug": "string",
+                "level": 2,
+                "path": "/string/string/string"
+              }
+            ]
+          }
+        ]
       }
     ]
   },
@@ -1912,9 +1920,15 @@ This document provides comprehensive API documentation for all admin routes in t
 }
 ```
 
+**Note:** 
+- Only active categories are returned
+- Response includes hierarchical structure with nested children (up to 3 levels: 0 → 1 → 2)
+- Each category includes parent information if it has one
+- Categories are ordered by level and displayOrder
+
 ### GET /categories/:id
 
-**Description:** Get category by ID.
+**Description:** Get category by ID with parent and children relationships.
 
 **Request:**
 - Method: `GET`
@@ -1923,37 +1937,36 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (if id is missing), `404 Not Found` (if category not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
-  "message": "Category retrieved successfully",
+  "message": "Category fetched successfully",
   "data": {
     "category": {
       "id": "string",
       "name": "string",
       "slug": "string",
-      "description": "string",
-      "image": "string",
-      "icon": "string",
-      "parentId": "string",
-      "level": "number",
-      "path": "string",
-      "metaTitle": "string",
-      "metaDescription": "string",
-      "metaKeywords": "string[]",
-      "displayOrder": "number",
-      "isActive": "boolean",
-      "isFeatured": "boolean",
-      "commissionRate": "number",
-      "createdAt": "string",
-      "updatedAt": "string",
+      "level": 1,
+      "path": "/parent/child",
       "parent": {
         "id": "string",
-        "name": "string"
-      }
+        "name": "string",
+        "slug": "string",
+        "level": 0,
+        "path": "/parent"
+      },
+      "children": [
+        {
+          "id": "string",
+          "name": "string",
+          "slug": "string",
+          "level": 2,
+          "path": "/parent/child/grandchild"
+        }
+      ]
     }
   },
   "timestamp": "string"
@@ -1962,17 +1975,36 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### POST /categories
 
-**Description:** Create a new category.
+**Description:** Create a new category. The system automatically calculates `slug` (from name if not provided), `level` (from parent), and `path` (from parent path and slug) if not explicitly provided.
 
 **Request:**
 - Method: `POST`
 - Endpoint: `/categories`
 - Content-Type: `application/json`
-- Body: `{ name: string, description: string, parentId: string, displayOrder: number, isActive: boolean, isFeatured: boolean, commissionRate: number }`
+- Body:
+```json
+{
+  "name": "string (required, min 2 chars)",
+  "slug": "string (optional, auto-generated from name if not provided)",
+  "description": "string (optional)",
+  "image": "string (optional, must be valid URL)",
+  "icon": "string (optional, must be valid URL)",
+  "parentId": "string (optional, null for root category)",
+  "level": "number (optional, auto-calculated from parent)",
+  "path": "string (optional, auto-calculated from parent path and slug)",
+  "metaTitle": "string (optional)",
+  "metaDescription": "string (optional)",
+  "metaKeywords": "string[] (optional)",
+  "displayOrder": "number (optional, default: 0)",
+  "isActive": "boolean (optional, default: true)",
+  "isFeatured": "boolean (optional, default: false)",
+  "commissionRate": "number (optional, 0-100, precision 2)"
+}
+```
 
 **Response:**
 - Success: `201 Created`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -1984,45 +2016,61 @@ This document provides comprehensive API documentation for all admin routes in t
       "id": "string",
       "name": "string",
       "slug": "string",
-      "description": "string",
-      "image": "string",
-      "icon": "string",
-      "parentId": "string",
-      "level": "number",
-      "path": "string",
-      "metaTitle": "string",
-      "metaDescription": "string",
-      "metaKeywords": "string[]",
-      "displayOrder": "number",
-      "isActive": "boolean",
-      "isFeatured": "boolean",
-      "commissionRate": "number",
-      "createdAt": "string",
-      "updatedAt": "string",
+      "level": 1,
+      "path": "/parent/child",
       "parent": {
         "id": "string",
-        "name": "string"
-      }
+        "name": "string",
+        "slug": "string",
+        "level": 0,
+        "path": "/parent"
+      },
+      "children": []
     }
   },
   "timestamp": "string"
 }
 ```
 
+**Note:**
+- If `parentId` is provided, the parent category must exist
+- `slug` is auto-generated from `name` if not provided (lowercase, hyphenated)
+- `level` is calculated as `parent.level + 1` (or 0 if no parent)
+- `path` is built as `${parent.path}/${slug}` (or `/${slug}` if no parent)
+
 ### PUT /categories/:id
 
-**Description:** Update a category.
+**Description:** Update a category. When `parentId` is changed, the system automatically recalculates `level` and `path` for the category and all its children recursively. When `slug` is changed, the `path` is recalculated.
 
 **Request:**
 - Method: `PUT`
 - Endpoint: `/categories/:id`
 - Path Parameter: `id` (category ID)
 - Content-Type: `application/json`
-- Body: `{ name: string, description: string, parentId: string, displayOrder: number, isActive: boolean, isFeatured: boolean, commissionRate: number }`
+- Body: (all fields optional)
+```json
+{
+  "name": "string",
+  "slug": "string",
+  "description": "string",
+  "image": "string",
+  "icon": "string",
+  "parentId": "string | null",
+  "level": "number",
+  "path": "string",
+  "metaTitle": "string",
+  "metaDescription": "string",
+  "metaKeywords": "string[]",
+  "displayOrder": "number",
+  "isActive": "boolean",
+  "isFeatured": "boolean",
+  "commissionRate": "number"
+}
+```
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error, circular reference, self-parent), `404 Not Found` (if category not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -2034,34 +2082,40 @@ This document provides comprehensive API documentation for all admin routes in t
       "id": "string",
       "name": "string",
       "slug": "string",
-      "description": "string",
-      "image": "string",
-      "icon": "string",
-      "parentId": "string",
-      "level": "number",
-      "path": "string",
-      "metaTitle": "string",
-      "metaDescription": "string",
-      "metaKeywords": "string[]",
-      "displayOrder": "number",
-      "isActive": "boolean",
-      "isFeatured": "boolean",
-      "commissionRate": "number",
-      "createdAt": "string",
-      "updatedAt": "string",
+      "level": 1,
+      "path": "/parent/child",
       "parent": {
         "id": "string",
-        "name": "string"
-      }
+        "name": "string",
+        "slug": "string",
+        "level": 0,
+        "path": "/parent"
+      },
+      "children": [
+        {
+          "id": "string",
+          "name": "string",
+          "slug": "string",
+          "level": 2,
+          "path": "/parent/child/grandchild"
+        }
+      ]
     }
   },
   "timestamp": "string"
 }
 ```
 
+**Note:**
+- Changing `parentId` automatically updates `level` and `path` for the category and all descendants
+- Changing `slug` automatically updates `path` for the category and all descendants
+- Cannot set a category as its own parent
+- Cannot create circular references (parent cannot be a descendant of the category)
+- If `parentId` is set to `null`, the category becomes a root category (level 0)
+
 ### DELETE /categories/:id
 
-**Description:** Delete a category.
+**Description:** Delete a category. The category cannot be deleted if it has children or associated products.
 
 **Request:**
 - Method: `DELETE`
@@ -2070,42 +2124,42 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (if category has children or products), `404 Not Found` (if category not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
   "message": "Category deleted successfully",
-  "data": {
-    "category": {
-      "id": "string",
-      "name": "string",
-      "slug": "string",
-      "description": "string",
-      "image": "string",
-      "icon": "string",
-      "parentId": "string",
-      "level": "number",
-      "path": "string",
-      "metaTitle": "string",
-      "metaDescription": "string",
-      "metaKeywords": "string[]",
-      "displayOrder": "number",
-      "isActive": "boolean",
-      "isFeatured": "boolean",
-      "commissionRate": "number",
-      "createdAt": "string",
-      "updatedAt": "string",
-      "parent": {
-        "id": "string",
-        "name": "string"
-      }
-    }
-  },
   "timestamp": "string"
 }
 ```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "success": false,
+  "error": "Cannot delete category: it has 3 child categories. Please delete or reassign children first.",
+  "message": "Problem in Deleting Category",
+  "timestamp": "string"
+}
+```
+
+or
+
+```json
+{
+  "success": false,
+  "error": "Cannot delete category: it has 5 products associated. Please remove products first.",
+  "message": "Problem in Deleting Category",
+  "timestamp": "string"
+}
+```
+
+**Note:**
+- Category must have no children to be deleted
+- Category must have no associated products to be deleted
+- Delete children and remove products before deleting a category
 
 ### PATCH /categories/:id/feature
 
@@ -2116,41 +2170,37 @@ This document provides comprehensive API documentation for all admin routes in t
 - Endpoint: `/categories/:id/feature`
 - Path Parameter: `id` (category ID)
 - Content-Type: `application/json`
-- Body: `{ isFeatured: boolean }`
+- Body:
+```json
+{
+  "isFeatured": true
+}
+```
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (if id is missing or isFeatured is not boolean), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
-  "message": "Category featured status updated successfully",
+  "message": "Category feature flag updated",
   "data": {
     "category": {
       "id": "string",
       "name": "string",
       "slug": "string",
-      "description": "string",
-      "image": "string",
-      "icon": "string",
-      "parentId": "string",
-      "level": "number",
-      "path": "string",
-      "metaTitle": "string",
-      "metaDescription": "string",
-      "metaKeywords": "string[]",
-      "displayOrder": "number",
-      "isActive": "boolean",
-      "isFeatured": "boolean",
-      "commissionRate": "number",
-      "createdAt": "string",
-      "updatedAt": "string",
+      "level": 1,
+      "path": "/parent/child",
       "parent": {
         "id": "string",
-        "name": "string"
-      }
+        "name": "string",
+        "slug": "string",
+        "level": 0,
+        "path": "/parent"
+      },
+      "children": []
     }
   },
   "timestamp": "string"
@@ -2166,41 +2216,37 @@ This document provides comprehensive API documentation for all admin routes in t
 - Endpoint: `/categories/:id/activate`
 - Path Parameter: `id` (category ID)
 - Content-Type: `application/json`
-- Body: `{ isActive: boolean }`
+- Body:
+```json
+{
+  "isActive": true
+}
+```
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (if id is missing or isActive is not boolean), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
-  "message": "Category active status updated successfully",
+  "message": "Category active status updated",
   "data": {
     "category": {
       "id": "string",
       "name": "string",
       "slug": "string",
-      "description": "string",
-      "image": "string",
-      "icon": "string",
-      "parentId": "string",
-      "level": "number",
-      "path": "string",
-      "metaTitle": "string",
-      "metaDescription": "string",
-      "metaKeywords": "string[]",
-      "displayOrder": "number",
-      "isActive": "boolean",
-      "isFeatured": "boolean",
-      "commissionRate": "number",
-      "createdAt": "string",
-      "updatedAt": "string",
+      "level": 1,
+      "path": "/parent/child",
       "parent": {
         "id": "string",
-        "name": "string"
-      }
+        "name": "string",
+        "slug": "string",
+        "level": 0,
+        "path": "/parent"
+      },
+      "children": []
     }
   },
   "timestamp": "string"

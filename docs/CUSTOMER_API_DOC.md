@@ -778,7 +778,7 @@ Authorization: Bearer <token>
 ```
 
 ### GET /products/categories
-**Description:** Retrieves all product categories
+**Description:** Retrieves all product categories in hierarchical structure. Returns only root categories (level 0) with nested children. Each category includes only essential fields optimized for frontend rendering.
 
 **Request:**
 - Method: `GET`
@@ -788,28 +788,53 @@ Authorization: Bearer <token>
 ```json
 {
   "success": true,
+  "message": "Categories fetched successfully",
   "data": {
     "categories": [
       {
         "id": "string",
         "name": "string",
         "slug": "string",
-        "description": "string",
-        "parentId": "string",
-        "image": "string",
-        "banner": "string",
-        "isFeatured": true,
-        "isActive": true,
-        "sortOrder": 1,
-        "createdAt": "2023-12-25T10:30:00.000Z",
-        "updatedAt": "2023-12-25T10:30:00.000Z"
+        "level": 0,
+        "path": "/string",
+        "children": [
+          {
+            "id": "string",
+            "name": "string",
+            "slug": "string",
+            "level": 1,
+            "path": "/parent/child",
+            "children": [
+              {
+                "id": "string",
+                "name": "string",
+                "slug": "string",
+                "level": 2,
+                "path": "/parent/child/grandchild"
+              }
+            ]
+          }
+        ]
       }
     ]
   },
-  "message": "Categories retrieved successfully",
   "timestamp": "2023-12-25T10:30:00.000Z"
 }
 ```
+
+**Response Fields:**
+- `id`: Category unique identifier
+- `name`: Category display name
+- `slug`: URL-friendly category identifier
+- `level`: Category hierarchy level (0 = root, 1 = subcategory, 2 = sub-subcategory)
+- `path`: Full category path (e.g., "/electronics/mobiles/smartphones")
+- `children`: Array of child categories (nested structure, up to 3 levels)
+
+**Note:**
+- Only active categories are returned
+- Response includes hierarchical structure with nested children (up to 3 levels: 0 → 1 → 2)
+- Categories are ordered by level and displayOrder
+- This endpoint is optimized for building category navigation menus and filters
 
 ### GET /products/
 **Description:** Retrieves all products with pagination, search, and filtering. Returns optimized product card data for efficient frontend rendering.

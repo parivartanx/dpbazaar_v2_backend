@@ -6,8 +6,7 @@ export const createCategorySchema = Joi.object({
     'string.min': 'Category name must be at least 2 characters',
   }),
 
-  slug: Joi.string().min(2).max(100).required().messages({
-    'string.empty': 'Slug is required',
+  slug: Joi.string().min(2).max(100).optional().messages({
     'string.min': 'Slug must be at least 2 characters',
   }),
 
@@ -23,10 +22,10 @@ export const createCategorySchema = Joi.object({
 
   parentId: Joi.string().optional().allow(null),
 
-  level: Joi.number().integer().min(0).default(0),
+  level: Joi.number().integer().min(0).optional(),
 
-  path: Joi.string().min(1).required().messages({
-    'string.empty': 'Path is required',
+  path: Joi.string().min(1).optional().messages({
+    'string.empty': 'Path cannot be empty',
   }),
 
   metaTitle: Joi.string().max(150).optional().allow(null),

@@ -21,10 +21,39 @@ export class CategoryController {
       // Transform image keys to public URLs in the category response
       const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(category);
       
+      // Format category with essential keys only
+      const formatCategory = (cat: any): any => {
+        const formatted: any = {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          level: cat.level,
+          path: cat.path,
+        };
+
+        if (cat.parent) {
+          formatted.parent = {
+            id: cat.parent.id,
+            name: cat.parent.name,
+            slug: cat.parent.slug,
+            level: cat.parent.level,
+            path: cat.parent.path,
+          };
+        }
+
+        if (cat.children && cat.children.length > 0) {
+          formatted.children = cat.children.map((child: any) => formatCategory(child));
+        }
+
+        return formatted;
+      };
+      
+      const formattedCategory = formatCategory(transformedCategory);
+      
       return res.status(201).json({
         success: true,
         message: 'Category created successfully',
-        data: { category: transformedCategory },
+        data: { category: formattedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -47,10 +76,35 @@ export class CategoryController {
       // Transform image keys to public URLs in the categories response
       const transformedCategories = await this.imageUrlTransformer.transformCommonImageFields(categories);
       
+      // Format categories into hierarchical structure with only essential keys
+      const formatCategory = (cat: any): any => {
+        const formatted: any = {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          level: cat.level,
+          path: cat.path,
+        };
+
+        // Recursively format children
+        if (cat.children && cat.children.length > 0) {
+          formatted.children = cat.children.map((child: any) => formatCategory(child));
+        }
+
+        return formatted;
+      };
+
+      // Build hierarchical structure: only include root categories (level 0) with nested children
+      const hierarchy = transformedCategories
+        .filter((cat: any) => cat.level === 0)
+        .map((cat: any) => formatCategory(cat));
+      
       return res.status(200).json({
         success: true,
         message: 'Categories fetched successfully',
-        data: { categories: transformedCategories },
+        data: {
+          categories: hierarchy,
+        },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -73,7 +127,7 @@ export class CategoryController {
         return res
           .status(400)
           .json({
-            succcess: false,
+            success: false,
             message: 'Id is required',
             timestamp: new Date().toISOString(),
           });
@@ -91,10 +145,39 @@ export class CategoryController {
       // Transform image keys to public URLs in the category response
       const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(category);
       
+      // Format category with essential keys only
+      const formatCategory = (cat: any): any => {
+        const formatted: any = {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          level: cat.level,
+          path: cat.path,
+        };
+
+        if (cat.parent) {
+          formatted.parent = {
+            id: cat.parent.id,
+            name: cat.parent.name,
+            slug: cat.parent.slug,
+            level: cat.parent.level,
+            path: cat.parent.path,
+          };
+        }
+
+        if (cat.children && cat.children.length > 0) {
+          formatted.children = cat.children.map((child: any) => formatCategory(child));
+        }
+
+        return formatted;
+      };
+      
+      const formattedCategory = formatCategory(transformedCategory);
+      
       return res.status(200).json({
         success: true,
         message: 'Category fetched successfully',
-        data: { category: transformedCategory },
+        data: { category: formattedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -127,10 +210,39 @@ export class CategoryController {
       // Transform image keys to public URLs in the category response
       const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(updated);
       
+      // Format category with essential keys only
+      const formatCategory = (cat: any): any => {
+        const formatted: any = {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          level: cat.level,
+          path: cat.path,
+        };
+
+        if (cat.parent) {
+          formatted.parent = {
+            id: cat.parent.id,
+            name: cat.parent.name,
+            slug: cat.parent.slug,
+            level: cat.parent.level,
+            path: cat.parent.path,
+          };
+        }
+
+        if (cat.children && cat.children.length > 0) {
+          formatted.children = cat.children.map((child: any) => formatCategory(child));
+        }
+
+        return formatted;
+      };
+      
+      const formattedCategory = formatCategory(transformedCategory);
+      
       return res.status(200).json({
         success: true,
         message: 'Category updated successfully',
-        data: { updated: transformedCategory },
+        data: { category: formattedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -159,9 +271,9 @@ export class CategoryController {
           });
 
       await this.categoryRepo.delete(id);
-      return res.status(20).json({
+      return res.status(200).json({
         success: true,
-        message: 'Category deleted',
+        message: 'Category deleted successfully',
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -173,7 +285,9 @@ export class CategoryController {
         timestamp: new Date().toISOString(),
       };
 
-      return res.status(500).json(response);
+      // Return 400 for validation errors (children/products exist), 500 for other errors
+      const statusCode = (error as Error).message.includes('Cannot delete') ? 400 : 500;
+      return res.status(statusCode).json(response);
     }
   };
 
@@ -205,10 +319,39 @@ export class CategoryController {
       // Transform image keys to public URLs in the category response
       const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(category);
       
+      // Format category with essential keys only
+      const formatCategory = (cat: any): any => {
+        const formatted: any = {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          level: cat.level,
+          path: cat.path,
+        };
+
+        if (cat.parent) {
+          formatted.parent = {
+            id: cat.parent.id,
+            name: cat.parent.name,
+            slug: cat.parent.slug,
+            level: cat.parent.level,
+            path: cat.parent.path,
+          };
+        }
+
+        if (cat.children && cat.children.length > 0) {
+          formatted.children = cat.children.map((child: any) => formatCategory(child));
+        }
+
+        return formatted;
+      };
+      
+      const formattedCategory = formatCategory(transformedCategory);
+      
       return res.status(200).json({
         success: true,
         message: 'Category feature flag updated',
-        data: { category: transformedCategory },
+        data: { category: formattedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -252,10 +395,39 @@ export class CategoryController {
       // Transform image keys to public URLs in the category response
       const transformedCategory = await this.imageUrlTransformer.transformCommonImageFields(category);
       
+      // Format category with essential keys only
+      const formatCategory = (cat: any): any => {
+        const formatted: any = {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          level: cat.level,
+          path: cat.path,
+        };
+
+        if (cat.parent) {
+          formatted.parent = {
+            id: cat.parent.id,
+            name: cat.parent.name,
+            slug: cat.parent.slug,
+            level: cat.parent.level,
+            path: cat.parent.path,
+          };
+        }
+
+        if (cat.children && cat.children.length > 0) {
+          formatted.children = cat.children.map((child: any) => formatCategory(child));
+        }
+
+        return formatted;
+      };
+      
+      const formattedCategory = formatCategory(transformedCategory);
+      
       return res.status(200).json({
         success: true,
         message: 'Category active status updated',
-        data: { category: transformedCategory },
+        data: { category: formattedCategory },
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
