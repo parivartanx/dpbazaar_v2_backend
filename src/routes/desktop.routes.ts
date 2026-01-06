@@ -27,7 +27,7 @@ router.post('/send-otp', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.
 router.post('/generate-bill', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.createOrder);
 
 // Bill history API
-router.get('/bills', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillHistory);
+router.get('/bills', desktopController.getBillHistory);
 router.get('/bills-excel', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillHistoryExcel);
 // Get bill by order number API
 router.get('/bills/:orderNumber', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillByOrderNumber);

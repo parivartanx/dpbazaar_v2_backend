@@ -293,6 +293,15 @@ export class OrderRepository implements IOrderRepository {
             },
           },
         },
+        creator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+          },
+        },
       },
     });
 
@@ -401,6 +410,26 @@ export class OrderRepository implements IOrderRepository {
               },
             },
           },
+          payments: {
+            select: {
+              id: true,
+              method: true,
+              status: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1, // Get the most recent payment
+          },
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              role: true,
+            },
+          },
         },
       }),
       prisma.order.count({ where }),
@@ -443,6 +472,15 @@ export class OrderRepository implements IOrderRepository {
         delivery: true,
         returns: true,
         invoices: true,
+        creator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+          },
+        },
       },
     });
   }

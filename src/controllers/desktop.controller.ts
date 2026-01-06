@@ -134,10 +134,23 @@ export class DesktopController {
         // Calculate item count from the items array
         const itemCount = Array.isArray(typedOrder.items) ? typedOrder.items.length : 0;
         
-        // Try to determine payment method from the order data
-        // Since we don't have direct payment method in the limited order, 
-        // we can infer it from the source (SYSTEM orders are typically cash)
-        const paymentMethod = typedOrder.source === 'SYSTEM' ? 'CASH' : 'OTHER';
+        // Get payment method from payments array (most recent payment)
+        let paymentMethod = 'CASH'; // Default to CASH for SYSTEM orders
+        if (typedOrder.payments && Array.isArray(typedOrder.payments) && typedOrder.payments.length > 0) {
+          const latestPayment = typedOrder.payments[0]; // Already ordered by createdAt desc
+          paymentMethod = latestPayment.method || 'CASH';
+        }
+        
+        // Extract creator information
+        let creator = null;
+        if (typedOrder.creator) {
+          creator = {
+            id: typedOrder.creator.id,
+            name: `${typedOrder.creator.firstName || ''} ${typedOrder.creator.lastName || ''}`.trim(),
+            email: typedOrder.creator.email,
+            role: typedOrder.creator.role,
+          };
+        }
         
         return {
           id: typedOrder.id,
@@ -152,12 +165,13 @@ export class DesktopController {
           totalAmount: typedOrder.totalAmount,
           status: typedOrder.status,
           paymentStatus: typedOrder.paymentStatus,
-          paymentMethod: paymentMethod, // Add payment method
+          paymentMethod: paymentMethod,
           source: typedOrder.source,
           createdAt: typedOrder.createdAt,
           updatedAt: typedOrder.updatedAt,
-          itemCount: itemCount, // Just the count instead of full items array
-          // Remove the nested customer object since we already have the details at the main level
+          itemCount: itemCount,
+          createdBy: typedOrder.createdBy,
+          creator: creator,
         };
       });
 
@@ -239,10 +253,22 @@ export class DesktopController {
         // Calculate item count from the items array
         const itemCount = Array.isArray(typedOrder.items) ? typedOrder.items.length : 0;
         
-        // Try to determine payment method from the order data
-        // Since we don't have direct payment method in the limited order, 
-        // we can infer it from the source (SYSTEM orders are typically cash)
-        const paymentMethod = typedOrder.source === 'SYSTEM' ? 'CASH' : 'OTHER';
+        // Get payment method from payments array (most recent payment)
+        let paymentMethod = 'CASH'; // Default to CASH for SYSTEM orders
+        if (typedOrder.payments && Array.isArray(typedOrder.payments) && typedOrder.payments.length > 0) {
+          const latestPayment = typedOrder.payments[0]; // Already ordered by createdAt desc
+          paymentMethod = latestPayment.method || 'CASH';
+        }
+        
+        // Extract creator information
+        let creatorName = '';
+        let creatorEmail = '';
+        let creatorRole = '';
+        if (typedOrder.creator) {
+          creatorName = `${typedOrder.creator.firstName || ''} ${typedOrder.creator.lastName || ''}`.trim();
+          creatorEmail = typedOrder.creator.email || '';
+          creatorRole = typedOrder.creator.role || '';
+        }
         
         return {
           id: typedOrder.id,
@@ -256,10 +282,13 @@ export class DesktopController {
           totalAmount: typedOrder.totalAmount,
           status: typedOrder.status,
           paymentStatus: typedOrder.paymentStatus,
-          paymentMethod: paymentMethod, // Add payment method
-          itemCount: itemCount, // Just the count instead of full items array
+          paymentMethod: paymentMethod,
+          itemCount: itemCount,
           createdAt: typedOrder.createdAt,
           updatedAt: typedOrder.updatedAt,
+          creatorName: creatorName,
+          creatorEmail: creatorEmail,
+          creatorRole: creatorRole,
         };
       });
       
@@ -294,6 +323,9 @@ export class DesktopController {
         bill.paymentStatus,
         bill.paymentMethod,
         bill.itemCount,
+        bill.creatorName,
+        bill.creatorEmail,
+        bill.creatorRole,
         formatISTDate(bill.createdAt),
         formatISTDate(bill.updatedAt),
       ]);
@@ -312,6 +344,9 @@ export class DesktopController {
         'Payment Status',
         'Payment Method',
         'Item Count',
+        'Created By Name',
+        'Created By Email',
+        'Created By Role',
         'Created At',
         'Updated At'
       ];
@@ -907,6 +942,27 @@ export class DesktopController {
         createdBy: ret.createdBy
       }));
       
+      // Get payment method from payments array (most recent payment)
+      let paymentMethod = 'CASH'; // Default to CASH for SYSTEM orders
+      if (orderWithIncludes.payments && Array.isArray(orderWithIncludes.payments) && orderWithIncludes.payments.length > 0) {
+        // Sort payments by createdAt desc to get the most recent
+        const sortedPayments = [...orderWithIncludes.payments].sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        paymentMethod = sortedPayments[0].method || 'CASH';
+      }
+      
+      // Extract creator information
+      let creator = null;
+      if (orderWithIncludes.creator) {
+        creator = {
+          id: orderWithIncludes.creator.id,
+          name: `${orderWithIncludes.creator.firstName || ''} ${orderWithIncludes.creator.lastName || ''}`.trim(),
+          email: orderWithIncludes.creator.email,
+          role: orderWithIncludes.creator.role,
+        };
+      }
+      
       const orderWithReturnStatus = {
         id: orderWithIncludes.id,
         orderNumber: orderWithIncludes.orderNumber,
@@ -920,6 +976,7 @@ export class DesktopController {
         totalAmount: orderWithIncludes.totalAmount,
         status: orderWithIncludes.status,
         paymentStatus: orderWithIncludes.paymentStatus,
+        paymentMethod: paymentMethod,
         shippingAddress: orderWithIncludes.shippingAddress,
         billingAddress: orderWithIncludes.billingAddress,
         customerName: orderWithIncludes.customerName,
@@ -936,6 +993,7 @@ export class DesktopController {
         cancelledAt: orderWithIncludes.cancelledAt,
         returnRequestedAt: orderWithIncludes.returnRequestedAt,
         createdBy: orderWithIncludes.createdBy,
+        creator: creator,
         source: orderWithIncludes.source,
         deviceInfo: orderWithIncludes.deviceInfo,
         metadata: orderWithIncludes.metadata,
