@@ -253,10 +253,58 @@ export class ProductController {
     return sanitizedProduct;
   }
 
-  // Products
+  // Products - Public route with pagination, search, and filtering
   getAllProducts = async (req: Request, res: Response): Promise<void> => {
     try {
-      const products = await this.repo.getAll();
+      // Extract query parameters for pagination, search, and filtering
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const search = req.query.search as string;
+      const category = req.query.category as string;
+      const brand = req.query.brand as string;
+      const status = req.query.status as string;
+      const stockStatus = req.query.stockStatus as string;
+      const isFeatured = req.query.isFeatured as string;
+      const isNewArrival = req.query.isNewArrival as string;
+      const isBestSeller = req.query.isBestSeller as string;
+      const barcode = req.query.barcode as string;
+
+      // Build filters object
+      const filters: any = {
+        page,
+        limit,
+        search,
+        category,
+        brand,
+        stockStatus
+      };
+
+      // Only filter by status if provided (for public route, we typically want ACTIVE products)
+      // But allow override via query param
+      if (status) {
+        filters.status = status;
+      } else {
+        // Default to ACTIVE for public products
+        filters.status = 'ACTIVE';
+      }
+
+      // Convert string booleans to actual booleans
+      if (isFeatured !== undefined) {
+        filters.isFeatured = isFeatured === 'true';
+      }
+      if (isNewArrival !== undefined) {
+        filters.isNewArrival = isNewArrival === 'true';
+      }
+      if (isBestSeller !== undefined) {
+        filters.isBestSeller = isBestSeller === 'true';
+      }
+
+      if (barcode) {
+        filters.barcode = barcode;
+      }
+
+      // Get products with filters and pagination
+      const { products, totalCount } = await this.repo.getAllWithFilters(filters);
       
       // Convert Decimal fields to numbers BEFORE image transformation
       // This prevents serialization issues with Decimal objects
@@ -329,9 +377,22 @@ export class ProductController {
       // Extract only essential fields for product cards/list view (optimized for performance)
       const productCards = transformedProducts.map(product => this.extractProductCardFields(product));
       
+      // Calculate pagination metadata
+      const totalPages = Math.ceil(totalCount / limit);
+      
       const response: ApiResponse = {
         success: true,
-        data: { products: productCards },
+        data: { 
+          products: productCards,
+          pagination: {
+            currentPage: page,
+            totalPages,
+            totalCount,
+            limit,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+          }
+        },
         message: 'Products Found',
         timestamp: new Date().toISOString(),
       };

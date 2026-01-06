@@ -126,52 +126,9 @@ export class ProductRepository implements IProductRepository {
 
     console.log(`ProductRepository.getAllWithFilters - found ${totalCount} products, returning ${productsResult.length} products`);
     
-    // Transform products to include only required fields
-    const products = productsResult.map(product => {
-      // Get primary image or first image
-      const primaryImage = product.images && product.images.length > 0 
-        ? product.images.find(img => img.isPrimary) || product.images[0]
-        : null;
-      
-      // Calculate total stock quantity from all inventory records
-      const totalStockQuantity = product.inventory && product.inventory.length > 0 
-        ? product.inventory.reduce((sum: number, inv: any) => sum + inv.availableQuantity, 0)
-        : 0;
-        
-      // Calculate discount information
-      const mrp = Number(product.mrp);
-      const sellingPrice = Number(product.sellingPrice);
-      const discountAmount = mrp - sellingPrice;
-      const discountPercent = mrp > 0 ? ((discountAmount / mrp) * 100) : 0;
-      
-      return {
-        id: product.id,
-        name: product.name,
-        image: primaryImage?.url || null,
-        sku: product.sku,
-        price: sellingPrice,
-        mrp: mrp,
-        discount: {
-          amount: discountAmount,
-          percent: parseFloat(discountPercent.toFixed(2))
-        },
-        category: product.categories.map((category: any) => category.category.name),
-        barcode: product.barcode,
-        taxRate: Number(product.taxRate),
-        hsnCode: product.hsnCode,
-        weight: Number(product.weight),
-        dimensions: product.dimensions,
-        description: product.description,
-        shortDescription: product.shortDescription,
-        stockStatus: product.stockStatus,
-        status: product.status,
-        stockQuantity: totalStockQuantity,
-        createdAt: product.createdAt,
-        updatedAt: product.updatedAt
-      };
-    });
-
-    return { products, totalCount };
+    // Return full product structure so controllers can transform as needed
+    // This allows both extractProductCardFields and transformCommonImageFields to work correctly
+    return { products: productsResult, totalCount };
   }
 
   async getDashboardStats(): Promise<any> {

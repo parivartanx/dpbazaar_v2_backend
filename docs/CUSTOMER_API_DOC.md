@@ -812,7 +812,7 @@ Authorization: Bearer <token>
 ```
 
 ### GET /products/
-**Description:** Retrieves all products with pagination and filtering
+**Description:** Retrieves all products with pagination, search, and filtering. Returns optimized product card data for efficient frontend rendering.
 
 **Request:**
 - Method: `GET`
@@ -820,12 +820,15 @@ Authorization: Bearer <token>
 - Query Parameters:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 20)
-  - `search` (optional): Search term for product name/description
-  - `category` (optional): Category filter
-  - `brand` (optional): Brand filter
-  - `minPrice` (optional): Minimum price filter
-  - `maxPrice` (optional): Maximum price filter
-  - `inStock` (optional): Filter for in-stock items (true/false)
+  - `search` (optional): Search term for product name, description, SKU, or barcode (case-insensitive)
+  - `category` (optional): Filter by category ID
+  - `brand` (optional): Filter by brand ID
+  - `status` (optional): Filter by product status (ACTIVE, INACTIVE, DRAFT). Defaults to ACTIVE for public route
+  - `stockStatus` (optional): Filter by stock status (IN_STOCK, LOW_STOCK, OUT_OF_STOCK)
+  - `isFeatured` (optional): Filter featured products (true/false)
+  - `isNewArrival` (optional): Filter new arrival products (true/false)
+  - `isBestSeller` (optional): Filter best seller products (true/false)
+  - `barcode` (optional): Search by specific barcode
 
 **Response:**
 ```json
@@ -838,60 +841,56 @@ Authorization: Bearer <token>
         "sku": "string",
         "name": "string",
         "slug": "string",
-        "description": "string",
         "shortDescription": "string",
-        "categoryId": "string",
-        "brandId": "string",
-        "mrp": 100.00,
-        "sellingPrice": 90.00,
-        "discountPercentage": 10.00,
-        "taxRate": 10.00,
-        "stockQuantity": 100,
-        "reservedQuantity": 0,
-        "availableQuantity": 100,
-        "minOrderQuantity": 1,
-        "maxOrderQuantity": 10,
-        "weight": 1.0,
-        "dimensions": {
-          "length": 10.0,
-          "width": 10.0,
-          "height": 10.0
+        "mrp": 29990,
+        "sellingPrice": 24990,
+        "discount": {
+          "amount": 5000,
+          "percent": 16.67
         },
-        "images": ["string"],
-        "primaryImage": "string",
-        "isReturnable": true,
-        "returnDays": 30,
-        "warrantyPeriod": "string",
-        "specifications": {},
-        "status": "ACTIVE|INACTIVE|DRAFT",
-        "visibility": "PUBLIC|PRIVATE|INVITATION",
-        "tags": ["string"],
-        "createdAt": "2023-12-25T10:30:00.000Z",
-        "updatedAt": "2023-12-25T10:30:00.000Z",
-        "category": {
-          "id": "string",
-          "name": "string",
-          "slug": "string"
+        "image": {
+          "url": "string",
+          "thumbnailUrl": "string",
+          "alt": "string"
         },
         "brand": {
           "id": "string",
           "name": "string",
+          "logo": "string",
           "slug": "string"
-        }
+        },
+        "categories": ["string"],
+        "stockStatus": "IN_STOCK|LOW_STOCK|OUT_OF_STOCK",
+        "status": "ACTIVE|INACTIVE|DRAFT",
+        "isFeatured": true,
+        "isNewArrival": true,
+        "isBestSeller": true,
+        "avgRating": 4.48,
+        "totalReviews": 39
       }
     ],
     "pagination": {
       "currentPage": 1,
-      "totalPages": 5,
-      "totalCount": 100,
+      "totalPages": 3,
+      "totalCount": 45,
+      "limit": 20,
       "hasNextPage": true,
       "hasPrevPage": false
     }
   },
-  "message": "Products retrieved successfully",
-  "timestamp": "2023-12-25T10:30:00.000Z"
+  "message": "Products Found",
+  "timestamp": "2026-01-06T05:37:46.815Z"
 }
 ```
+
+**Notes:**
+- Products are returned in optimized card format for efficient frontend rendering
+- The `image` field contains the primary product image with URL, thumbnail URL, and alt text
+- The `brand` field can be `null` if the product has no brand assigned
+- The `categories` field is an array of category names
+- The `discount` field is calculated automatically from MRP and selling price
+- Products are filtered by `status: ACTIVE` by default for public access
+- Search is performed across product name, description, SKU, and barcode fields
 
 ### GET /products/slug/:slug
 **Description:** Retrieves a product by its slug
