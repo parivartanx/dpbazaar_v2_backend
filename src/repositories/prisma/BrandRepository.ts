@@ -10,9 +10,7 @@ export class BrandRepository implements IBrandRepository {
   }
 
   async findAll(): Promise<Brand[]> {
-    return prisma.brand.findMany({
-      include: { products: true },
-    });
+    return prisma.brand.findMany({});
   }
 
   async findById(id: string): Promise<Brand | null> {
