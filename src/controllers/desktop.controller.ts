@@ -945,11 +945,9 @@ export class DesktopController {
       // Get payment method from payments array (most recent payment)
       let paymentMethod = 'CASH'; // Default to CASH for SYSTEM orders
       if (orderWithIncludes.payments && Array.isArray(orderWithIncludes.payments) && orderWithIncludes.payments.length > 0) {
-        // Sort payments by createdAt desc to get the most recent
-        const sortedPayments = [...orderWithIncludes.payments].sort((a: any, b: any) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        paymentMethod = sortedPayments[0].method || 'CASH';
+        // Payments are already ordered by createdAt desc from repository
+        const latestPayment = orderWithIncludes.payments[0];
+        paymentMethod = latestPayment.method || 'CASH';
       }
       
       // Extract creator information

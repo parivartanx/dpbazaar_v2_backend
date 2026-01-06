@@ -519,6 +519,15 @@ export class OrderRepository implements IOrderRepository {
         delivery: true,
         returns: true,
         invoices: true,
+        creator: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+          },
+        },
       },
     });
   }
