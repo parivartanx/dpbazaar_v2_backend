@@ -30,7 +30,7 @@ router.post('/generate-bill', isAccessAllowed('MANAGER', 'ADMIN'), desktopContro
 router.get('/bills', desktopController.getBillHistory);
 router.get('/bills-excel', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillHistoryExcel);
 // Get bill by order number API
-router.get('/bills/:orderNumber', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.getBillByOrderNumber);
+router.get('/bills/:orderNumber', desktopController.getBillByOrderNumber);
 
 // Return APIs
 router.post('/create-return-request', isAccessAllowed('MANAGER', 'ADMIN'), desktopController.createReturnRequest);
