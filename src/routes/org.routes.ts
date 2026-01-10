@@ -69,7 +69,6 @@ import {
   employeePermissionSchema,
 } from '../validators/employee.validaton';
 import {
-  createCustomerSchema,
   updateCustomerSchema,
 } from '../validators/customer.validaton';
 import {
@@ -79,14 +78,13 @@ import {
 import { UserSubscriptionCardController } from '../controllers/userSubscriptionCard.controller';
 import { createUserSubscriptionCardSchema, updateUserSubscriptionCardSchema } from '../validators/userSubscriptionCard.validation';
 import {
-  createWalletSchema,
   updateWalletSchema,
 } from '../validators/wallet.validation';
 import {
   createWalletTransactionSchema,
   updateWalletTransactionSchema,
 } from '../validators/walletTransaction.validation';
-import { updateReturnStatusSchema, createOrderSchema, updateOrderSchema, updateOrderStatusSchema, cancelOrderSchema } from '../validators/order.validation';
+import { updateReturnStatusSchema, updateOrderStatusSchema, cancelOrderSchema } from '../validators/order.validation';
 import { DiscountController } from '../controllers/discount.controller';
 import { ProductReviewController } from '../controllers/productReview.controller';
 import { createDiscountSchema, updateDiscountSchema } from '../validators/discount.validation';
@@ -105,10 +103,8 @@ import { createDeliverySchema, updateDeliverySchema } from '../validators/delive
 import { ReferralCodeController } from '../controllers/referralCode.controller';
 import { ReferralHistoryController } from '../controllers/referralHistory.controller';
 import { createReferralCodeSchema, updateReferralCodeSchema } from '../validators/referralCode.validation';
-import { createReferralHistorySchema, updateReferralHistorySchema } from '../validators/referralHistory.validation';
 
 import { NotificationController } from '../controllers/notification.controller';
-import { createNotificationSchema, updateNotificationSchema } from '../validators/notification.validation';
 
 import { EmailTemplateController } from '../controllers/emailTemplate.controller';
 import { createEmailTemplateSchema, updateEmailTemplateSchema } from '../validators/emailTemplate.validation';
@@ -126,7 +122,7 @@ import { InvoiceController } from '../controllers/invoice.controller';
 import { createInvoiceSchema, updateInvoiceSchema } from '../validators/invoice.validation';
 
 import { DeliveryEarningController } from '../controllers/deliveryEarning.controller';
-import { createDeliveryEarningSchema, updateDeliveryEarningSchema } from '../validators/deliveryEarning.validation';
+import { updateDeliveryEarningSchema } from '../validators/deliveryEarning.validation';
 
 import { PriceHistoryController } from '../controllers/priceHistory.controller';
 

@@ -114,11 +114,12 @@ export class CustomerController {
 
       // Check if customer is soft-deleted
       if (customer.deletedAt) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Customer not found',
           timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       const flattenedCustomer = this.flattenCustomerResponse(customer);
@@ -164,12 +165,13 @@ export class CustomerController {
         if (target?.includes('userId')) fieldName = 'user';
         else if (target?.includes('customerCode')) fieldName = 'customer code';
         
-        return res.status(409).json({
+        res.status(409).json({
           success: false,
           error: 'Duplicate customer',
           message: `A customer with this ${fieldName} already exists. Field(s): ${target?.join(', ') || 'userId, customerCode'}`,
           timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       const response: ApiResponse = {
@@ -198,11 +200,12 @@ export class CustomerController {
       // Check if customer exists
       const existingCustomer = await customerRepo.findById(id);
       if (!existingCustomer) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Customer not found',
           timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       const customer = await customerRepo.update(id, req.body);
@@ -221,12 +224,13 @@ export class CustomerController {
       // Handle Prisma unique constraint error (P2002) - customerCode uniqueness
       if (error.code === 'P2002') {
         const target = error.meta?.target;
-        return res.status(409).json({
+        res.status(409).json({
           success: false,
           error: 'Duplicate customer',
           message: `A customer with this ${target?.includes('customerCode') ? 'customer code' : 'field'} already exists. Field(s): ${target?.join(', ') || 'customerCode'}`,
           timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       const response: ApiResponse = {
@@ -255,20 +259,22 @@ export class CustomerController {
       // Check if customer exists
       const existingCustomer = await customerRepo.findById(id);
       if (!existingCustomer) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Customer not found',
           timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       // Check if already soft-deleted
       if (existingCustomer.deletedAt) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Customer is already deleted',
           timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       const customer = await customerRepo.softDelete(id);
@@ -309,20 +315,22 @@ export class CustomerController {
       // Check if customer exists
       const existingCustomer = await customerRepo.findById(id);
       if (!existingCustomer) {
-        return res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'Customer not found',
           timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       // Check if customer is not soft-deleted
       if (!existingCustomer.deletedAt) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Customer is not deleted',
           timestamp: new Date().toISOString(),
         });
+        return;
       }
 
       const customer = await customerRepo.restore(id);
