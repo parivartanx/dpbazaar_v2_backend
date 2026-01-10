@@ -17,12 +17,34 @@ export const updateDepartmentSchema = Joi.object({
 });
 
 export const createEmployeeSchema = Joi.object({
-  userId: Joi.string().required(),
-  employeeCode: Joi.string().required(),
-  // Note: firstName, lastName, middleName are now in User model
-  // Note: personalEmail, workPhone removed - use User.email and User.phone
+  // User details (required for auto-creating user)
+  firstName: Joi.string().min(2).max(50).required().messages({
+    'string.empty': 'First name is required',
+    'string.min': 'First name must be at least 2 characters',
+  }),
+  lastName: Joi.string().min(2).max(50).required().messages({
+    'string.empty': 'Last name is required',
+    'string.min': 'Last name must be at least 2 characters',
+  }),
+  email: Joi.string().email().required().messages({
+    'string.empty': 'Email is required',
+    'string.email': 'Email must be valid',
+  }),
+  password: Joi.string().min(6).max(128).required().messages({
+    'string.empty': 'Password is required',
+    'string.min': 'Password must be at least 6 characters',
+  }),
+  phone: Joi.string()
+    .pattern(/^[0-9]{10,15}$/)
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.pattern.base': 'Phone number must be 10–15 digits',
+    }),
+  middleName: Joi.string().optional().allow(null, ''),
 
-  // Employment details
+  // Employee details
+  employeeCode: Joi.string().required(),
   departmentId: Joi.string().allow(null, ''),
   designation: Joi.string().required(),
   reportingTo: Joi.string().allow(null, ''),
@@ -92,8 +114,8 @@ export const createPermissionSchema = Joi.object({
 
 export const updatePermissionSchema = Joi.object({
   resource: Joi.string().optional(),
-  action: Joi.string().valid('CREATE', 'READ', 'UPDATE', 'DELETE', 'MANAGE'),
-  description: Joi.string().allow(null, ''),
+  action: Joi.string().valid('CREATE', 'READ', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT').optional(),
+  description: Joi.string().optional().allow(null, ''),
 });
 
 export const employeePermissionSchema = Joi.object({

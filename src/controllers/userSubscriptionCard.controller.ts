@@ -6,7 +6,6 @@ import { SubscriptionCardRepository } from '../repositories/prisma/SubscriptionC
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { ReferralStatus, TransactionType, TransactionReason, TransactionStatus, CardSubscriptionStatus } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
 import { PaymentService } from '../services/payment.service';
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
@@ -350,7 +349,7 @@ export class UserSubscriptionCardController {
               referrerSubscriptionId: userSubscriptionCard.id, // This will be the new subscription ID
               triggeredCardId: cardId,
               status: 'PENDING' as ReferralStatus,
-              rewardAmount: new Decimal(referralRewardAmount),
+              rewardAmount: referralRewardAmount,
               createdAt: new Date(),
             },
             include: {
@@ -368,12 +367,13 @@ export class UserSubscriptionCardController {
           });
           
           if (referrerWallet) {
-            const newBalance = Number(referrerWallet.balance) + referralRewardAmount;
+            const balanceBefore = Number(referrerWallet.balance);
+            const newBalance = balanceBefore + referralRewardAmount;
             
             // Update wallet balance
             await tx.wallet.update({
               where: { id: referrerWallet.id },
-              data: { balance: new Decimal(newBalance) }
+              data: { balance: newBalance }
             });
             
             // Create wallet transaction for referral reward
@@ -384,9 +384,9 @@ export class UserSubscriptionCardController {
                 type: 'CREDIT' as TransactionType,
                 reason: 'REFERRAL_REWARD' as TransactionReason,
                 status: 'SUCCESS' as TransactionStatus,
-                amount: new Decimal(referralRewardAmount),
-                balanceBefore: referrerWallet.balance,
-                balanceAfter: new Decimal(newBalance),
+                amount: referralRewardAmount,
+                balanceBefore: balanceBefore,
+                balanceAfter: newBalance,
                 referralId: referralHistory.id,
                 createdAt: new Date(),
               }

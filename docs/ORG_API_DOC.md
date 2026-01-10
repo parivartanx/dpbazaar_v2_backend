@@ -545,11 +545,20 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### GET /employees
 
-**Description:** Get all employees.
+**Description:** Get all employees with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/employees`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `search` (string): Search by employee code, designation, first name, last name, email, or phone
+  - `status` (string): Filter by status - `ACTIVE`, `INACTIVE`, or `SUSPENDED`
+  - `departmentId` (string): Filter by department ID
+  - `employmentType` (string): Filter by employment type - `FULL_TIME`, `PART_TIME`, or `CONTRACT`
+  - `sortBy` (string): Sort field (default: `createdAt`)
+  - `sortOrder` (string): Sort order - `asc` or `desc` (default: `desc`)
 
 **Response:**
 - Success: `200 OK`
@@ -559,7 +568,7 @@ This document provides comprehensive API documentation for all admin routes in t
 ```json
 {
   "success": true,
-  "message": "Employees retrieved successfully",
+  "message": "Employees fetched successfully",
   "data": {
     "employees": [
       {
@@ -570,7 +579,7 @@ This document provides comprehensive API documentation for all admin routes in t
           "id": "string",
           "name": "string"
         },
-        "status": "string",
+        "status": "ACTIVE",
         "designation": "string",
         "reportingTo": "string",
         "joiningDate": "string",
@@ -597,10 +606,28 @@ This document provides comprehensive API documentation for all admin routes in t
         "lastLoginIp": "string",
         "permissions": []
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalItems": 100,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
+```
+
+**Example Requests:**
+```bash
+# Get all active employees in a specific department
+GET /employees?status=ACTIVE&departmentId=dept123&page=1&limit=20
+
+# Search for employees
+GET /employees?search=john&page=1&limit=10
+
+# Filter by employment type and sort
+GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
 ```
 
 ### GET /employees/:id
@@ -614,7 +641,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (employee not found or soft-deleted), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -664,17 +691,45 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### POST /employees
 
-**Description:** Create a new employee.
+**Description:** Create a new employee. **Automatically creates a new User account** with the provided details and links it to the employee record. The user is created with the `EMPLOYEE` role.
 
 **Request:**
 - Method: `POST`
 - Endpoint: `/employees`
 - Content-Type: `application/json`
-- Body: `{ firstName: string, lastName: string, email: string, password: string, departmentId: string, designation: string, reportingTo: string }`
+- Body:
+```json
+{
+  "firstName": "string (required, min 2 chars)",
+  "lastName": "string (required, min 2 chars)",
+  "middleName": "string (optional)",
+  "email": "string (required, valid email)",
+  "password": "string (required, min 6 chars)",
+  "phone": "string (optional, 10-15 digits)",
+  "employeeCode": "string (required)",
+  "departmentId": "string (optional, null for no department)",
+  "designation": "string (required)",
+  "reportingTo": "string (optional, employee ID of manager)",
+  "status": "ACTIVE | INACTIVE | SUSPENDED (optional, default: ACTIVE)",
+  "employmentType": "FULL_TIME | PART_TIME | CONTRACT (optional, default: FULL_TIME)",
+  "joiningDate": "string (required, ISO date)",
+  "confirmationDate": "string (optional, ISO date)",
+  "lastWorkingDate": "string (optional, ISO date)",
+  "salary": "number (optional, precision 2)",
+  "currency": "string (optional, default: INR)",
+  "documents": "object (optional, key-value pairs)",
+  "emergencyContactName": "string (optional)",
+  "emergencyContactPhone": "string (optional)",
+  "emergencyContactRelation": "string (optional)",
+  "currentAddress": "object (optional)",
+  "permanentAddress": "object (optional)",
+  "metadata": "object (optional)"
+}
+```
 
 **Response:**
 - Success: `201 Created`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error, duplicate email), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -690,7 +745,7 @@ This document provides comprehensive API documentation for all admin routes in t
         "id": "string",
         "name": "string"
       },
-      "status": "string",
+      "status": "ACTIVE",
       "designation": "string",
       "reportingTo": "string",
       "joiningDate": "string",
@@ -706,36 +761,46 @@ This document provides comprehensive API documentation for all admin routes in t
       "phone": "string",
       "username": "string",
       "role": "EMPLOYEE",
-      "isEmailVerified": true,
-      "isPhoneVerified": true,
-      "isTwoFactorEnabled": false,
-      "dateOfBirth": "string",
-      "gender": "MALE|FEMALE|OTHER",
-      "avatar": "string",
-      "bio": "string",
-      "lastLoginAt": "string",
-      "lastLoginIp": "string",
-      "permissions": []
+      "isEmailVerified": false,
+      "isPhoneVerified": false,
+      "isTwoFactorEnabled": false
     }
   },
   "timestamp": "string"
 }
 ```
 
+**Error Response (400 Bad Request - Duplicate Email):**
+```json
+{
+  "success": false,
+  "error": "User with this email already exists",
+  "message": "A user with this email address already exists. Please use a different email or create employee for existing user.",
+  "timestamp": "string"
+}
+```
+
+**Note:**
+- A new User account is automatically created with the provided email and password
+- The user is assigned the `EMPLOYEE` role automatically
+- Email verification is set to `false` by default (user needs to verify later)
+- The employee record is linked to the newly created user via `userId`
+- If email already exists, the request will fail with a 400 error
+
 ### PUT /employees/:id
 
-**Description:** Update an employee.
+**Description:** Update an employee. Can update both User fields (firstName, lastName, email, phone, middleName) and Employee fields. If user-related fields are provided, the associated User record is also updated.
 
 **Request:**
 - Method: `PUT`
 - Endpoint: `/employees/:id`
 - Path Parameter: `id` (employee ID)
 - Content-Type: `application/json`
-- Body: `{ firstName: string, lastName: string, departmentId: string, designation: string, reportingTo: string, status: string }`
+- Body: (all fields optional - same as POST /employees)
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error), `404 Not Found` (employee not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -785,7 +850,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### DELETE /employees/:id
 
-**Description:** Delete an employee.
+**Description:** Soft delete an employee. Sets the `deletedAt` timestamp instead of permanently deleting the record.
 
 **Request:**
 - Method: `DELETE`
@@ -794,7 +859,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (employee not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -968,11 +1033,17 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### GET /department
 
-**Description:** Get all departments.
+**Description:** Get all departments with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/department`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `search` (string): Search by name, code, or description (case-insensitive)
+  - `isActive` (boolean): Filter by active status - `true` or `false`
+  - `parentId` (string): Filter by parent department ID (use empty string or `null` for root departments)
 
 **Response:**
 - Success: `200 OK`
@@ -982,7 +1053,7 @@ This document provides comprehensive API documentation for all admin routes in t
 ```json
 {
   "success": true,
-  "message": "Departments retrieved successfully",
+  "message": "Departments fetched successfully",
   "data": {
     "departments": [
       {
@@ -990,16 +1061,42 @@ This document provides comprehensive API documentation for all admin routes in t
         "name": "string",
         "code": "string",
         "description": "string",
-        "isActive": "boolean",
+        "isActive": true,
         "parent": {
           "id": "string",
           "name": "string"
-        }
+        },
+        "children": [
+          {
+            "id": "string",
+            "name": "string",
+            "code": "string"
+          }
+        ],
+        "employees": []
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 3,
+      "totalItems": 50,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
+```
+
+**Example Requests:**
+```bash
+# Get active departments with pagination
+GET /department?isActive=true&page=1&limit=20
+
+# Search for departments
+GET /department?search=engineering&page=1
+
+# Get root departments only
+GET /department?parentId=&page=1&limit=10
 ```
 
 ### GET /department/:id
@@ -1013,7 +1110,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (department not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -1082,11 +1179,11 @@ This document provides comprehensive API documentation for all admin routes in t
 - Endpoint: `/department/:id`
 - Path Parameter: `id` (department ID)
 - Content-Type: `application/json`
-- Body: `{ name: string, code: string, description: string, parentId: string, isActive: boolean }`
+- Body: `{ name: string, code: string, description: string, parentId: string, isActive: boolean }` (all fields optional)
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error), `404 Not Found` (department not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -1121,7 +1218,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (department not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -1149,11 +1246,17 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### GET /permissions
 
-**Description:** Get all permissions.
+**Description:** Get all permissions with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/permissions`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `search` (string): Search by resource or description (case-insensitive)
+  - `resource` (string): Filter by resource name (exact match)
+  - `action` (string): Filter by action - `CREATE`, `READ`, `UPDATE`, `DELETE`, `APPROVE`, or `REJECT`
 
 **Response:**
 - Success: `200 OK`
@@ -1163,19 +1266,38 @@ This document provides comprehensive API documentation for all admin routes in t
 ```json
 {
   "success": true,
-  "message": "Permissions retrieved successfully",
+  "message": "Permissions fetched successfully",
   "data": {
     "permissions": [
       {
         "id": "string",
-        "resource": "string",
-        "action": "string",
-        "description": "string"
+        "resource": "products",
+        "action": "CREATE",
+        "description": "Create new products",
+        "createdAt": "string"
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 2,
+      "totalItems": 30,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
+```
+
+**Example Requests:**
+```bash
+# Get all permissions for a specific resource
+GET /permissions?resource=products&page=1&limit=20
+
+# Search permissions
+GET /permissions?search=product&page=1
+
+# Filter by action
+GET /permissions?action=CREATE&page=1&limit=10
 ```
 
 ### GET /permissions/:id
@@ -1189,7 +1311,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (permission not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -1210,17 +1332,34 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### POST /permissions
 
-**Description:** Create a new permission.
+**Description:** Create a new permission. The combination of `resource` and `action` must be unique.
 
 **Request:**
 - Method: `POST`
 - Endpoint: `/permissions`
 - Content-Type: `application/json`
-- Body: `{ resource: string, action: string, description: string }`
+- Body:
+```json
+{
+  "resource": "string (required, e.g., 'products', 'orders', 'users')",
+  "action": "string (required, one of: 'CREATE', 'READ', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT')",
+  "description": "string (optional)"
+}
+```
 
 **Response:**
 - Success: `201 Created`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error), `409 Conflict` (duplicate resource+action combination), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate Permission):**
+```json
+{
+  "success": false,
+  "error": "Duplicate permission",
+  "message": "Permission with this resource and action combination already exists. Field(s): resource, action",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -1241,18 +1380,35 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### PUT /permissions/:id
 
-**Description:** Update a permission.
+**Description:** Update a permission. All fields are optional. The combination of `resource` and `action` must remain unique.
 
 **Request:**
 - Method: `PUT`
 - Endpoint: `/permissions/:id`
 - Path Parameter: `id` (permission ID)
 - Content-Type: `application/json`
-- Body: `{ resource: string, action: string, description: string }`
+- Body:
+```json
+{
+  "resource": "string (optional)",
+  "action": "string (optional, one of: 'CREATE', 'READ', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT')",
+  "description": "string (optional)"
+}
+```
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error), `404 Not Found` (permission not found), `409 Conflict` (duplicate resource+action combination), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate Permission):**
+```json
+{
+  "success": false,
+  "error": "Duplicate permission",
+  "message": "A permission with this resource and action combination already exists. Field(s): resource, action",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -1273,7 +1429,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### DELETE /permissions/:id
 
-**Description:** Delete a permission.
+**Description:** Delete a permission permanently.
 
 **Request:**
 - Method: `DELETE`
@@ -1282,21 +1438,13 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (permission not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
   "message": "Permission deleted successfully",
-  "data": {
-    "permission": {
-      "id": "string",
-      "resource": "string",
-      "action": "string",
-      "description": "string"
-    }
-  },
   "timestamp": "string"
 }
 ```
@@ -1684,11 +1832,16 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### GET /brands
 
-**Description:** Get all brands.
+**Description:** Get all brands with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/brands`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `search` (string): Search by name, slug, or description (case-insensitive)
+  - `isActive` (boolean): Filter by active status - `true` or `false`
 
 **Response:**
 - Success: `200 OK`
@@ -1698,7 +1851,7 @@ This document provides comprehensive API documentation for all admin routes in t
 ```json
 {
   "success": true,
-  "message": "Brands retrieved successfully",
+  "message": "Brands fetched successfully",
   "data": {
     "brands": [
       {
@@ -1708,19 +1861,40 @@ This document provides comprehensive API documentation for all admin routes in t
         "logo": "string",
         "description": "string",
         "website": "string",
-        "isActive": "boolean",
+        "isActive": true,
         "createdAt": "string",
-        "updatedAt": "string"
+        "updatedAt": "string",
+        "products": [
+          {
+            "id": "string",
+            "name": "string"
+          }
+        ]
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalItems": 100,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
 ```
 
+**Example Requests:**
+```bash
+# Get active brands with pagination
+GET /brands?isActive=true&page=1&limit=20
+
+# Search for brands
+GET /brands?search=nike&page=1&limit=10
+```
+
 ### GET /brands/:id
 
-**Description:** Get brand by ID.
+**Description:** Get brand by ID with associated products.
 
 **Request:**
 - Method: `GET`
@@ -1729,13 +1903,13 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (brand not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
-  "message": "Brand retrieved successfully",
+  "message": "Brand fetched successfully",
   "data": {
     "brand": {
       "id": "string",
@@ -1744,9 +1918,16 @@ This document provides comprehensive API documentation for all admin routes in t
       "logo": "string",
       "description": "string",
       "website": "string",
-      "isActive": "boolean",
+      "isActive": true,
       "createdAt": "string",
-      "updatedAt": "string"
+      "updatedAt": "string",
+      "products": [
+        {
+          "id": "string",
+          "name": "string",
+          "sku": "string"
+        }
+      ]
     }
   },
   "timestamp": "string"
@@ -1755,17 +1936,27 @@ This document provides comprehensive API documentation for all admin routes in t
 
 ### POST /brands
 
-**Description:** Create a new brand.
+**Description:** Create a new brand. Both `name` and `slug` must be unique.
 
 **Request:**
 - Method: `POST`
 - Endpoint: `/brands`
 - Content-Type: `application/json`
-- Body: `{ name: string, description: string, website: string, isActive: boolean }`
+- Body:
+```json
+{
+  "name": "string (required, min 2 chars, unique)",
+  "slug": "string (required, min 2 chars, unique)",
+  "logo": "string (optional, must be valid URL)",
+  "description": "string (optional, max 500 chars)",
+  "website": "string (optional, must be valid URL)",
+  "isActive": "boolean (optional, default: true)"
+}
+```
 
 **Response:**
 - Success: `201 Created`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error), `409 Conflict` (duplicate name or slug), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -1780,7 +1971,7 @@ This document provides comprehensive API documentation for all admin routes in t
       "logo": "string",
       "description": "string",
       "website": "string",
-      "isActive": "boolean",
+      "isActive": true,
       "createdAt": "string",
       "updatedAt": "string"
     }
@@ -1789,20 +1980,30 @@ This document provides comprehensive API documentation for all admin routes in t
 }
 ```
 
+**Error Response (409 Conflict - Duplicate Name/Slug):**
+```json
+{
+  "success": false,
+  "error": "Duplicate brand",
+  "message": "A brand with this name already exists. Field(s): name",
+  "timestamp": "string"
+}
+```
+
 ### PUT /brands/:id
 
-**Description:** Update a brand.
+**Description:** Update a brand. All fields are optional. Both `name` and `slug` must remain unique if updated.
 
 **Request:**
 - Method: `PUT`
 - Endpoint: `/brands/:id`
 - Path Parameter: `id` (brand ID)
 - Content-Type: `application/json`
-- Body: `{ name: string, description: string, website: string, isActive: boolean }`
+- Body: (all fields optional, same as POST /brands)
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error), `404 Not Found` (brand not found), `409 Conflict` (duplicate name or slug), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -1817,7 +2018,7 @@ This document provides comprehensive API documentation for all admin routes in t
       "logo": "string",
       "description": "string",
       "website": "string",
-      "isActive": "boolean",
+      "isActive": true,
       "createdAt": "string",
       "updatedAt": "string"
     }
@@ -1826,9 +2027,19 @@ This document provides comprehensive API documentation for all admin routes in t
 }
 ```
 
+**Error Response (409 Conflict - Duplicate Name/Slug):**
+```json
+{
+  "success": false,
+  "error": "Duplicate brand",
+  "message": "A brand with this slug already exists. Field(s): slug",
+  "timestamp": "string"
+}
+```
+
 ### DELETE /brands/:id
 
-**Description:** Delete a brand.
+**Description:** Delete a brand permanently. Brand cannot be deleted if it has associated products.
 
 **Request:**
 - Method: `DELETE`
@@ -1837,45 +2048,56 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, brand has products), `404 Not Found` (brand not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
   "message": "Brand deleted successfully",
-  "data": {
-    "brand": {
-      "id": "string",
-      "name": "string",
-      "slug": "string",
-      "logo": "string",
-      "description": "string",
-      "website": "string",
-      "isActive": "boolean",
-      "createdAt": "string",
-      "updatedAt": "string"
-    }
-  },
   "timestamp": "string"
 }
 ```
+
+**Error Response (400 Bad Request - Brand Has Products):**
+```json
+{
+  "success": false,
+  "error": "Cannot delete brand",
+  "message": "Brand cannot be deleted because it has associated products. Please remove or reassign products first.",
+  "timestamp": "string"
+}
+```
+
+**Note:**
+- Brand `name` and `slug` must be unique
+- If a brand has associated products, deletion will fail with a 400 error
+- Products associated with the brand are returned in the GET response (limited to 5 in list view)
 
 ## Category Management
 
 ### GET /categories
 
-**Description:** Get all categories in hierarchical structure. Returns only root categories (level 0) with nested children. Each category includes only essential fields for efficient rendering.
+**Description:** Get all categories with pagination, search, filtering, and optional flat/hierarchical structure support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/categories`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `search` (string): Search by name, slug, description, or path (case-insensitive)
+  - `isActive` (boolean): Filter by active status - `true` or `false`
+  - `isFeatured` (boolean): Filter by featured status - `true` or `false`
+  - `parentId` (string): Filter by parent category ID (use empty string or `null` for root categories)
+  - `level` (number): Filter by category level (0 = root, 1 = first level, etc.)
+  - `flat` (boolean): If `true`, returns flat list with pagination. If `false` or omitted, returns hierarchical structure (default: `false`)
 
 **Response:**
 - Success: `200 OK`
 - Error: `500 Internal Server Error`
 
-**Success Response:**
+**Success Response (Hierarchical - default, when `flat=false` or omitted):**
 ```json
 {
   "success": true,
@@ -1888,6 +2110,7 @@ This document provides comprehensive API documentation for all admin routes in t
         "slug": "string",
         "level": 0,
         "path": "/string",
+        "parent": null,
         "children": [
           {
             "id": "string",
@@ -1902,15 +2125,7 @@ This document provides comprehensive API documentation for all admin routes in t
               "level": 0,
               "path": "/string"
             },
-            "children": [
-              {
-                "id": "string",
-                "name": "string",
-                "slug": "string",
-                "level": 2,
-                "path": "/string/string/string"
-              }
-            ]
+            "children": []
           }
         ]
       }
@@ -1920,11 +2135,71 @@ This document provides comprehensive API documentation for all admin routes in t
 }
 ```
 
+**Success Response (Flat List - when `flat=true`):**
+```json
+{
+  "success": true,
+  "message": "Categories fetched successfully",
+  "data": {
+    "categories": [
+      {
+        "id": "string",
+        "name": "string",
+        "slug": "string",
+        "level": 0,
+        "path": "/string",
+        "parent": null
+      },
+      {
+        "id": "string",
+        "name": "string",
+        "slug": "string",
+        "level": 1,
+        "path": "/parent/child",
+        "parent": {
+          "id": "string",
+          "name": "string",
+          "slug": "string",
+          "level": 0,
+          "path": "/parent"
+        }
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalItems": 100,
+      "itemsPerPage": 20
+    }
+  },
+  "timestamp": "string"
+}
+```
+
 **Note:** 
-- Only active categories are returned
-- Response includes hierarchical structure with nested children (up to 3 levels: 0 → 1 → 2)
-- Each category includes parent information if it has one
+- When `flat=false` (default): Returns hierarchical structure with nested children. Only root categories (level 0) are included at the top level, with their children nested. Pagination metadata is only included if filters are applied.
+- When `flat=true`: Returns flat list of all categories matching filters with pagination metadata. Nested children are not included.
+- Search filters work on name, slug, description, and path fields (case-insensitive)
+- Only active categories are returned by default unless `isActive=false` is specified
 - Categories are ordered by level and displayOrder
+
+**Example Requests:**
+```bash
+# Get hierarchical structure (default)
+GET /categories
+
+# Get flat list with pagination
+GET /categories?flat=true&page=1&limit=20
+
+# Search and filter active featured categories
+GET /categories?search=electronics&isActive=true&isFeatured=true&page=1
+
+# Get root categories only
+GET /categories?parentId=&level=0&page=1&limit=10
+
+# Get categories for a specific parent
+GET /categories?parentId=cat123&page=1&limit=20
+```
 
 ### GET /categories/:id
 
@@ -2004,7 +2279,7 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `201 Created`
-- Error: `400 Bad Request` (validation error), `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error, parent not found), `409 Conflict` (duplicate slug), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -2032,8 +2307,29 @@ This document provides comprehensive API documentation for all admin routes in t
 }
 ```
 
+**Error Response (409 Conflict - Duplicate Slug):**
+```json
+{
+  "success": false,
+  "error": "Duplicate category",
+  "message": "A category with this slug already exists. Field(s): slug",
+  "timestamp": "string"
+}
+```
+
+**Error Response (400 Bad Request - Parent Not Found):**
+```json
+{
+  "success": false,
+  "error": "Parent category with ID \"parentId\" not found",
+  "message": "Problem in Creating Category",
+  "timestamp": "string"
+}
+```
+
 **Note:**
 - If `parentId` is provided, the parent category must exist
+- `slug` must be unique. If a category with the same slug exists, the request will fail with a 409 Conflict error
 - `slug` is auto-generated from `name` if not provided (lowercase, hyphenated)
 - `level` is calculated as `parent.level + 1` (or 0 if no parent)
 - `path` is built as `${parent.path}/${slug}` (or `/${slug}` if no parent)
@@ -2070,7 +2366,17 @@ This document provides comprehensive API documentation for all admin routes in t
 
 **Response:**
 - Success: `200 OK`
-- Error: `400 Bad Request` (validation error, circular reference, self-parent), `404 Not Found` (if category not found), `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error, circular reference, self-parent, parent not found), `404 Not Found` (if category not found), `409 Conflict` (duplicate slug), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate Slug):**
+```json
+{
+  "success": false,
+  "error": "Duplicate category",
+  "message": "A category with this slug already exists. Field(s): slug",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -2163,7 +2469,7 @@ or
 
 ### PATCH /categories/:id/feature
 
-**Description:** Toggle category featured status.
+**Description:** Toggle the featured status of a category. The category must exist before toggling. Request body is validated using Joi schema.
 
 **Request:**
 - Method: `PATCH`
@@ -2173,19 +2479,19 @@ or
 - Body:
 ```json
 {
-  "isFeatured": true
+  "isFeatured": "boolean (required)"
 }
 ```
 
 **Response:**
 - Success: `200 OK`
-- Error: `400 Bad Request` (if id is missing or isFeatured is not boolean), `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error - isFeatured must be boolean), `404 Not Found` (category not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
-  "message": "Category feature flag updated",
+  "message": "Category feature flag updated successfully",
   "data": {
     "category": {
       "id": "string",
@@ -2207,9 +2513,32 @@ or
 }
 ```
 
+**Error Response (400 Bad Request - Validation Error):**
+```json
+{
+  "success": false,
+  "message": "isFeatured must be a boolean value",
+  "timestamp": "string"
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "message": "Category not found",
+  "timestamp": "string"
+}
+```
+
+**Note:**
+- The category existence is checked before toggling the feature status
+- The request body is validated using Joi schema - `isFeatured` must be a boolean
+- If category is not found, a 404 error is returned
+
 ### PATCH /categories/:id/activate
 
-**Description:** Toggle category active status.
+**Description:** Toggle the active status of a category. The category must exist before toggling. Request body is validated using Joi schema.
 
 **Request:**
 - Method: `PATCH`
@@ -2219,19 +2548,19 @@ or
 - Body:
 ```json
 {
-  "isActive": true
+  "isActive": "boolean (required)"
 }
 ```
 
 **Response:**
 - Success: `200 OK`
-- Error: `400 Bad Request` (if id is missing or isActive is not boolean), `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error - isActive must be boolean), `404 Not Found` (category not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
 {
   "success": true,
-  "message": "Category active status updated",
+  "message": "Category active status updated successfully",
   "data": {
     "category": {
       "id": "string",
@@ -2253,15 +2582,51 @@ or
 }
 ```
 
+**Error Response (400 Bad Request - Validation Error):**
+```json
+{
+  "success": false,
+  "message": "isActive must be a boolean value",
+  "timestamp": "string"
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "message": "Category not found",
+  "timestamp": "string"
+}
+```
+
+**Note:**
+- The category existence is checked before toggling the active status
+- The request body is validated using Joi schema - `isActive` must be a boolean
+- If category is not found, a 404 error is returned
+- When a category is set to inactive (`isActive: false`), it may be hidden from public-facing endpoints
+
 ## Product Management
 
 ### GET /products
 
-**Description:** Get all products.
+**Description:** Get all products with pagination, search, and filtering support. Returns optimized product card data for efficient rendering. Soft-deleted products are excluded by default.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/products`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `search` (string): Search by name, description, SKU, or barcode (case-insensitive)
+  - `category` (string): Filter by category ID
+  - `brand` (string): Filter by brand ID
+  - `status` (string): Filter by product status - `DRAFT`, `ACTIVE`, `INACTIVE`, `ARCHIVED` (default: all statuses for admin)
+  - `stockStatus` (string): Filter by stock status - `IN_STOCK`, `LOW_STOCK`, `OUT_OF_STOCK`
+  - `isFeatured` (boolean): Filter by featured status - `true` or `false`
+  - `isNewArrival` (boolean): Filter by new arrival flag - `true` or `false`
+  - `isBestSeller` (boolean): Filter by best seller flag - `true` or `false`
+  - `barcode` (string): Filter by exact barcode match
 
 **Response:**
 - Success: `200 OK`
@@ -2271,7 +2636,7 @@ or
 ```json
 {
   "success": true,
-  "message": "Products retrieved successfully",
+  "message": "Products fetched successfully",
   "data": {
     "products": [
       {
@@ -2279,66 +2644,63 @@ or
         "sku": "string",
         "name": "string",
         "slug": "string",
-        "description": "string",
         "shortDescription": "string",
-        "barcode": "string",
         "mrp": "number",
         "sellingPrice": "number",
-        "costPrice": "number",
-        "taxRate": "number",
-        "hsnCode": "string",
-        "brandId": "string",
-        "vendorId": "string",
-        "status": "string",
-        "stockStatus": "string",
-        "weight": "number",
-        "dimensions": "object",
-        "metaTitle": "string",
-        "metaDescription": "string",
-        "metaKeywords": "string[]",
-        "isFeatured": "boolean",
-        "isNewArrival": "boolean",
-        "isBestSeller": "boolean",
-        "isReturnable": "boolean",
-        "returnPeriodDays": "number",
-        "viewCount": "number",
-        "salesCount": "number",
-        "avgRating": "number",
-        "totalReviews": "number",
-        "tags": "string[]",
-        "metadata": "object",
-        "publishedAt": "string",
-        "createdAt": "string",
-        "updatedAt": "string",
         "brand": {
           "id": "string",
           "name": "string"
-        },
-        "vendor": {
-          "id": "string",
-          "businessName": "string"
         },
         "images": [
           {
             "id": "string",
             "url": "string",
-            "thumbnailUrl": "string",
-            "alt": "string",
-            "caption": "string",
-            "displayOrder": "number",
-            "isPrimary": "boolean"
+            "isPrimary": true
           }
-        ]
+        ],
+        "status": "ACTIVE",
+        "stockStatus": "IN_STOCK",
+        "isFeatured": false,
+        "isNewArrival": false,
+        "isBestSeller": false
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
 ```
 
+**Example Requests:**
+```bash
+# Get all active featured products
+GET /products?status=ACTIVE&isFeatured=true&page=1&limit=20
+
+# Search for products
+GET /products?search=laptop&page=1&limit=10
+
+# Filter by category and brand
+GET /products?category=cat123&brand=brand456&page=1
+
+# Filter by stock status
+GET /products?stockStatus=OUT_OF_STOCK&page=1&limit=20
+```
+
+**Note:**
+- Returns optimized product card fields for list views (essential fields only for performance)
+- Soft-deleted products (`deletedAt` is not null) are automatically excluded
+- Admin can see all statuses by default (no default status filter applied)
+- Decimal fields (mrp, sellingPrice, etc.) are automatically converted to numbers
+- Image keys are transformed to public signed URLs
+
 ### GET /products/:id
 
-**Description:** Get product by ID.
+**Description:** Get product by ID with full details including variants, categories, images, and attributes. Soft-deleted products return 404.
 
 **Request:**
 - Method: `GET`
@@ -2347,7 +2709,7 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (product not found or soft-deleted), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -2452,17 +2814,27 @@ or
 
 ### POST /products
 
-**Description:** Create a new product.
+**Description:** Create a new product. SKU, slug, and barcode must be unique.
 
 **Request:**
 - Method: `POST`
 - Endpoint: `/products`
 - Content-Type: `application/json`
-- Body: `{ name: string, description: string, shortDescription: string, sku: string, mrp: number, sellingPrice: number, costPrice: number, taxRate: number, hsnCode: string, brandId: string, vendorId: string, status: string, weight: number, dimensions: object, metaTitle: string, metaDescription: string, metaKeywords: string[], isFeatured: boolean, isNewArrival: boolean, isBestSeller: boolean, isReturnable: boolean, returnPeriodDays: number, tags: string[], categories: string[], images: string[], attributes: object[] }`
+- Body: (See Product schema - fields include name, sku, slug, description, mrp, sellingPrice, brandId, vendorId, status, etc.)
 
 **Response:**
 - Success: `201 Created`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error), `409 Conflict` (duplicate SKU/slug/barcode), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate SKU/Slug/Barcode):**
+```json
+{
+  "success": false,
+  "error": "Duplicate product",
+  "message": "A product with this SKU already exists. Field(s): sku",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -2533,14 +2905,28 @@ or
 
 ### PUT /products/:id
 
-**Description:** Update a product.
+**Description:** Update a product. All fields are optional. SKU, slug, and barcode must remain unique if updated.
 
 **Request:**
 - Method: `PUT`
 - Endpoint: `/products/:id`
 - Path Parameter: `id` (product ID)
 - Content-Type: `application/json`
-- Body: `{ name: string, description: string, shortDescription: string, sku: string, mrp: number, sellingPrice: number, costPrice: number, taxRate: number, hsnCode: string, brandId: string, vendorId: string, status: string, weight: number, dimensions: object, metaTitle: string, metaDescription: string, metaKeywords: string[], isFeatured: boolean, isNewArrival: boolean, isBestSeller: boolean, isReturnable: boolean, returnPeriodDays: number, tags: string[], categories: string[], images: string[], attributes: object[] }`
+- Body: (all fields optional - same as POST /products)
+
+**Response:**
+- Success: `200 OK`
+- Error: `400 Bad Request` (missing ID, validation error), `404 Not Found` (product not found), `409 Conflict` (duplicate SKU/slug/barcode), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate SKU/Slug/Barcode):**
+```json
+{
+  "success": false,
+  "error": "Duplicate product",
+  "message": "A product with this slug already exists. Field(s): slug",
+  "timestamp": "string"
+}
+```
 
 **Response:**
 - Success: `200 OK`
@@ -2615,7 +3001,7 @@ or
 
 ### DELETE /products/:id
 
-**Description:** Soft delete a product.
+**Description:** Soft delete a product by setting the `deletedAt` timestamp. The product must exist and not already be deleted.
 
 **Request:**
 - Method: `DELETE`
@@ -2624,7 +3010,16 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, product already deleted), `404 Not Found` (product not found), `500 Internal Server Error`
+
+**Error Response (400 Bad Request - Already Deleted):**
+```json
+{
+  "success": false,
+  "message": "Product is already deleted",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -2696,7 +3091,7 @@ or
 
 ### PATCH /products/:id/restore
 
-**Description:** Restore a soft deleted product.
+**Description:** Restore a soft-deleted product by clearing the `deletedAt` timestamp. The product must exist and be soft-deleted.
 
 **Request:**
 - Method: `PATCH`
@@ -2705,7 +3100,16 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, product not deleted), `404 Not Found` (product not found), `500 Internal Server Error`
+
+**Error Response (400 Bad Request - Not Deleted):**
+```json
+{
+  "success": false,
+  "message": "Product is not deleted",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -2897,7 +3301,7 @@ or
 
 ### GET /:id/variants
 
-**Description:** Get all variants for a product.
+**Description:** Get all variants for a product. The product must exist.
 
 **Request:**
 - Method: `GET`
@@ -2906,7 +3310,7 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (product not found), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -2937,18 +3341,28 @@ or
 
 ### POST /:id/variants
 
-**Description:** Create a new product variant.
+**Description:** Create a new product variant. The product must exist. `variantSku` must be unique.
 
 **Request:**
 - Method: `POST`
 - Endpoint: `/:id/variants`
 - Path Parameter: `id` (product ID)
 - Content-Type: `application/json`
-- Body: `{ variantSku: string, variantName: string, mrp: number, sellingPrice: number, attributes: object, weight: number, dimensions: object }`
+- Body: `{ variantSku: string (required, unique), variantName: string, mrp: number, sellingPrice: number, attributes: object, weight: number, dimensions: object, isActive: boolean (optional, default: true) }`
 
 **Response:**
 - Success: `201 Created`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing product ID, validation error), `404 Not Found` (product not found), `409 Conflict` (duplicate variantSku), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate variantSku):**
+```json
+{
+  "success": false,
+  "error": "Duplicate variant",
+  "message": "A variant with this SKU already exists. Field(s): variantSku",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -2977,18 +3391,28 @@ or
 
 ### PUT /variants/:id
 
-**Description:** Update a product variant.
+**Description:** Update a product variant. All fields are optional. The variant must exist. `variantSku` must remain unique if updated.
 
 **Request:**
 - Method: `PUT`
 - Endpoint: `/variants/:id`
 - Path Parameter: `id` (variant ID)
 - Content-Type: `application/json`
-- Body: `{ variantSku: string, variantName: string, mrp: number, sellingPrice: number, attributes: object, weight: number, dimensions: object, isActive: boolean }`
+- Body: (all fields optional - same as POST /:id/variants)
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error), `404 Not Found` (variant not found), `409 Conflict` (duplicate variantSku), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate variantSku):**
+```json
+{
+  "success": false,
+  "error": "Duplicate variant",
+  "message": "A variant with this SKU already exists. Field(s): variantSku",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -3017,7 +3441,7 @@ or
 
 ### DELETE /variants/:id
 
-**Description:** Delete a product variant.
+**Description:** Delete a product variant permanently. The variant must exist and cannot have associated inventory or order items.
 
 **Request:**
 - Method: `DELETE`
@@ -3026,7 +3450,17 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, variant has inventory/order items), `404 Not Found` (variant not found), `500 Internal Server Error`
+
+**Error Response (400 Bad Request - Has Associations):**
+```json
+{
+  "success": false,
+  "error": "Cannot delete variant",
+  "message": "Variant cannot be deleted because it has associated inventory or order items. Please remove or reassign them first.",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -3039,18 +3473,27 @@ or
 
 ### PATCH /variants/:id/toggle
 
-**Description:** Toggle variant active status.
+**Description:** Toggle variant active status. The variant must exist. Request body is validated.
 
 **Request:**
 - Method: `PATCH`
 - Endpoint: `/variants/:id/toggle`
 - Path Parameter: `id` (variant ID)
 - Content-Type: `application/json`
-- Body: `{ isActive: boolean }`
+- Body: `{ isActive: boolean (required) }`
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error - isActive must be boolean), `404 Not Found` (variant not found), `500 Internal Server Error`
+
+**Error Response (400 Bad Request - Validation Error):**
+```json
+{
+  "success": false,
+  "message": "isActive must be a boolean value",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -3081,11 +3524,15 @@ or
 
 ### GET /attributes
 
-**Description:** Get all attributes.
+**Description:** Get all attributes with pagination and search support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/attributes`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `search` (string): Search by name or dataType (case-insensitive)
 
 **Response:**
 - Success: `200 OK`
@@ -3095,36 +3542,69 @@ or
 ```json
 {
   "success": true,
-  "message": "Attributes retrieved successfully",
+  "message": "Attributes fetched successfully",
   "data": {
     "attrs": [
       {
         "id": "string",
         "name": "string",
-        "dataType": "string",
-        "isRequired": "boolean",
-        "values": "string[]",
+        "dataType": "TEXT | NUMBER | BOOLEAN | DATE | ENUM",
+        "isRequired": false,
+        "values": ["string"],
         "createdAt": "string"
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalItems": 100,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
 ```
 
+**Example Requests:**
+```bash
+# Get all attributes with pagination
+GET /attributes?page=1&limit=20
+
+# Search for attributes
+GET /attributes?search=color&page=1&limit=10
+```
+
 ### POST /attributes
 
-**Description:** Create a new attribute.
+**Description:** Create a new attribute. The `name` must be unique.
 
 **Request:**
 - Method: `POST`
 - Endpoint: `/attributes`
 - Content-Type: `application/json`
-- Body: `{ name: string, dataType: string, isRequired: boolean, values: string[] }`
+- Body:
+```json
+{
+  "name": "string (required, min 2 chars, unique)",
+  "dataType": "TEXT | NUMBER | BOOLEAN | DATE | ENUM (required)",
+  "isRequired": "boolean (optional, default: false)",
+  "values": "string[] (optional, required for ENUM type)"
+}
+```
 
 **Response:**
 - Success: `201 Created`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error), `409 Conflict` (duplicate name), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate Name):**
+```json
+{
+  "success": false,
+  "error": "Duplicate attribute",
+  "message": "An attribute with this name already exists. Field(s): name",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -3147,18 +3627,28 @@ or
 
 ### PUT /attributes/:id
 
-**Description:** Update an attribute.
+**Description:** Update an attribute. All fields are optional. The attribute must exist. The `name` must remain unique if updated.
 
 **Request:**
 - Method: `PUT`
 - Endpoint: `/attributes/:id`
 - Path Parameter: `id` (attribute ID)
 - Content-Type: `application/json`
-- Body: `{ name: string, dataType: string, isRequired: boolean, values: string[] }`
+- Body: (all fields optional - same as POST /attributes)
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error), `404 Not Found` (attribute not found), `409 Conflict` (duplicate name), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate Name):**
+```json
+{
+  "success": false,
+  "error": "Duplicate attribute",
+  "message": "An attribute with this name already exists. Field(s): name",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -3181,7 +3671,7 @@ or
 
 ### DELETE /attributes/:id
 
-**Description:** Delete an attribute.
+**Description:** Delete an attribute permanently. The attribute must exist and cannot have associated products or categories.
 
 **Request:**
 - Method: `DELETE`
@@ -3190,7 +3680,21 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, attribute has associations), `404 Not Found` (attribute not found), `500 Internal Server Error`
+
+**Error Response (400 Bad Request - Has Associations):**
+```json
+{
+  "success": false,
+  "error": "Cannot delete attribute",
+  "message": "Attribute cannot be deleted because it has associated products or categories. Please remove associations first.",
+  "timestamp": "string"
+}
+```
+
+**Note:**
+- Attribute `name` must be unique
+- If an attribute is used by products or categories, deletion will fail with a 400 error
 
 **Success Response:**
 ```json
@@ -4253,11 +4757,16 @@ or
 
 ### GET /customers
 
-**Description:** Get all customers.
+**Description:** Get all customers with pagination, search, and filtering support. Soft-deleted customers are excluded by default.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/customers`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `search` (string): Search by first name, last name, email, phone, or customer code (case-insensitive)
+  - `tier` (string): Filter by customer tier - `BRONZE`, `SILVER`, `GOLD`, `PLATINUM`
 
 **Response:**
 - Success: `200 OK`
@@ -4281,7 +4790,7 @@ or
         "phone": "string",
         "username": "string",
         "role": "CUSTOMER",
-        "status": "ACTIVE|INACTIVE|SUSPENDED",
+        "status": "ACTIVE",
         "isEmailVerified": true,
         "isPhoneVerified": true,
         "isTwoFactorEnabled": false,
@@ -4291,7 +4800,7 @@ or
         "bio": "string",
         "lastLoginAt": "string",
         "lastLoginIp": "string",
-        "tier": "BRONZE|SILVER|GOLD|PLATINUM",
+        "tier": "BRONZE",
         "loyaltyPoints": 0,
         "lifetimeValue": "0.00",
         "preferences": {},
@@ -4303,15 +4812,30 @@ or
         "createdAt": "string",
         "updatedAt": "string"
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
 ```
 
+**Example Requests:**
+```bash
+# Get customers by tier with pagination
+GET /customers?tier=GOLD&page=1&limit=20
+
+# Search for customers
+GET /customers?search=john&page=1&limit=10
+```
+
 ### GET /customers/:id
 
-**Description:** Get customer by ID.
+**Description:** Get customer by ID. Soft-deleted customers return 404.
 
 **Request:**
 - Method: `GET`
@@ -4320,7 +4844,7 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (customer not found or soft-deleted), `500 Internal Server Error`
 
 **Success Response:**
 ```json
@@ -4368,17 +4892,27 @@ or
 
 ### POST /customers
 
-**Description:** Create a new customer.
+**Description:** Create a new customer. Both `userId` and `customerCode` must be unique.
 
 **Request:**
 - Method: `POST`
 - Endpoint: `/customers`
 - Content-Type: `application/json`
-- Body: `{ firstName: string, lastName: string, email: string, password: string, phone: string, dateOfBirth: string, gender: string, tier: string, preferences: object }`
+- Body: `{ userId: string (required, unique), customerCode: string (optional, auto-generated if not provided, unique), tier: string, loyaltyPoints: number, preferences: object, metadata: object }`
 
 **Response:**
 - Success: `201 Created`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (validation error), `409 Conflict` (duplicate userId or customerCode), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate userId/customerCode):**
+```json
+{
+  "success": false,
+  "error": "Duplicate customer",
+  "message": "A customer with this user already exists. Field(s): userId",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -4426,18 +4960,28 @@ or
 
 ### PUT /customers/:id
 
-**Description:** Update a customer.
+**Description:** Update a customer. All fields are optional. The customer must exist. `customerCode` must remain unique if updated.
 
 **Request:**
 - Method: `PUT`
 - Endpoint: `/customers/:id`
 - Path Parameter: `id` (customer ID)
 - Content-Type: `application/json`
-- Body: `{ firstName: string, lastName: string, phone: string, dateOfBirth: string, gender: string, tier: string, preferences: object }`
+- Body: (all fields optional - same as POST /customers, plus user fields like firstName, lastName, phone, etc.)
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, validation error), `404 Not Found` (customer not found), `409 Conflict` (duplicate customerCode), `500 Internal Server Error`
+
+**Error Response (409 Conflict - Duplicate customerCode):**
+```json
+{
+  "success": false,
+  "error": "Duplicate customer",
+  "message": "A customer with this customer code already exists. Field(s): customerCode",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -4485,7 +5029,7 @@ or
 
 ### DELETE /customers/:id
 
-**Description:** Delete a customer.
+**Description:** Soft delete a customer by setting the `deletedAt` timestamp. The customer must exist and not already be deleted.
 
 **Request:**
 - Method: `DELETE`
@@ -4494,7 +5038,16 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, customer already deleted), `404 Not Found` (customer not found), `500 Internal Server Error`
+
+**Error Response (400 Bad Request - Already Deleted):**
+```json
+{
+  "success": false,
+  "message": "Customer is already deleted",
+  "timestamp": "string"
+}
+```
 
 **Success Response:**
 ```json
@@ -4542,7 +5095,7 @@ or
 
 ### POST /customers/:id/restore
 
-**Description:** Restore a deleted customer.
+**Description:** Restore a soft-deleted customer by clearing the `deletedAt` timestamp. The customer must exist and be soft-deleted.
 
 **Request:**
 - Method: `POST`
@@ -4551,7 +5104,21 @@ or
 
 **Response:**
 - Success: `200 OK`
-- Error: `500 Internal Server Error`
+- Error: `400 Bad Request` (missing ID, customer not deleted), `404 Not Found` (customer not found), `500 Internal Server Error`
+
+**Error Response (400 Bad Request - Not Deleted):**
+```json
+{
+  "success": false,
+  "message": "Customer is not deleted",
+  "timestamp": "string"
+}
+```
+
+**Note:**
+- Customer `userId` and `customerCode` must be unique
+- Soft-deleted customers are excluded from list views by default
+- Customer data includes merged user fields (firstName, lastName, email, etc.) for convenience
 
 **Success Response:**
 ```json

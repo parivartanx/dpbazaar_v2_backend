@@ -1,4 +1,4 @@
-import { Permission, Prisma } from '@prisma/client';
+import { Permission, Prisma, PermissionAction } from '@prisma/client';
 import { prisma } from '../../config/prismaClient';
 import { IPermissionRepository } from '../interfaces/IPermissionRepository';
 
@@ -30,5 +30,66 @@ export class PermissionRepository implements IPermissionRepository {
 
   async delete(id: string): Promise<void> {
     await prisma.permission.delete({ where: { id } });
+  }
+
+  async filterPermissions(params: {
+    search?: string;
+    resource?: string;
+    action?: PermissionAction;
+    page?: number;
+    limit?: number;
+  }): Promise<Permission[]> {
+    const { search, resource, action, page = 1, limit = 20 } = params;
+
+    const where: any = {};
+
+    if (resource) {
+      where.resource = resource;
+    }
+
+    if (action) {
+      where.action = action;
+    }
+
+    if (search) {
+      where.OR = [
+        { resource: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } },
+      ];
+    }
+
+    return prisma.permission.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  }
+
+  async countFilteredPermissions(params: {
+    search?: string;
+    resource?: string;
+    action?: PermissionAction;
+  }): Promise<number> {
+    const { search, resource, action } = params;
+
+    const where: any = {};
+
+    if (resource) {
+      where.resource = resource;
+    }
+
+    if (action) {
+      where.action = action;
+    }
+
+    if (search) {
+      where.OR = [
+        { resource: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } },
+      ];
+    }
+
+    return prisma.permission.count({ where });
   }
 }

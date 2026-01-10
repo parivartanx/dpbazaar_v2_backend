@@ -14,6 +14,7 @@ export class DepartmentRepository implements IDepartmentRepository {
     return prisma.department.findMany({
       skip,
       take,
+      where: { isActive: true },
       include: {
         employees: {
           include: {
@@ -54,5 +55,79 @@ export class DepartmentRepository implements IDepartmentRepository {
 
   async delete(id: string): Promise<void> {
     await prisma.department.delete({ where: { id } });
+  }
+
+  async filterDepartments(params: {
+    search?: string;
+    isActive?: boolean;
+    parentId?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<Department[]> {
+    const { search, isActive, parentId, page = 1, limit = 20 } = params;
+
+    const where: any = {};
+
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
+
+    if (parentId !== undefined) {
+      where.parentId = parentId || null;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { code: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } },
+      ];
+    }
+
+    return prisma.department.findMany({
+      where,
+      include: {
+        employees: {
+          include: {
+            user: {
+              select: USER_FIELDS_SELECT,
+            },
+          },
+        },
+        children: true,
+        parent: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  }
+
+  async countFilteredDepartments(params: {
+    search?: string;
+    isActive?: boolean;
+    parentId?: string;
+  }): Promise<number> {
+    const { search, isActive, parentId } = params;
+
+    const where: any = {};
+
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
+
+    if (parentId !== undefined) {
+      where.parentId = parentId || null;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { code: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } },
+      ];
+    }
+
+    return prisma.department.count({ where });
   }
 }

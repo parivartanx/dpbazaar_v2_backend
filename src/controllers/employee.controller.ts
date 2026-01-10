@@ -3,6 +3,8 @@ import { DepartmentRepository } from '../repositories/prisma/DepartmentRepositor
 import { EmployeeRepository } from '../repositories/prisma/EmployeeRepository';
 import { EmployeePermissionRepository } from '../repositories/prisma/EmployeePermissionRepository';
 import { PermissionRepository } from '../repositories/prisma/PermissionRepository';
+import { UserRepository } from '../repositories/prisma/UserRepository';
+import { UserRole, EmployeeStatus, PermissionAction } from '@prisma/client';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { R2Service } from '../services/r2.service';
@@ -39,13 +41,55 @@ export class DepartmentController {
 
   getAllDepartments = async (req: Request, res: Response) => {
     try {
-      const departments = await this.repo.findAll();
-      return res.status(200).json({
+      const { search, isActive, parentId, page, limit } = req.query;
+
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      // Build filter params - only include defined values
+      const filterParams: any = {
+        search: search as string,
+        parentId: parentId as string,
+        page: pageNum,
+        limit: limitNum,
+      };
+
+      if (isActive !== undefined) {
+        filterParams.isActive = isActive === 'true';
+      }
+
+      // Get filtered departments
+      const departments = await this.repo.filterDepartments(filterParams);
+
+      // Build count params
+      const countParams: any = {
+        search: search as string,
+        parentId: parentId as string,
+      };
+
+      if (isActive !== undefined) {
+        countParams.isActive = isActive === 'true';
+      }
+
+      // Get total count for pagination metadata
+      const totalCount = await this.repo.countFilteredDepartments(countParams);
+
+      const response: ApiResponse = {
         success: true,
         message: 'Departments fetched successfully',
-        data: { departments },
+        data: {
+          departments,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
-      });
+      };
+
+      return res.status(200).json(response);
     } catch (error) {
       logger.error(`error: ${error}`);
       const response: ApiResponse = {
@@ -70,13 +114,11 @@ export class DepartmentController {
 
       const department = await this.repo.findById(id);
       if (!department)
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: 'Department not found',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(404).json({
+          success: false,
+          message: 'Department not found',
+          timestamp: new Date().toISOString(),
+        });
 
       return res.status(200).json({
         success: true,
@@ -100,13 +142,20 @@ export class DepartmentController {
     try {
       const { id } = req.params;
       if (!id)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Department ID is required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Department ID is required',
+          timestamp: new Date().toISOString(),
+        });
+
+      // Check if department exists
+      const existingDepartment = await this.repo.findById(id);
+      if (!existingDepartment)
+        return res.status(404).json({
+          success: false,
+          message: 'Department not found',
+          timestamp: new Date().toISOString(),
+        });
 
       const department = await this.repo.update(id, req.body);
       return res.status(200).json({
@@ -131,18 +180,25 @@ export class DepartmentController {
     try {
       const { id } = req.params;
       if (!id)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Department ID is required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Department ID is required',
+          timestamp: new Date().toISOString(),
+        });
+
+      // Check if department exists before deleting
+      const existingDepartment = await this.repo.findById(id);
+      if (!existingDepartment)
+        return res.status(404).json({
+          success: false,
+          message: 'Department not found',
+          timestamp: new Date().toISOString(),
+        });
 
       await this.repo.delete(id);
       return res.status(200).json({
         success: true,
-        message: 'department deleted',
+        message: 'Department deleted successfully',
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -165,6 +221,7 @@ export class DepartmentController {
  */
 export class EmployeeController {
   private repo = new EmployeeRepository();
+  private userRepo = new UserRepository();
   private r2Service = new R2Service();
   private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
@@ -193,7 +250,89 @@ export class EmployeeController {
 
   createEmployee = async (req: Request, res: Response) => {
     try {
-      const employee = await this.repo.create(req.body);
+      const {
+        // User fields
+        firstName,
+        lastName,
+        email,
+        password,
+        phone,
+        middleName,
+        // Employee fields
+        employeeCode,
+        departmentId,
+        designation,
+        reportingTo,
+        status,
+        employmentType,
+        joiningDate,
+        confirmationDate,
+        lastWorkingDate,
+        salary,
+        currency,
+        documents,
+        emergencyContactName,
+        emergencyContactPhone,
+        emergencyContactRelation,
+        currentAddress,
+        permanentAddress,
+        metadata,
+      } = req.body;
+
+      // Check if user already exists with this email
+      const existingUser = await this.userRepo.findByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          error: 'User with this email already exists',
+          message: 'A user with this email address already exists. Please use a different email or create employee for existing user.',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Create User first with role EMPLOYEE
+      const newUser = await this.userRepo.create({
+        firstName,
+        lastName,
+        email,
+        password,
+        role: UserRole.EMPLOYEE,
+        isEmailVerified: false,
+      });
+
+      // Update phone and middleName if provided
+      if (phone || middleName) {
+        await this.userRepo.update(newUser.id, {
+          phone: phone || null,
+          middleName: middleName || null,
+        });
+      }
+
+      // Prepare employee data - Prisma handles null/undefined values automatically
+      const employeeData: any = {
+        userId: newUser.id,
+        employeeCode,
+        designation,
+        joiningDate: new Date(joiningDate),
+        status: status || 'ACTIVE',
+        employmentType: employmentType || 'FULL_TIME',
+        currency: currency || 'INR',
+        departmentId: departmentId || null,
+        reportingTo: reportingTo || null,
+        confirmationDate: confirmationDate ? new Date(confirmationDate) : null,
+        lastWorkingDate: lastWorkingDate ? new Date(lastWorkingDate) : null,
+        salary: salary ?? null,
+        documents: documents || null,
+        emergencyContactName: emergencyContactName || null,
+        emergencyContactPhone: emergencyContactPhone || null,
+        emergencyContactRelation: emergencyContactRelation || null,
+        currentAddress: currentAddress || null,
+        permanentAddress: permanentAddress || null,
+        metadata: metadata || null,
+      };
+
+      // Create Employee
+      const employee = await this.repo.create(employeeData);
       
       // Transform image keys to public URLs in the employee response
       const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(employee);
@@ -219,22 +358,55 @@ export class EmployeeController {
     }
   };
 
-  getAllEmployees = async (_: Request, res: Response) => {
+  getAllEmployees = async (req: Request, res: Response) => {
     try {
-      const employees = await this.repo.findAll();
-      
+      const { search, status, departmentId, designation, employmentType, page, limit } = req.query;
+
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      // Get filtered employees
+      const employees = await this.repo.filterEmployees({
+        search: search as string,
+        status: status as EmployeeStatus,
+        departmentId: departmentId as string,
+        designation: designation as string,
+        employmentType: employmentType as string,
+        page: pageNum,
+        limit: limitNum,
+      });
+
+      // Get total count for pagination metadata
+      const totalCount = await this.repo.countFilteredEmployees({
+        search: search as string,
+        status: status as EmployeeStatus,
+        departmentId: departmentId as string,
+        designation: designation as string,
+        employmentType: employmentType as string,
+      });
+
       // Transform image keys to public URLs in the employees response
       const transformedEmployees = await this.imageUrlTransformer.transformCommonImageFields(employees);
-      
+
       // Flatten employee responses by merging user fields
       const flattenedEmployees = this.flattenEmployeeArray(transformedEmployees);
-      
-      return res.status(200).json({
+
+      const response: ApiResponse = {
         success: true,
         message: 'Employees fetched successfully',
-        data: { employees: flattenedEmployees },
+        data: {
+          employees: flattenedEmployees,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
-      });
+      };
+
+      return res.status(200).json(response);
     } catch (error) {
       logger.error(`error: ${error}`);
       const response: ApiResponse = {
@@ -251,23 +423,19 @@ export class EmployeeController {
     try {
       const { id } = req.params;
       if (!id)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Id required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Id required',
+          timestamp: new Date().toISOString(),
+        });
 
       const employee = await this.repo.findById(id);
-      if (!employee)
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: 'Employee not found',
-            timestamp: new Date().toISOString(),
-          });
+      if (!employee || employee.deletedAt)
+        return res.status(404).json({
+          success: false,
+          message: 'Employee not found',
+          timestamp: new Date().toISOString(),
+        });
 
       // Transform image keys to public URLs in the employee response
       const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(employee);
@@ -297,15 +465,37 @@ export class EmployeeController {
     try {
       const { id } = req.params;
       if (!id)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Id required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Id required',
+          timestamp: new Date().toISOString(),
+        });
 
-      const updated = await this.repo.update(id, req.body);
+      // Check if employee exists
+      const existingEmployee = await this.repo.findById(id);
+      if (!existingEmployee || existingEmployee.deletedAt)
+        return res.status(404).json({
+          success: false,
+          message: 'Employee not found',
+          timestamp: new Date().toISOString(),
+        });
+
+      // Prepare update data with proper date conversions
+      const {
+        joiningDate,
+        confirmationDate,
+        lastWorkingDate,
+        ...otherFields
+      } = req.body;
+
+      const updateData: any = { ...otherFields };
+
+      // Convert date strings to Date objects if provided
+      if (joiningDate) updateData.joiningDate = new Date(joiningDate);
+      if (confirmationDate) updateData.confirmationDate = new Date(confirmationDate);
+      if (lastWorkingDate) updateData.lastWorkingDate = new Date(lastWorkingDate);
+
+      const updated = await this.repo.update(id, updateData);
       
       // Transform image keys to public URLs in the employee response
       const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(updated);
@@ -335,18 +525,25 @@ export class EmployeeController {
     try {
       const { id } = req.params;
       if (!id)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Id required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Id required',
+          timestamp: new Date().toISOString(),
+        });
+
+      // Check if employee exists before deleting
+      const existingEmployee = await this.repo.findById(id);
+      if (!existingEmployee || existingEmployee.deletedAt)
+        return res.status(404).json({
+          success: false,
+          message: 'Employee not found',
+          timestamp: new Date().toISOString(),
+        });
 
       await this.repo.delete(id);
       return res.status(200).json({
         success: true,
-        message: 'employee deleted',
+        message: 'Employee deleted successfully',
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -552,8 +749,20 @@ export class PermissionController {
         data: { permission },
         timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma unique constraint error (P2002)
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        return res.status(409).json({
+          success: false,
+          error: 'Duplicate permission',
+          message: `Permission with this resource and action combination already exists. Field(s): ${target?.join(', ') || 'resource, action'}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
@@ -566,19 +775,61 @@ export class PermissionController {
 
   getAllPermissions = async (req: Request, res: Response) => {
     try {
-      const permissions = await this.repo.findAll();
-      return res.status(200).json({
+      const { search, resource, action, page, limit } = req.query;
+
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      // Build filter params - only include defined values
+      const filterParams: any = {
+        search: search as string,
+        resource: resource as string,
+        page: pageNum,
+        limit: limitNum,
+      };
+
+      if (action) {
+        filterParams.action = action as PermissionAction;
+      }
+
+      // Get filtered permissions
+      const permissions = await this.repo.filterPermissions(filterParams);
+
+      // Build count params
+      const countParams: any = {
+        search: search as string,
+        resource: resource as string,
+      };
+
+      if (action) {
+        countParams.action = action as PermissionAction;
+      }
+
+      // Get total count for pagination metadata
+      const totalCount = await this.repo.countFilteredPermissions(countParams);
+
+      const response: ApiResponse = {
         success: true,
         message: 'Permissions fetched successfully',
-        data: { permissions },
+        data: {
+          permissions,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
-      });
+      };
+
+      return res.status(200).json(response);
     } catch (error) {
       logger.error(`error: ${error}`);
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in Fetching Permission',
+        message: 'Problem in Fetching Permissions',
         timestamp: new Date().toISOString(),
       };
       return res.status(500).json(response);
@@ -589,25 +840,22 @@ export class PermissionController {
     try {
       const { id } = req.params;
       if (!id) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Permission ID is required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Permission ID is required',
+          timestamp: new Date().toISOString(),
+        });
       }
 
       const permission = await this.repo.findById(id as string);
       if (!permission) {
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: 'Permission not found',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(404).json({
+          success: false,
+          message: 'Permission not found',
+          timestamp: new Date().toISOString(),
+        });
       }
+
       return res.status(200).json({
         success: true,
         message: 'Permission fetched successfully',
@@ -630,7 +878,21 @@ export class PermissionController {
     try {
       const { id } = req.params;
       if (!id) {
-        return res.status(400).json({ error: 'Permission ID is required' });
+        return res.status(400).json({
+          success: false,
+          message: 'Permission ID is required',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Check if permission exists
+      const existingPermission = await this.repo.findById(id as string);
+      if (!existingPermission) {
+        return res.status(404).json({
+          success: false,
+          message: 'Permission not found',
+          timestamp: new Date().toISOString(),
+        });
       }
 
       const permission = await this.repo.update(id as string, req.body);
@@ -640,8 +902,20 @@ export class PermissionController {
         data: { permission },
         timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma unique constraint error (P2002)
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        return res.status(409).json({
+          success: false,
+          error: 'Duplicate permission',
+          message: `A permission with this resource and action combination already exists. Field(s): ${target?.join(', ') || 'resource, action'}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
@@ -656,19 +930,27 @@ export class PermissionController {
     try {
       const { id } = req.params;
       if (!id) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Permission ID is required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Permission ID is required',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Check if permission exists before deleting
+      const existingPermission = await this.repo.findById(id as string);
+      if (!existingPermission) {
+        return res.status(404).json({
+          success: false,
+          message: 'Permission not found',
+          timestamp: new Date().toISOString(),
+        });
       }
 
       await this.repo.delete(id as string);
       return res.status(200).json({
         success: true,
-        message: 'Permission Deleted',
+        message: 'Permission deleted successfully',
         timestamp: new Date().toISOString(),
       });
     } catch (error) {

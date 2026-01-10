@@ -7,7 +7,6 @@ import { UserRepository } from '../repositories/prisma/UserRepository';
 import { AuthService } from '../services/auth.service';
 import { PaymentService } from '../services/payment.service';
 import { prisma } from '../config/prismaClient';
-import { Decimal } from '@prisma/client/runtime/library';
 import bcrypt from 'bcryptjs';
 import { smsService } from '../services/sms.service';
 import { USER_FIELDS_SELECT } from '../repositories/constants';
@@ -2317,7 +2316,7 @@ export class DesktopController {
         return;
       }
       
-      if (wallet.balance < new Decimal(amount)) {
+      if (Number(wallet.balance) < Number(amount)) {
         const response: ApiResponse = {
           success: false,
           error: 'Insufficient balance',

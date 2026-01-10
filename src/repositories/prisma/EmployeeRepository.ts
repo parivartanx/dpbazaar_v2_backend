@@ -99,4 +99,108 @@ export class EmployeeRepository implements IEmployeeRepository {
       },
     });
   }
+
+  async filterEmployees(params: {
+    search?: string;
+    status?: EmployeeStatus;
+    departmentId?: string;
+    designation?: string;
+    employmentType?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<Employee[]> {
+    const { search, status, departmentId, designation, employmentType, page = 1, limit = 20 } = params;
+
+    const where: any = {
+      deletedAt: null,
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (departmentId) {
+      where.departmentId = departmentId;
+    }
+
+    if (designation) {
+      where.designation = { contains: designation, mode: 'insensitive' as const };
+    }
+
+    if (employmentType) {
+      where.employmentType = employmentType;
+    }
+
+    if (search) {
+      where.OR = [
+        { employeeCode: { contains: search, mode: 'insensitive' as const } },
+        { designation: { contains: search, mode: 'insensitive' as const } },
+        {
+          user: {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' as const } },
+              { lastName: { contains: search, mode: 'insensitive' as const } },
+              { email: { contains: search, mode: 'insensitive' as const } },
+            ],
+          },
+        },
+      ];
+    }
+
+    return prisma.employee.findMany({
+      where,
+      include: {
+        user: {
+          select: USER_FIELDS_SELECT,
+        },
+        department: true,
+        permissions: { include: { permission: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  }
+
+  async countFilteredEmployees(params: {
+    search?: string;
+    status?: EmployeeStatus;
+    departmentId?: string;
+    designation?: string;
+    employmentType?: string;
+  }): Promise<number> {
+    const { search, status, departmentId, designation, employmentType } = params;
+
+    const where: any = {
+      deletedAt: null,
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (departmentId) {
+      where.departmentId = departmentId;
+    }
+
+    if (designation) {
+      where.designation = { contains: designation, mode: 'insensitive' as const };
+    }
+
+    if (employmentType) {
+      where.employmentType = employmentType;
+    }
+
+    if (search) {
+      where.OR = [
+        { employeeCode: { contains: search, mode: 'insensitive' as const } },
+        { designation: { contains: search, mode: 'insensitive' as const } },
+        { user: { firstName: { contains: search, mode: 'insensitive' as const } } },
+        { user: { lastName: { contains: search, mode: 'insensitive' as const } } },
+        { user: { email: { contains: search, mode: 'insensitive' as const } } },
+      ];
+    }
+
+    return prisma.employee.count({ where });
+  }
 }

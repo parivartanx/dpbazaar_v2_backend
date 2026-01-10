@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 import cron from 'node-cron';
-import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
@@ -44,15 +43,15 @@ async function distributeSubscriptionRewards() {
 
     for (const subscription of activeSubscriptions) {
       // Calculate reward amount for this subscription
-      const rewardPercent = new Decimal(subscription.card.rewardPercent);
-      const targetAmount = new Decimal(subscription.card.targetAmount);
-      const currentAmount = new Decimal(subscription.currentAmount || 0);
+      const rewardPercent = Number(subscription.card.rewardPercent);
+      const targetAmount = Number(subscription.card.targetAmount);
+      const currentAmount = Number(subscription.currentAmount || 0);
 
       // Calculate remaining amount to reach target
-      const remainingAmount = targetAmount.minus(currentAmount);
+      const remainingAmount = targetAmount - currentAmount;
 
       // If already reached target, skip
-      if (remainingAmount.lte(0)) {
+      if (remainingAmount <= 0) {
         console.log(`Subscription ${subscription.id} for customer ${subscription.customerId} has already reached target amount`);
         continue;
       }
@@ -61,7 +60,7 @@ async function distributeSubscriptionRewards() {
       let dailyReward = rewardPercent;
 
       // If remaining amount is less than daily reward, use remaining amount instead
-      if (remainingAmount.lt(dailyReward)) {
+      if (remainingAmount < dailyReward) {
         dailyReward = remainingAmount;
       }
 
@@ -95,8 +94,8 @@ async function distributeSubscriptionRewards() {
           reason: 'REWARD',
           status: 'SUCCESS',
           amount: dailyReward,
-          balanceBefore: wallet.balance.minus(dailyReward),
-          balanceAfter: wallet.balance,
+          balanceBefore: Number(wallet.balance) - dailyReward,
+          balanceAfter: Number(wallet.balance),
           subscriptionId: subscription.id,
           metadata: {
             subscriptionCardId: subscription.cardId,

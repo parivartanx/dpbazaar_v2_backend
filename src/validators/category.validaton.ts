@@ -67,3 +67,17 @@ export const updateCategorySchema = Joi.object({
     .optional()
     .allow(null),
 });
+
+export const toggleFeatureSchema = Joi.object({
+  isFeatured: Joi.boolean().required().messages({
+    'any.required': 'isFeatured is required',
+    'boolean.base': 'isFeatured must be a boolean value',
+  }),
+});
+
+export const toggleActiveSchema = Joi.object({
+  isActive: Joi.boolean().required().messages({
+    'any.required': 'isActive is required',
+    'boolean.base': 'isActive must be a boolean value',
+  }),
+});
