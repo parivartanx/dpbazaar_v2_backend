@@ -28,7 +28,7 @@ export class ProductController {
    * Optimized for displaying products in a grid/list, not full product details
    */
   private extractProductCardFields(product: any): any {
-    // First sanitize to remove internal fields and convert Decimals
+    // First sanitize to remove internal fields and convert Float fields
     const sanitized = this.sanitizeProductForPublic(product);
     
     // Get primary image or first image
@@ -128,59 +128,13 @@ export class ProductController {
       ...sanitizedProduct
     } = product;
 
-    // Convert Decimal fields to numbers (should already be numbers from getAllProducts, but handle as fallback)
-    // Handle both Decimal instances and already-converted numbers
-    const convertDecimal = (value: any): number | null => {
+    // Convert Float fields to numbers (already numbers from Prisma, but ensure proper conversion)
+    // Handle null/undefined and ensure proper number type
+    const convertToNumber = (value: any): number | null => {
       if (value === null || value === undefined) return null;
       if (typeof value === 'number') return isNaN(value) ? null : value;
       
-      // If already a number, return it
-      if (typeof value === 'number') return value;
-      
-      // Try toNumber() if available (Decimal instance)
-      if (value && typeof value === 'object' && 'toNumber' in value && typeof value.toNumber === 'function') {
-        try {
-          const num = value.toNumber();
-          return isNaN(num) ? null : num;
-        } catch {
-          // Fall through to next method
-        }
-      }
-      
-      // Handle serialized Decimal format: {s: 1, e: 4, d: [15995]}
-      if (value && typeof value === 'object' && 'd' in value && Array.isArray(value.d) && 'e' in value) {
-        try {
-          // Reconstruct from serialized format
-          const digits = value.d;
-          const exponent = value.e || 0;
-          const sign = value.s === -1 ? -1 : 1;
-          
-          // For simple single-digit cases: {d: [15995], e: 4} means 15995 * 10^4
-          // But actually, Decimal.js uses base-1e7, so this is more complex
-          // For now, try simple reconstruction
-          if (digits.length === 1) {
-            const num = digits[0];
-            // If exponent is 0, the number is just the digit
-            if (exponent === 0) {
-              return sign * num;
-            }
-            // Otherwise, apply exponent (this is approximate)
-            return sign * num * Math.pow(10, exponent);
-          }
-          
-          // For multiple digits, reconstruct properly
-          let result = 0;
-          for (let i = 0; i < digits.length; i++) {
-            result += digits[i] * Math.pow(1e7, digits.length - 1 - i);
-          }
-          result *= Math.pow(10, exponent);
-          return sign * result;
-        } catch {
-          // Fall through
-        }
-      }
-      
-      // Try direct Number() conversion
+      // Try direct Number() conversion for any other type
       try {
         const num = Number(value);
         return isNaN(num) ? null : num;
@@ -189,11 +143,11 @@ export class ProductController {
       }
     };
     
-    sanitizedProduct.mrp = convertDecimal(sanitizedProduct.mrp);
-    sanitizedProduct.sellingPrice = convertDecimal(sanitizedProduct.sellingPrice);
-    sanitizedProduct.taxRate = convertDecimal(sanitizedProduct.taxRate);
-    sanitizedProduct.weight = convertDecimal(sanitizedProduct.weight);
-    sanitizedProduct.avgRating = convertDecimal(sanitizedProduct.avgRating);
+    sanitizedProduct.mrp = convertToNumber(sanitizedProduct.mrp);
+    sanitizedProduct.sellingPrice = convertToNumber(sanitizedProduct.sellingPrice);
+    sanitizedProduct.taxRate = convertToNumber(sanitizedProduct.taxRate);
+    sanitizedProduct.weight = convertToNumber(sanitizedProduct.weight);
+    sanitizedProduct.avgRating = convertToNumber(sanitizedProduct.avgRating);
 
     // Also sanitize nested relations if they exist
     if (sanitizedProduct.brand) {
@@ -219,8 +173,8 @@ export class ProductController {
           ...sanitizedVariant
         } = variant;
         
-        // Convert Decimal fields in variants
-        const convertDecimal = (value: any): number | null => {
+        // Convert Float fields in variants (already numbers from Prisma, but ensure proper conversion)
+        const convertToNumber = (value: any): number | null => {
           if (value === null || value === undefined) return null;
           if (typeof value === 'number') return isNaN(value) ? null : value;
           try {
@@ -231,9 +185,9 @@ export class ProductController {
           }
         };
         
-        sanitizedVariant.mrp = convertDecimal(sanitizedVariant.mrp);
-        sanitizedVariant.sellingPrice = convertDecimal(sanitizedVariant.sellingPrice);
-        sanitizedVariant.weight = convertDecimal(sanitizedVariant.weight);
+        sanitizedVariant.mrp = convertToNumber(sanitizedVariant.mrp);
+        sanitizedVariant.sellingPrice = convertToNumber(sanitizedVariant.sellingPrice);
+        sanitizedVariant.weight = convertToNumber(sanitizedVariant.weight);
         
         return sanitizedVariant;
       });
@@ -302,64 +256,35 @@ export class ProductController {
       // Get products with filters and pagination
       const { products, totalCount } = await this.repo.getAllWithFilters(filters);
       
-      // Convert Decimal fields to numbers BEFORE image transformation
-      // This prevents serialization issues with Decimal objects
-      const productsWithConvertedDecimals = products.map(product => {
+      // Convert Float fields to numbers (already numbers from Prisma, but ensure proper conversion)
+      const convertToNumber = (value: any): number | null => {
+        if (value === null || value === undefined) return null;
+        if (typeof value === 'number') return isNaN(value) ? null : value;
+        try {
+          const num = Number(value);
+          return isNaN(num) ? null : num;
+        } catch {
+          return null;
+        }
+      };
+      
+      const productsWithConvertedNumbers = products.map(product => {
         const converted = { ...product } as any;
         
-        // Convert product-level Decimal fields
-        if (converted.mrp != null && typeof converted.mrp === 'object' && 'toNumber' in converted.mrp) {
-          converted.mrp = converted.mrp.toNumber();
-        } else if (converted.mrp != null) {
-          converted.mrp = Number(converted.mrp);
-        }
+        // Convert product-level Float fields
+        converted.mrp = convertToNumber(converted.mrp);
+        converted.sellingPrice = convertToNumber(converted.sellingPrice);
+        converted.taxRate = convertToNumber(converted.taxRate);
+        converted.weight = convertToNumber(converted.weight);
+        converted.avgRating = convertToNumber(converted.avgRating);
         
-        if (converted.sellingPrice != null && typeof converted.sellingPrice === 'object' && 'toNumber' in converted.sellingPrice) {
-          converted.sellingPrice = converted.sellingPrice.toNumber();
-        } else if (converted.sellingPrice != null) {
-          converted.sellingPrice = Number(converted.sellingPrice);
-        }
-        
-        if (converted.taxRate != null && typeof converted.taxRate === 'object' && 'toNumber' in converted.taxRate) {
-          converted.taxRate = converted.taxRate.toNumber();
-        } else if (converted.taxRate != null) {
-          converted.taxRate = Number(converted.taxRate);
-        }
-        
-        if (converted.weight != null && typeof converted.weight === 'object' && 'toNumber' in converted.weight) {
-          converted.weight = converted.weight.toNumber();
-        } else if (converted.weight != null) {
-          converted.weight = Number(converted.weight);
-        }
-        
-        if (converted.avgRating != null && typeof converted.avgRating === 'object' && 'toNumber' in converted.avgRating) {
-          converted.avgRating = converted.avgRating.toNumber();
-        } else if (converted.avgRating != null) {
-          converted.avgRating = Number(converted.avgRating);
-        }
-        
-        // Convert variant-level Decimal fields
+        // Convert variant-level Float fields
         if (converted.variants && Array.isArray(converted.variants)) {
           converted.variants = converted.variants.map((variant: any) => {
             const convertedVariant = { ...variant };
-            if (convertedVariant.mrp != null && typeof convertedVariant.mrp === 'object' && 'toNumber' in convertedVariant.mrp) {
-              convertedVariant.mrp = convertedVariant.mrp.toNumber();
-            } else if (convertedVariant.mrp != null) {
-              convertedVariant.mrp = Number(convertedVariant.mrp);
-            }
-            
-            if (convertedVariant.sellingPrice != null && typeof convertedVariant.sellingPrice === 'object' && 'toNumber' in convertedVariant.sellingPrice) {
-              convertedVariant.sellingPrice = convertedVariant.sellingPrice.toNumber();
-            } else if (convertedVariant.sellingPrice != null) {
-              convertedVariant.sellingPrice = Number(convertedVariant.sellingPrice);
-            }
-            
-            if (convertedVariant.weight != null && typeof convertedVariant.weight === 'object' && 'toNumber' in convertedVariant.weight) {
-              convertedVariant.weight = convertedVariant.weight.toNumber();
-            } else if (convertedVariant.weight != null) {
-              convertedVariant.weight = Number(convertedVariant.weight);
-            }
-            
+            convertedVariant.mrp = convertToNumber(convertedVariant.mrp);
+            convertedVariant.sellingPrice = convertToNumber(convertedVariant.sellingPrice);
+            convertedVariant.weight = convertToNumber(convertedVariant.weight);
             return convertedVariant;
           });
         }
@@ -368,7 +293,7 @@ export class ProductController {
       });
       
       // Transform image keys to public URLs in the products response
-      const transformedProducts = await this.imageUrlTransformer.transformCommonImageFields(productsWithConvertedDecimals);
+      const transformedProducts = await this.imageUrlTransformer.transformCommonImageFields(productsWithConvertedNumbers);
       
       // Extract only essential fields for product cards/list view (optimized for performance)
       const productCards = transformedProducts.map(product => this.extractProductCardFields(product));

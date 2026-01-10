@@ -14,7 +14,7 @@ datasource db {
 enum UserRole {
   SUPER_ADMIN
   ADMIN
-  MANAGER 
+  MANAGER
   EMPLOYEE
   VENDOR
   CUSTOMER
@@ -198,6 +198,7 @@ enum EmploymentType {
   PART_TIME
   CONTRACT
 }
+
 enum Visibility {
   PUBLIC
   PRIVATE
@@ -285,7 +286,6 @@ enum BannerStatus {
   ARCHIVED
 }
 
-
 // =====================================================
 // USER & AUTHENTICATION SYSTEM
 // =====================================================
@@ -361,9 +361,9 @@ model Session {
 // =====================================================
 
 model Employee {
-  id           String  @id @default(cuid())
-  userId       String  @unique
-  employeeCode String  @unique
+  id           String @id @default(cuid())
+  userId       String @unique
+  employeeCode String @unique
 
   // Employment details
   departmentId   String?
@@ -378,11 +378,11 @@ model Employee {
   lastWorkingDate  DateTime?
 
   // Compensation (encrypted in production)
-  salary   Decimal? @db.Decimal(12, 2)
-  currency String   @default("INR")
+  salary   Float?
+  currency String @default("INR")
 
   // Documents
-  documents    Json? // {resume: url, idProof: url, etc}
+  documents Json? // {resume: url, idProof: url, etc}
 
   // Emergency contact
   emergencyContactName     String?
@@ -473,21 +473,21 @@ model EmployeePermission {
 // =====================================================
 
 model Customer {
-  id           String    @id @default(cuid())
-  userId       String    @unique
-  customerCode String    @unique @default(cuid())
+  id           String @id @default(cuid())
+  userId       String @unique
+  customerCode String @unique @default(cuid())
 
   // Loyalty
-  tier          String  @default("BRONZE") // BRONZE, SILVER, GOLD, PLATINUM
-  loyaltyPoints Int     @default(0)
-  lifetimeValue Decimal @default(0) @db.Decimal(12, 2)
+  tier          String @default("BRONZE") // BRONZE, SILVER, GOLD, PLATINUM
+  loyaltyPoints Int    @default(0)
+  lifetimeValue Float  @default(0)
 
   // Preferences
   preferences Json? // {newsletter: true, smsAlerts: false, etc}
 
   // Stats
   totalOrders Int       @default(0)
-  totalSpent  Decimal   @default(0) @db.Decimal(12, 2)
+  totalSpent  Float     @default(0)
   lastOrderAt DateTime?
 
   // Metadata
@@ -564,16 +564,16 @@ model Vendor {
   bankDetails Json? // Encrypted
 
   // Commission
-  commissionRate Decimal @default(10) @db.Decimal(5, 2)
+  commissionRate Float @default(10)
 
   // Status
   status     String    @default("PENDING") // PENDING, ACTIVE, SUSPENDED, BLOCKED
   verifiedAt DateTime?
 
   // Performance
-  rating        Decimal @default(0) @db.Decimal(3, 2)
-  totalProducts Int     @default(0)
-  totalSales    Int     @default(0)
+  rating        Float @default(0)
+  totalProducts Int   @default(0)
+  totalSales    Int   @default(0)
 
   // Metadata
   metadata  Json?
@@ -596,11 +596,11 @@ model Vendor {
 }
 
 model VendorPayout {
-  id       String  @id @default(cuid())
+  id       String @id @default(cuid())
   vendorId String
-  amount   Decimal @db.Decimal(12, 2)
-  currency String  @default("INR")
-  status   String  @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  amount   Float
+  currency String @default("INR")
+  status   String @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
 
   // Period
   periodStart DateTime
@@ -669,7 +669,7 @@ model Category {
   isFeatured   Boolean @default(false)
 
   // Commission for this category
-  commissionRate Decimal? @db.Decimal(5, 2)
+  commissionRate Float?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -699,12 +699,12 @@ model Product {
   barcode String? @unique
 
   // Pricing
-  mrp          Decimal  @db.Decimal(12, 2)
-  sellingPrice Decimal  @db.Decimal(12, 2)
-  costPrice    Decimal? @db.Decimal(12, 2)
+  mrp          Float
+  sellingPrice Float
+  costPrice    Float?
 
   // Tax
-  taxRate Decimal @default(0) @db.Decimal(5, 2)
+  taxRate Float   @default(0)
   hsnCode String?
 
   // Brand & Vendor
@@ -716,7 +716,7 @@ model Product {
   stockStatus StockStatus   @default(OUT_OF_STOCK)
 
   // Attributes
-  weight     Decimal? @db.Decimal(10, 3)
+  weight     Float?
   dimensions Json? // {length, width, height, unit}
 
   // SEO
@@ -732,10 +732,10 @@ model Product {
   returnPeriodDays Int     @default(7)
 
   // Stats
-  viewCount    Int     @default(0)
-  salesCount   Int     @default(0)
-  avgRating    Decimal @default(0) @db.Decimal(3, 2)
-  totalReviews Int     @default(0)
+  viewCount    Int   @default(0)
+  salesCount   Int   @default(0)
+  avgRating    Float @default(0)
+  totalReviews Int   @default(0)
 
   // Metadata
   tags      String[]
@@ -783,14 +783,14 @@ model ProductVariant {
   variantName String
 
   // Pricing override
-  mrp          Decimal? @db.Decimal(12, 2)
-  sellingPrice Decimal? @db.Decimal(12, 2)
+  mrp          Float?
+  sellingPrice Float?
 
   // Variant attributes (size, color, etc)
   attributes Json // {color: "Red", size: "XL"}
 
   // Weight/dimensions override
-  weight     Decimal? @db.Decimal(10, 3)
+  weight     Float?
   dimensions Json?
 
   isActive Boolean @default(true)
@@ -884,11 +884,11 @@ model ProductAttribute {
 }
 
 model ProductRelation {
-  id               String  @id @default(cuid())
+  id               String @id @default(cuid())
   productId        String
   relatedProductId String
   relationType     String // SIMILAR, ACCESSORY, BUNDLE, FREQUENTLY_BOUGHT
-  score            Decimal @default(0) @db.Decimal(5, 2)
+  score            Float  @default(0)
 
   createdAt DateTime @default(now())
 
@@ -911,8 +911,8 @@ model Warehouse {
 
   // Address
   address Json
-  lat     Decimal? @db.Decimal(10, 8)
-  lng     Decimal? @db.Decimal(11, 8)
+  lat     Float?
+  lng     Float?
 
   // Contact
   managerId    String?
@@ -1016,10 +1016,10 @@ model PriceHistory {
   id        String @id @default(cuid())
   productId String
 
-  oldMrp          Decimal @db.Decimal(12, 2)
-  newMrp          Decimal @db.Decimal(12, 2)
-  oldSellingPrice Decimal @db.Decimal(12, 2)
-  newSellingPrice Decimal @db.Decimal(12, 2)
+  oldMrp          Float
+  newMrp          Float
+  oldSellingPrice Float
+  newSellingPrice Float
 
   reason    String?
   changedBy String?
@@ -1037,11 +1037,11 @@ model Discount {
   code        String       @unique
   description String
   type        DiscountType
-  value       Decimal      @db.Decimal(12, 2)
+  value       Float
 
   // Conditions
-  minOrderAmount    Decimal? @db.Decimal(12, 2)
-  maxDiscountAmount Decimal? @db.Decimal(12, 2)
+  minOrderAmount    Float?
+  maxDiscountAmount Float?
 
   // Usage limits
   usageLimit       Int?
@@ -1080,14 +1080,14 @@ model Cart {
   sessionId  String? // For guest carts
 
   // Totals (denormalized for performance)
-  itemCount     Int     @default(0)
-  totalMrp      Decimal @default(0) @db.Decimal(12, 2)
-  totalDiscount Decimal @default(0) @db.Decimal(12, 2)
-  totalAmount   Decimal @default(0) @db.Decimal(12, 2)
+  itemCount     Int   @default(0)
+  totalMrp      Float @default(0)
+  totalDiscount Float @default(0)
+  totalAmount   Float @default(0)
 
   // Applied discount
   discountCode   String?
-  discountAmount Decimal @default(0) @db.Decimal(12, 2)
+  discountAmount Float   @default(0)
 
   expiresAt DateTime? // For abandoned cart recovery
 
@@ -1111,9 +1111,9 @@ model CartItem {
   quantity Int @default(1)
 
   // Price snapshot
-  mrp          Decimal @db.Decimal(12, 2)
-  sellingPrice Decimal @db.Decimal(12, 2)
-  discount     Decimal @default(0) @db.Decimal(12, 2)
+  mrp          Float
+  sellingPrice Float
+  discount     Float @default(0)
 
   // Save for later
   savedForLater Boolean @default(false)
@@ -1138,12 +1138,12 @@ model Order {
   vendorId    String? // For marketplace orders
 
   // Amounts
-  itemsTotal      Decimal @db.Decimal(12, 2)
-  taxAmount       Decimal @db.Decimal(12, 2)
-  shippingCharges Decimal @db.Decimal(12, 2)
-  codCharges      Decimal @default(0) @db.Decimal(12, 2)
-  discount        Decimal @default(0) @db.Decimal(12, 2)
-  totalAmount     Decimal @db.Decimal(12, 2)
+  itemsTotal      Float
+  taxAmount       Float
+  shippingCharges Float
+  codCharges      Float @default(0)
+  discount        Float @default(0)
+  totalAmount     Float
 
   // Status
   status        OrderStatus   @default(PENDING)
@@ -1218,22 +1218,22 @@ model OrderItem {
   productImage String?
 
   // Pricing snapshot
-  mrp          Decimal @db.Decimal(12, 2)
-  sellingPrice Decimal @db.Decimal(12, 2)
+  mrp          Float
+  sellingPrice Float
   quantity     Int
-  discount     Decimal @default(0) @db.Decimal(12, 2)
-  taxRate      Decimal @default(0) @db.Decimal(5, 2)
-  taxAmount    Decimal @default(0) @db.Decimal(12, 2)
-  totalAmount  Decimal @db.Decimal(12, 2)
+  discount     Float @default(0)
+  taxRate      Float @default(0)
+  taxAmount    Float @default(0)
+  totalAmount  Float
 
   // Vendor info for marketplace
   vendorId         String?
-  vendorCommission Decimal? @db.Decimal(12, 2)
+  vendorCommission Float?
 
   // Status
-  status String @default("PENDING")
-  refundedQuantity Int @default(0)
-  isReturned Boolean @default(false)
+  status           String  @default("PENDING")
+  refundedQuantity Int     @default(0)
+  isReturned       Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1250,11 +1250,11 @@ model OrderItem {
 }
 
 model OrderDiscount {
-  id             String  @id @default(cuid())
+  id             String @id @default(cuid())
   orderId        String
   discountId     String
   discountCode   String
-  discountAmount Decimal @db.Decimal(12, 2)
+  discountAmount Float
 
   appliedAt DateTime @default(now())
 
@@ -1290,12 +1290,12 @@ model Payment {
   id      String @id @default(cuid())
   orderId String
 
-  amount   Decimal        @db.Decimal(12, 2)
-  cash     Decimal?       @db.Decimal(12, 2)
-  online   Decimal?       @db.Decimal(12, 2)
-  currency String         @default("INR")
+  amount   Float
+  cash     Float?
+  online   Float?
+  currency String        @default("INR")
   method   PaymentMethod
-  status   PaymentStatus  @default(PENDING)
+  status   PaymentStatus @default(PENDING)
 
   // Gateway info
   gatewayName      String // razorpay, stripe, paypal
@@ -1316,7 +1316,7 @@ model Payment {
 
   // Refund info
   isRefundable   Boolean @default(true)
-  refundedAmount Decimal @default(0) @db.Decimal(12, 2)
+  refundedAmount Float   @default(0)
 
   // Timestamps
   paidAt   DateTime?
@@ -1335,13 +1335,13 @@ model Payment {
 }
 
 model Refund {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   paymentId String
   returnId  String?
 
-  amount Decimal @db.Decimal(12, 2)
+  amount Float
   reason String
-  status String  @default("PENDING") // PENDING, PROCESSING, SUCCESS, FAILED
+  status String @default("PENDING") // PENDING, PROCESSING, SUCCESS, FAILED
 
   // Gateway info
   gatewayRefundId String?
@@ -1355,7 +1355,7 @@ model Refund {
   // Relations
   payment Payment @relation(fields: [paymentId], references: [id])
   return  Return? @relation(fields: [returnId], references: [id])
-  
+
   @@index([paymentId])
   @@index([status])
   @@index([returnId])
@@ -1388,7 +1388,7 @@ model DeliveryAgent {
   insuranceExpiry DateTime?
 
   // Work info
-  employmentType EmploymentType         @default(CONTRACT)
+  employmentType EmploymentType @default(CONTRACT)
   status         EmployeeStatus @default(ACTIVE)
   zones          String[] // Service areas/zones
   currentZone    String?
@@ -1399,21 +1399,21 @@ model DeliveryAgent {
   availableUntil DateTime?
 
   // Location
-  lastKnownLat       Decimal?  @db.Decimal(10, 8)
-  lastKnownLng       Decimal?  @db.Decimal(11, 8)
+  lastKnownLat       Float?
+  lastKnownLng       Float?
   lastLocationUpdate DateTime?
 
   // Performance
-  totalDeliveries      Int     @default(0)
-  successfulDeliveries Int     @default(0)
-  failedDeliveries     Int     @default(0)
+  totalDeliveries      Int   @default(0)
+  successfulDeliveries Int   @default(0)
+  failedDeliveries     Int   @default(0)
   avgDeliveryTime      Int? // in minutes
-  rating               Decimal @default(0) @db.Decimal(3, 2)
-  totalRatings         Int     @default(0)
+  rating               Float @default(0)
+  totalRatings         Int   @default(0)
 
   // Earnings
-  totalEarnings   Decimal @default(0) @db.Decimal(12, 2)
-  pendingEarnings Decimal @default(0) @db.Decimal(12, 2)
+  totalEarnings   Float @default(0)
+  pendingEarnings Float @default(0)
 
   // Bank details (encrypted)
   bankDetails Json?
@@ -1475,13 +1475,13 @@ model Delivery {
   maxAttempts   Int     @default(3)
 
   // Distance & duration
-  distance Decimal? @db.Decimal(10, 2) // in km
+  distance Float? // in km
   duration Int? // in minutes
 
   // Charges
-  deliveryCharge Decimal @default(0) @db.Decimal(12, 2)
-  codAmount      Decimal @default(0) @db.Decimal(12, 2)
-  codCollected   Decimal @default(0) @db.Decimal(12, 2)
+  deliveryCharge Float @default(0)
+  codAmount      Float @default(0)
+  codCollected   Float @default(0)
 
   // Rating
   customerRating   Int? // 1-5
@@ -1507,8 +1507,8 @@ model DeliveryTracking {
 
   status   String
   location String?
-  lat      Decimal? @db.Decimal(10, 8)
-  lng      Decimal? @db.Decimal(11, 8)
+  lat      Float?
+  lng      Float?
 
   notes String?
 
@@ -1526,7 +1526,7 @@ model DeliveryEarning {
   deliveryId String?
 
   type        String // DELIVERY, BONUS, PENALTY, ADJUSTMENT
-  amount      Decimal @db.Decimal(12, 2)
+  amount      Float
   description String
 
   status           String    @default("PENDING") // PENDING, PAID, CANCELLED
@@ -1571,7 +1571,7 @@ model Return {
   inspectedBy           String?
 
   // Refund/Exchange
-  refundAmount    Decimal? @db.Decimal(12, 2)
+  refundAmount    Float?
   refundMethod    String? // ORIGINAL_PAYMENT, STORE_CREDIT, BANK_TRANSFER
   exchangeOrderId String?
 
@@ -1582,8 +1582,8 @@ model Return {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  source     Source @default(WEBSITE) // WEBSITE, APP, POS, SYSTEM
-  createdBy  String? // User ID of the employee who processed the return
+  source    Source   @default(WEBSITE) // WEBSITE, APP, POS, SYSTEM
+  createdBy String? // User ID of the employee who processed the return
 
   // Relations
   order   Order        @relation(fields: [orderId], references: [id])
@@ -1867,20 +1867,20 @@ model EmployeeActivity {
 // =====================================================
 
 model JobExecution {
-  id          String   @id @default(cuid())
-  jobName     String   // e.g., 'subscription-rewards-distribution'
+  id            String    @id @default(cuid())
+  jobName       String // e.g., 'subscription-rewards-distribution'
   executionDate DateTime
-  status      String   // 'PENDING', 'RUNNING', 'SUCCESS', 'FAILED'
-  result      Json?    // Store execution results
-  errorMessage String?
-  startedAt   DateTime @default(now())
-  completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status        String // 'PENDING', 'RUNNING', 'SUCCESS', 'FAILED'
+  result        Json? // Store execution results
+  errorMessage  String?
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
+  @@unique([jobName, executionDate]) // Prevent duplicate executions for same date
   @@index([jobName, executionDate])
   @@index([status])
-  @@unique([jobName, executionDate]) // Prevent duplicate executions for same date
 }
 
 // =====================================================
@@ -1888,16 +1888,16 @@ model JobExecution {
 // =====================================================
 
 model Otp {
-  id         String   @id @default(cuid())
-  phone      String   // Phone number for OTP
-  email      String?  // Email for OTP (optional)
-  otp        String   // The OTP code
-  type       String   // LOGIN, PAYMENT, FORGOT_PASSWORD, etc
-  status     String   @default("PENDING") // PENDING, VERIFIED, EXPIRED, FAILED
+  id         String    @id @default(cuid())
+  phone      String // Phone number for OTP
+  email      String? // Email for OTP (optional)
+  otp        String // The OTP code
+  type       String // LOGIN, PAYMENT, FORGOT_PASSWORD, etc
+  status     String    @default("PENDING") // PENDING, VERIFIED, EXPIRED, FAILED
   expiresAt  DateTime
   verifiedAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([phone])
   @@index([email])
@@ -1918,9 +1918,9 @@ model Invoice {
   type String @default("TAX_INVOICE") // TAX_INVOICE, PROFORMA, CREDIT_NOTE
 
   // Amounts
-  subtotal    Decimal @db.Decimal(12, 2)
-  taxAmount   Decimal @db.Decimal(12, 2)
-  totalAmount Decimal @db.Decimal(12, 2)
+  subtotal    Float
+  taxAmount   Float
+  totalAmount Float
 
   // Tax details
   taxDetails Json // GST breakup, HSN codes, etc
@@ -1973,8 +1973,8 @@ model Address {
   postalCode String
 
   // Coordinates
-  lat Decimal? @db.Decimal(10, 8)
-  lng Decimal? @db.Decimal(11, 8)
+  lat Float?
+  lng Float?
 
   // Delivery instructions
   deliveryInstructions String?
@@ -1998,7 +1998,7 @@ model Wallet {
   id                String              @id @default(cuid())
   customerId        String
   type              WalletType
-  balance           Decimal             @default(0) @db.Decimal(12, 2)
+  balance           Float               @default(0)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   customer          Customer            @relation(fields: [customerId], references: [id])
@@ -2011,13 +2011,13 @@ model SubscriptionCard {
   id                    String                 @id @default(cuid())
   name                  String
   slug                  String?                @unique
-  price                 Decimal                @db.Decimal(12, 2)
-  targetAmount          Decimal                @db.Decimal(12, 2)
-  rewardPercent         Decimal                @db.Decimal(5, 2)
+  price                 Float
+  targetAmount          Float
+  rewardPercent         Float
   capPercentage         Int
   benefitDays           String[]
-  referralRewardPercent Decimal?               @db.Decimal(5, 2)
-  referralRewardAmount  Decimal?               @db.Decimal(12, 2)
+  referralRewardPercent Float?
+  referralRewardAmount  Float?
   validityDays          Int
   status                CardStatus
   visibility            Visibility
@@ -2038,7 +2038,7 @@ model UserSubscriptionCard {
   purchasedAt    DateTime               @default(now())
   activatedAt    DateTime?
   expiredAt      DateTime?
-  currentAmount  Decimal                @default(0) @db.Decimal(12, 2)
+  currentAmount  Float                  @default(0)
   card           SubscriptionCard       @relation(fields: [cardId], references: [id])
   customer       Customer               @relation(fields: [customerId], references: [id])
 
@@ -2064,7 +2064,7 @@ model ReferralHistory {
   referrerSubscriptionId String
   triggeredCardId        String
   status                 ReferralStatus
-  rewardAmount           Decimal?       @db.Decimal(12, 2)
+  rewardAmount           Float?
   rewardedAt             DateTime?
   expiredAt              DateTime?
   createdAt              DateTime       @default(now())
@@ -2079,14 +2079,14 @@ model WalletTransaction {
   type           TransactionType
   reason         TransactionReason
   status         TransactionStatus
-  amount         Decimal           @db.Decimal(12, 2)
-  balanceBefore  Decimal           @db.Decimal(12, 2)
-  balanceAfter   Decimal           @db.Decimal(12, 2)
+  amount         Float
+  balanceBefore  Float
+  balanceAfter   Float
   cardId         String?
   subscriptionId String?
   referralId     String?
-  rewardPercent  Decimal?          @db.Decimal(5, 2)
-  targetAmount   Decimal?          @db.Decimal(12, 2)
+  rewardPercent  Float?
+  targetAmount   Float?
   capPercentage  Int?
   idempotencyKey String?           @unique
   metadata       Json?
@@ -2098,26 +2098,25 @@ model WalletTransaction {
   @@index([customerId, createdAt])
 }
 
-
 // =====================================================
 // BANNER MANAGEMENT
 // =====================================================
 
 model Banner {
-  id          String       @id @default(cuid())
+  id          String  @id @default(cuid())
   title       String
   subtitle    String?
   description String?
 
   type      BannerType
-  status    BannerStatus  @default(DRAFT)
+  status    BannerStatus    @default(DRAFT)
   placement BannerPlacement
 
   // Media
-  imageUrl      String?
+  imageUrl       String?
   mobileImageUrl String?
-  videoUrl      String?
-  altText       String?
+  videoUrl       String?
+  altText        String?
 
   // CTA
   ctaText String?
@@ -2129,10 +2128,10 @@ model Banner {
   brandId    String?
 
   // Offer info (optional)
-  offerCode        String?
-  offerText        String?
-  discountPercent  Decimal? @db.Decimal(5, 2)
-  discountAmount   Decimal? @db.Decimal(12, 2)
+  offerCode       String?
+  offerText       String?
+  discountPercent Float?
+  discountAmount  Float?
 
   // Targeting
   visibleToRoles UserRole[] @default([])
