@@ -158,17 +158,21 @@ Authorization: Bearer <token>
         "fullName": "string",
         "phone": "string",
         "addressLine1": "string",
-        "addressLine2": "string",
+        "addressLine2": null,
+        "landmark": null,
         "city": "string",
         "state": "string",
         "country": "string",
         "postalCode": "string",
-        "isDefault": true,
-        "isBilling": true,
-        "isShipping": true,
-        "type": "HOME|OFFICE|OTHER",
-        "createdAt": "2023-12-25T10:30:00.000Z",
-        "updatedAt": "2023-12-25T10:30:00.000Z"
+        "isDefault": false,
+        "type": "HOME",
+        "alternatePhone": null,
+        "lat": null,
+        "lng": null,
+        "deliveryInstructions": null,
+        "deletedAt": null,
+        "createdAt": "2024-01-09T15:30:00.000Z",
+        "updatedAt": "2024-01-09T15:30:00.000Z"
       }
     ]
   },
@@ -178,105 +182,271 @@ Authorization: Bearer <token>
 ```
 
 ### POST /customer/me/addresses
-**Description:** Creates a new address for the authenticated customer
+**Description:** Creates a new address for the authenticated customer. The `customerId` is automatically added from the authenticated user, so it should not be included in the request body.
 
 **Request:**
 - Method: `POST`
 - Route: `/customer/me/addresses`
 - Headers: `Authorization: Bearer <token>`
-- Request Body:
+- Content-Type: `application/json`
+- Request Body Schema:
 ```json
 {
-  "fullName": "string",
-  "phone": "string",
-  "addressLine1": "string",
-  "addressLine2": "string",
-  "city": "string",
-  "state": "string",
-  "country": "string",
-  "postalCode": "string",
+  "fullName": "string (required, min 2, max 100 chars)",
+  "phone": "string (required, 10-15 digits only)",
+  "alternatePhone": "string (optional, 10-15 digits)",
+  "addressLine1": "string (required, min 3, max 200 chars)",
+  "addressLine2": "string (optional, max 200 chars)",
+  "landmark": "string (optional, max 100 chars)",
+  "city": "string (required, min 2, max 50 chars)",
+  "state": "string (required, min 2, max 50 chars)",
+  "country": "string (optional, default: 'India', min 2, max 50 chars)",
+  "postalCode": "string (required, min 3, max 10 chars)",
+  "type": "HOME|WORK|OTHER (optional, default: 'HOME')",
+  "isDefault": "boolean (optional, default: false)",
+  "lat": "number (optional, -90 to 90)",
+  "lng": "number (optional, -180 to 180)",
+  "deliveryInstructions": "string (optional, max 500 chars)"
+}
+```
+
+**Example Request Body (Minimum Required Fields):**
+```json
+{
+  "fullName": "Ranjeet Kumar",
+  "phone": "8409741571",
+  "addressLine1": "Lalpur, Ranchi",
+  "city": "Ranchi",
+  "state": "Jharkhand",
+  "postalCode": "834001"
+}
+```
+
+**Example Request Body (All Fields):**
+```json
+{
+  "fullName": "Ranjeet Kumar",
+  "phone": "8409741571",
+  "alternatePhone": "9876543210",
+  "addressLine1": "Lalpur, Near City Center",
+  "addressLine2": "Apartment 4B, Building A",
+  "landmark": "Near City Mall",
+  "city": "Ranchi",
+  "state": "Jharkhand",
+  "country": "India",
+  "postalCode": "834001",
+  "type": "HOME",
   "isDefault": true,
-  "isBilling": true,
-  "isShipping": true,
-  "type": "HOME|OFFICE|OTHER"
+  "lat": 23.3441,
+  "lng": 85.3096,
+  "deliveryInstructions": "Please call before delivery"
 }
 ```
 
 **Response:**
+- Success: `201 Created`
+- Error: `400 Bad Request` (validation error), `401 Unauthorized` (not authenticated), `500 Internal Server Error`
+
+**Success Response:**
 ```json
 {
   "success": true,
+  "message": "Address created successfully",
   "data": {
     "address": {
       "id": "string",
       "customerId": "string",
+      "type": "HOME",
+      "isDefault": false,
       "fullName": "string",
       "phone": "string",
+      "alternatePhone": null,
       "addressLine1": "string",
-      "addressLine2": "string",
+      "addressLine2": null,
+      "landmark": null,
       "city": "string",
       "state": "string",
-      "country": "string",
+      "country": "India",
       "postalCode": "string",
-      "isDefault": true,
-      "isBilling": true,
-      "isShipping": true,
-      "type": "HOME|OFFICE|OTHER",
-      "createdAt": "2023-12-25T10:30:00.000Z",
-      "updatedAt": "2023-12-25T10:30:00.000Z"
+      "lat": null,
+      "lng": null,
+      "deliveryInstructions": null,
+      "deletedAt": null,
+      "createdAt": "2024-01-09T15:30:00.000Z",
+      "updatedAt": "2024-01-09T15:30:00.000Z"
     }
   },
-  "message": "Address created successfully",
-  "timestamp": "2023-12-25T10:30:00.000Z"
+  "timestamp": "2024-01-09T15:30:00.000Z"
 }
 ```
 
+**Error Response (400 Bad Request - Validation Error):**
+```json
+{
+  "success": false,
+  "message": "Validation error",
+  "errors": [
+    "Phone number must be 10-15 digits (numbers only, no spaces or special characters)",
+    "Address line 1 must be at least 3 characters",
+    "City is required"
+  ]
+}
+```
+
+**Error Response (400 Bad Request - Generic Error):**
+```json
+{
+  "success": false,
+  "message": "Failed to create address",
+  "error": "Invalid data provided for address creation",
+  "timestamp": "2024-01-09T15:30:00.000Z"
+}
+```
+
+**Validation Rules:**
+- `fullName`: Required, 2-100 characters
+- `phone`: Required, exactly 10-15 digits (numbers only, no spaces, dashes, or special characters)
+- `alternatePhone`: Optional, if provided must be 10-15 digits
+- `addressLine1`: Required, 3-200 characters
+- `addressLine2`: Optional, max 200 characters
+- `landmark`: Optional, max 100 characters
+- `city`: Required, 2-50 characters
+- `state`: Required, 2-50 characters
+- `country`: Optional, defaults to "India" if not provided, 2-50 characters
+- `postalCode`: Required, 3-10 characters
+- `type`: Optional, must be one of: `HOME`, `WORK`, `OTHER` (default: `HOME`)
+- `isDefault`: Optional boolean (default: `false`)
+- `lat`: Optional, must be between -90 and 90
+- `lng`: Optional, must be between -180 and 180
+- `deliveryInstructions`: Optional, max 500 characters
+
+**Note:**
+- All string fields are automatically trimmed (leading/trailing whitespace removed)
+- `customerId` is automatically added from the authenticated user and should NOT be included in the request
+- Phone numbers must contain only digits (0-9), no spaces, dashes, or country codes
+
 ### PUT /customer/me/addresses/:id
-**Description:** Updates an existing address for the authenticated customer
+**Description:** Updates an existing address for the authenticated customer. All fields in the request body are optional - only include the fields you want to update.
 
 **Request:**
 - Method: `PUT`
 - Route: `/customer/me/addresses/:id`
 - Headers: `Authorization: Bearer <token>`
-- Parameters: `id` (required)
-- Request Body:
+- Content-Type: `application/json`
+- Path Parameter: `id` (address ID, required)
+- Request Body Schema (all fields optional):
 ```json
 {
-  "fullName": "string",
-  "phone": "string",
-  "addressLine1": "string",
-  "addressLine2": "string",
-  "city": "string",
-  "state": "string",
-  "country": "string",
-  "postalCode": "string",
-  "isDefault": true,
-  "isBilling": true,
-  "isShipping": true,
-  "type": "HOME|OFFICE|OTHER"
+  "fullName": "string (optional, min 2, max 100 chars)",
+  "phone": "string (optional, 10-15 digits only)",
+  "alternatePhone": "string (optional, 10-15 digits)",
+  "addressLine1": "string (optional, min 5, max 200 chars)",
+  "addressLine2": "string (optional, max 200 chars)",
+  "landmark": "string (optional, max 100 chars)",
+  "city": "string (optional, min 2, max 50 chars)",
+  "state": "string (optional, min 2, max 50 chars)",
+  "country": "string (optional, min 2, max 50 chars)",
+  "postalCode": "string (optional, min 3, max 10 chars)",
+  "type": "HOME|WORK|OTHER (optional)",
+  "isDefault": "boolean (optional)",
+  "lat": "number (optional, -90 to 90)",
+  "lng": "number (optional, -180 to 180)",
+  "deliveryInstructions": "string (optional, max 500 chars)"
+}
+```
+
+**Example Request Body (Update Basic Info):**
+```json
+{
+  "fullName": "Ranjeet Kumar Singh",
+  "phone": "8409741571",
+  "isDefault": true
+}
+```
+
+**Example Request Body (Update Full Address):**
+```json
+{
+  "fullName": "Ranjeet Kumar",
+  "phone": "8409741571",
+  "alternatePhone": "9876543210",
+  "addressLine1": "New Address Line 1",
+  "addressLine2": "New Address Line 2",
+  "landmark": "Near New Landmark",
+  "city": "New City",
+  "state": "New State",
+  "country": "India",
+  "postalCode": "834001",
+  "type": "WORK",
+  "isDefault": false,
+  "lat": 23.3441,
+  "lng": 85.3096,
+  "deliveryInstructions": "Updated delivery instructions"
 }
 ```
 
 **Response:**
+- Success: `200 OK`
+- Error: `400 Bad Request` (validation error, missing ID), `401 Unauthorized` (not authenticated), `404 Not Found` (address not found), `500 Internal Server Error`
+
+**Success Response:**
 ```json
 {
   "success": true,
+  "message": "Address updated successfully",
   "data": {
     "address": {
       "id": "string",
       "customerId": "string",
+      "type": "HOME",
+      "isDefault": false,
       "fullName": "string",
       "phone": "string",
+      "alternatePhone": null,
       "addressLine1": "string",
-      "addressLine2": "string",
+      "addressLine2": null,
+      "landmark": null,
       "city": "string",
       "state": "string",
-      "country": "string",
+      "country": "India",
       "postalCode": "string",
-      "isDefault": true,
-      "isBilling": true,
-      "isShipping": true,
-      "type": "HOME|OFFICE|OTHER",
+      "lat": null,
+      "lng": null,
+      "deliveryInstructions": null,
+      "deletedAt": null,
+      "createdAt": "2024-01-09T15:30:00.000Z",
+      "updatedAt": "2024-01-09T15:30:00.000Z"
+    }
+  },
+  "timestamp": "2024-01-09T15:30:00.000Z"
+}
+```
+
+**Error Response (400 Bad Request - Validation Error):**
+```json
+{
+  "success": false,
+  "message": "Validation error",
+  "errors": [
+    "Phone number must be 10-15 digits",
+    "Address line 1 must be at least 5 characters"
+  ]
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "message": "Address not found",
+  "timestamp": "2024-01-09T15:30:00.000Z"
+}
+```
+
+**Validation Rules (same as POST, but all fields are optional):**
+- All validation rules from POST endpoint apply, but fields are optional for updates
+- `type`: Must be one of: `HOME`, `WORK`, `OTHER` (not `OFFICE`)
+- Phone numbers must contain only digits (0-9)
       "createdAt": "2023-12-25T10:30:00.000Z",
       "updatedAt": "2023-12-25T10:30:00.000Z"
     }
@@ -310,13 +480,17 @@ Authorization: Bearer <token>
       "city": "string",
       "state": "string",
       "country": "string",
-      "postalCode": "string",
-      "isDefault": true,
-      "isBilling": true,
-      "isShipping": true,
-      "type": "HOME|OFFICE|OTHER",
-      "createdAt": "2023-12-25T10:30:00.000Z",
-      "updatedAt": "2023-12-25T10:30:00.000Z"
+        "postalCode": "string",
+        "isDefault": false,
+        "type": "HOME",
+        "alternatePhone": null,
+        "landmark": null,
+        "lat": null,
+        "lng": null,
+        "deliveryInstructions": null,
+        "deletedAt": null,
+        "createdAt": "2024-01-09T15:30:00.000Z",
+        "updatedAt": "2024-01-09T15:30:00.000Z"
     }
   },
   "message": "Address deleted successfully",

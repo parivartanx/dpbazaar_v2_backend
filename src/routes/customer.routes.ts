@@ -10,6 +10,10 @@ import { validateJoi } from '../middlewares/validateJoi';
 import {
   updateCustomerSchema,
 } from '../validators/customer.validaton';
+import {
+  createCustomerAddressSchema,
+  updateAddressSchema,
+} from '../validators/address.validation';
 
 
 const router = Router();
@@ -25,8 +29,8 @@ router.put('/me/profile', isAccessAllowed('CUSTOMER'), validateJoi(updateCustome
 
 // Customer Address Management
 router.get('/me/addresses', isAccessAllowed('CUSTOMER'), addressCtrl.getMyAddresses);
-router.post('/me/addresses', isAccessAllowed('CUSTOMER'), addressCtrl.createMyAddress);
-router.put('/me/addresses/:id', isAccessAllowed('CUSTOMER'), addressCtrl.updateMyAddress);
+router.post('/me/addresses', isAccessAllowed('CUSTOMER'), validateJoi(createCustomerAddressSchema), addressCtrl.createMyAddress);
+router.put('/me/addresses/:id', isAccessAllowed('CUSTOMER'), validateJoi(updateAddressSchema), addressCtrl.updateMyAddress);
 router.delete('/me/addresses/:id', isAccessAllowed('CUSTOMER'), addressCtrl.deleteMyAddress);
 
 // WALLET MANAGEMENT
