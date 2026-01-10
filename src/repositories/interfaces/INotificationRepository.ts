@@ -8,4 +8,5 @@ export interface INotificationRepository {
   getAll(filters?: any): Promise<Notification[]>;
   markAsRead(id: string): Promise<Notification>;
   markAllAsRead(userId: string): Promise<void>;
+  countFiltered(filters?: any): Promise<number>;
 }

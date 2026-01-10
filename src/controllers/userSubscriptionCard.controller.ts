@@ -26,9 +26,17 @@ export class UserSubscriptionCardController {
   listUserCards = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, customerId, status } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
       const userCards = await userSubscriptionCardRepo.list({
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
+        customerId: customerId as string,
+        status: status as any,
+      });
+
+      const totalCount = await userSubscriptionCardRepo.countFiltered({
         customerId: customerId as string,
         status: status as any,
       });
@@ -36,7 +44,15 @@ export class UserSubscriptionCardController {
       const response: ApiResponse = {
         success: true,
         message: 'User subscription cards fetched successfully',
-        data: { userCards },
+        data: {
+          userCards,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

@@ -2,9 +2,10 @@ import Joi from 'joi';
 
 /**
  * CREATE REFERRAL CODE SCHEMA
+ * Note: According to Prisma schema, ReferralCode has: id, code, isActive, customerId, createdAt, deactivatedAt
  */
 export const createReferralCodeSchema = Joi.object({
-  code: Joi.string().required().messages({
+  code: Joi.string().trim().required().messages({
     'string.empty': 'Referral code is required',
     'any.required': 'Referral code is required',
   }),
@@ -14,12 +15,7 @@ export const createReferralCodeSchema = Joi.object({
     'any.required': 'Customer ID is required',
   }),
 
-  userSubscriptionId: Joi.string().required().messages({
-    'string.empty': 'User subscription ID is required',
-    'any.required': 'User subscription ID is required',
-  }),
-
-  isActive: Joi.boolean().default(true).messages({
+  isActive: Joi.boolean().default(true).optional().messages({
     'boolean.base': 'isActive must be a boolean value',
   }),
 });

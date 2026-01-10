@@ -9,29 +9,48 @@ export class PaymentController {
   getAllPayments = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, status, orderId, method } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 10;
+
       const filters = {
         status: status as string,
         orderId: orderId as string,
         method: method as string,
-        page: Number(page) || 1,
-        limit: Number(limit) || 10,
+        page: pageNum,
+        limit: limitNum,
       };
 
-      // Note: Repository list returns array, not { data, total }. 
-      // Ideally repository should return total count too.
-      // For now, I'll just return the list.
       const payments = await paymentRepository.list(filters);
+      const totalCount = await paymentRepository.countFiltered({
+        status: status as string,
+        orderId: orderId as string,
+        method: method as string,
+      });
       
       const response: ApiResponse = {
         success: true,
-        data: { payments },
+        data: {
+          payments,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         message: 'Payments retrieved successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getAllPayments: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in fetching payments', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in fetching payments',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 

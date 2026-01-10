@@ -29,4 +29,9 @@ export interface IReferralCodeRepository {
   delete(id: string): Promise<ReferralCode>;
   
   deactivate(id: string): Promise<ReferralCode>;
+  
+  countFiltered(params?: {
+    customerId?: string;
+    isActive?: boolean;
+  }): Promise<number>;
 }

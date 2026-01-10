@@ -24,4 +24,8 @@ export interface IUserSubscriptionCardRepository {
     >
   ): Promise<UserSubscriptionCard>;
   delete(id: string): Promise<UserSubscriptionCard>;
+  countFiltered(params?: {
+    customerId?: string;
+    status?: CardSubscriptionStatus;
+  }): Promise<number>;
 }

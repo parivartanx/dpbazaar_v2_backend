@@ -89,7 +89,9 @@ export class DeliveryAgentRepository implements IDeliveryAgentRepository {
       ];
     }
     if (status) where.status = status;
-    if (isAvailable !== undefined) where.isAvailable = isAvailable === 'true' || isAvailable === true;
+    if (isAvailable !== undefined) {
+      where.isAvailable = typeof isAvailable === 'boolean' ? isAvailable : isAvailable === 'true';
+    }
     if (zone) where.zones = { has: zone };
 
     return prisma.deliveryAgent.count({ where });

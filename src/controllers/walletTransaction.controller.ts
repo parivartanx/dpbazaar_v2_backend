@@ -12,9 +12,20 @@ export class WalletTransactionController {
   listTransactions = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, walletId, customerId, type, reason, status } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
       const transactions = await walletTransactionRepo.list({
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
+        walletId: walletId as string,
+        customerId: customerId as string,
+        type: type as any,
+        reason: reason as any,
+        status: status as any,
+      });
+
+      const totalCount = await walletTransactionRepo.countFiltered({
         walletId: walletId as string,
         customerId: customerId as string,
         type: type as any,
@@ -25,7 +36,15 @@ export class WalletTransactionController {
       const response: ApiResponse = {
         success: true,
         message: 'Wallet transactions fetched successfully',
-        data: { transactions },
+        data: {
+          transactions,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

@@ -117,4 +117,23 @@ export class WalletTransactionRepository implements IWalletTransactionRepository
       }
     });
   }
+
+  async countFiltered(params?: {
+    walletId?: string;
+    customerId?: string;
+    type?: TransactionType;
+    reason?: TransactionReason;
+    status?: TransactionStatus;
+  }): Promise<number> {
+    const { walletId, customerId, type, reason, status } = params || {};
+    const where: any = {};
+
+    if (walletId) where.walletId = walletId;
+    if (customerId) where.customerId = customerId;
+    if (type) where.type = type;
+    if (reason) where.reason = reason;
+    if (status) where.status = status;
+
+    return prisma.walletTransaction.count({ where });
+  }
 }

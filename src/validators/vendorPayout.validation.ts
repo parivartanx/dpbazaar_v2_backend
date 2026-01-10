@@ -1,24 +1,43 @@
 import Joi from 'joi';
 
 export const createVendorPayoutSchema = Joi.object({
-  vendorId: Joi.string().required(),
-  amount: Joi.number().positive().required(),
-  currency: Joi.string().default('INR'),
-  status: Joi.string().valid('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED').default('PENDING'),
-  periodStart: Joi.date().required(),
-  periodEnd: Joi.date().required(),
-  transactionId: Joi.string().optional(),
-  paymentMethod: Joi.string().optional(),
-  paymentDetails: Joi.object().optional(),
+  vendorId: Joi.string().trim().required().messages({
+    'string.empty': 'Vendor ID is required',
+    'any.required': 'Vendor ID is required',
+  }),
+  amount: Joi.number().min(0).required().messages({
+    'number.base': 'Amount must be a number',
+    'number.min': 'Amount cannot be negative',
+    'any.required': 'Amount is required',
+  }),
+  currency: Joi.string().trim().default('INR').optional(),
+  status: Joi.string().valid('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED').default('PENDING').optional(),
+  periodStart: Joi.date().iso().required().messages({
+    'date.base': 'Period Start must be a valid date',
+    'any.required': 'Period Start is required',
+  }),
+  periodEnd: Joi.date().iso().min(Joi.ref('periodStart')).required().messages({
+    'date.base': 'Period End must be a valid date',
+    'date.min': 'Period End must be after Period Start',
+    'any.required': 'Period End is required',
+  }),
+  transactionId: Joi.string().trim().optional().allow(null, ''),
+  paymentMethod: Joi.string().trim().optional().allow(null, ''),
+  paymentDetails: Joi.object().optional().allow(null),
+  processedAt: Joi.date().iso().optional().allow(null),
 });
 
 export const updateVendorPayoutSchema = Joi.object({
-  amount: Joi.number().positive(),
-  status: Joi.string().valid('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'),
-  transactionId: Joi.string(),
-  paymentMethod: Joi.string(),
-  paymentDetails: Joi.object(),
-  processedAt: Joi.date(),
+  vendorId: Joi.string().trim().optional(),
+  amount: Joi.number().min(0).optional(),
+  currency: Joi.string().trim().optional(),
+  status: Joi.string().valid('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED').optional(),
+  periodStart: Joi.date().iso().optional(),
+  periodEnd: Joi.date().iso().optional(),
+  transactionId: Joi.string().trim().optional().allow(null, ''),
+  paymentMethod: Joi.string().trim().optional().allow(null, ''),
+  paymentDetails: Joi.object().optional().allow(null),
+  processedAt: Joi.date().iso().optional().allow(null),
 });
 
 export const updateVendorPayoutStatusSchema = Joi.object({

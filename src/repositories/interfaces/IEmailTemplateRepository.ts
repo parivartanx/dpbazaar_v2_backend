@@ -6,5 +6,6 @@ export interface IEmailTemplateRepository {
   delete(id: string): Promise<EmailTemplate>;
   getById(id: string): Promise<EmailTemplate | null>;
   getByCode(code: string): Promise<EmailTemplate | null>;
-  getAll(): Promise<EmailTemplate[]>;
+  getAll(filters?: any): Promise<EmailTemplate[]>;
+  countFiltered(filters?: any): Promise<number>;
 }

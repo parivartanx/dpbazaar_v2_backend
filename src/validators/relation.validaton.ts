@@ -1,11 +1,13 @@
 import Joi from 'joi';
 
+const cuidRegex = /^c[^\s-]{8,}$/;
+
 /**
  * CREATE PRODUCT RELATION
  */
 const createRelationSchema = Joi.object({
-  relatedProductId: Joi.string().uuid().required().messages({
-    'string.guid': 'Related Product ID must be a valid UUID',
+  relatedProductId: Joi.string().pattern(cuidRegex).required().messages({
+    'string.pattern.base': 'Related Product ID must be a valid CUID',
     'any.required': 'Related Product ID is required',
   }),
   relationType: Joi.string()

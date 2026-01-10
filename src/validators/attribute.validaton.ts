@@ -1,5 +1,7 @@
 import Joi from 'joi';
 
+const cuidRegex = /^c[^\s-]{8,}$/;
+
 /**
  * ATTRIBUTE TYPE
  */
@@ -33,8 +35,8 @@ const updateAttributeSchema = createAttributeSchema.fork(
  * PRODUCT ATTRIBUTE
  */
 const addProductAttributeSchema = Joi.object({
-  attributeTypeId: Joi.string().uuid().required().messages({
-    'string.guid': 'AttributeType ID must be a valid UUID',
+  attributeTypeId: Joi.string().pattern(cuidRegex).required().messages({
+    'string.pattern.base': 'AttributeType ID must be a valid CUID',
     'any.required': 'AttributeType ID is required',
   }),
   value: Joi.string().trim().required().messages({
@@ -48,8 +50,8 @@ const addProductAttributeSchema = Joi.object({
  * CATEGORY ATTRIBUTE
  */
 const assignCategoryAttributeSchema = Joi.object({
-  attributeTypeId: Joi.string().uuid().required().messages({
-    'string.guid': 'AttributeType ID must be a valid UUID',
+  attributeTypeId: Joi.string().pattern(cuidRegex).required().messages({
+    'string.pattern.base': 'AttributeType ID must be a valid CUID',
     'any.required': 'AttributeType ID is required',
   }),
   isRequired: Joi.boolean().optional(),

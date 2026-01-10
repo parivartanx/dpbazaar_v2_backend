@@ -20,9 +20,18 @@ export class ReferralHistoryController {
   listReferralHistories = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, referrerId, referredUserId, status } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
       const referralHistories = await referralHistoryRepo.list({
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
+        referrerId: referrerId as string,
+        referredUserId: referredUserId as string,
+        status: status as any,
+      });
+
+      const totalCount = await referralHistoryRepo.countFiltered({
         referrerId: referrerId as string,
         referredUserId: referredUserId as string,
         status: status as any,
@@ -31,7 +40,15 @@ export class ReferralHistoryController {
       const response: ApiResponse = {
         success: true,
         message: 'Referral histories fetched successfully',
-        data: { referralHistories },
+        data: {
+          referralHistories,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

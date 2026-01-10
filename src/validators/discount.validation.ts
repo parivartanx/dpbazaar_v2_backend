@@ -35,9 +35,10 @@ export const createDiscountSchema = Joi.object({
     'any.required': 'Valid Until is required',
   }),
   isActive: Joi.boolean().default(true).optional(),
-  applicableCategories: Joi.array().items(Joi.string()).default([]).optional(),
-  applicableProducts: Joi.array().items(Joi.string()).default([]).optional(),
-  applicableBrands: Joi.array().items(Joi.string()).default([]).optional(),
+  applicableCategories: Joi.array().items(Joi.string().trim()).default([]).optional(),
+  applicableProducts: Joi.array().items(Joi.string().trim()).default([]).optional(),
+  applicableBrands: Joi.array().items(Joi.string().trim()).default([]).optional(),
+  customerSegments: Joi.array().items(Joi.string().trim()).default([]).optional(),
 });
 
 export const updateDiscountSchema = createDiscountSchema.fork(

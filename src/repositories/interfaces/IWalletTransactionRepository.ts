@@ -26,4 +26,12 @@ export interface IWalletTransactionRepository {
   ): Promise<WalletTransaction>;
 
   delete(id: string): Promise<WalletTransaction>;
+  
+  countFiltered(params?: {
+    walletId?: string;
+    customerId?: string;
+    type?: TransactionType;
+    reason?: TransactionReason;
+    status?: TransactionStatus;
+  }): Promise<number>;
 }
