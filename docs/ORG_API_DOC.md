@@ -697,7 +697,7 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
 - Method: `POST`
 - Endpoint: `/employees`
 - Content-Type: `application/json`
-- Body:
+- Body Schema:
 ```json
 {
   "firstName": "string (required, min 2 chars)",
@@ -724,6 +724,69 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
   "currentAddress": "object (optional)",
   "permanentAddress": "object (optional)",
   "metadata": "object (optional)"
+}
+```
+
+**Example Request Body (Minimum Required Fields):**
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "password": "SecurePass123",
+  "employeeCode": "EMP001",
+  "designation": "Software Engineer",
+  "joiningDate": "2024-01-15T00:00:00.000Z"
+}
+```
+
+**Example Request Body (All Fields):**
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "middleName": "Michael",
+  "email": "john.doe@example.com",
+  "password": "SecurePass123",
+  "phone": "+919876543210",
+  "employeeCode": "EMP001",
+  "departmentId": "dept_abc123",
+  "designation": "Senior Software Engineer",
+  "reportingTo": "mgr_xyz789",
+  "status": "ACTIVE",
+  "employmentType": "FULL_TIME",
+  "joiningDate": "2024-01-15T00:00:00.000Z",
+  "confirmationDate": "2024-04-15T00:00:00.000Z",
+  "lastWorkingDate": null,
+  "salary": 75000.50,
+  "currency": "INR",
+  "documents": {
+    "aadhar": "https://example.com/docs/aadhar.pdf",
+    "pan": "https://example.com/docs/pan.pdf"
+  },
+  "emergencyContactName": "Jane Doe",
+  "emergencyContactPhone": "+919876543211",
+  "emergencyContactRelation": "Spouse",
+  "currentAddress": {
+    "addressLine1": "123 Main Street",
+    "addressLine2": "Apartment 4B",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "postalCode": "400001",
+    "country": "India"
+  },
+  "permanentAddress": {
+    "addressLine1": "456 Park Avenue",
+    "addressLine2": "Block C",
+    "city": "Delhi",
+    "state": "Delhi",
+    "postalCode": "110001",
+    "country": "India"
+  },
+  "metadata": {
+    "notes": "High performer",
+    "skills": ["JavaScript", "TypeScript", "Node.js"]
+  }
 }
 ```
 
@@ -796,7 +859,69 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
 - Endpoint: `/employees/:id`
 - Path Parameter: `id` (employee ID)
 - Content-Type: `application/json`
-- Body: (all fields optional - same as POST /employees)
+- Body: (all fields optional - same schema as POST /employees, but all fields are optional for updates)
+
+**Example Request Body (Update Basic Info):**
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "phone": "+919876543210",
+  "designation": "Lead Software Engineer",
+  "salary": 85000.00
+}
+```
+
+**Example Request Body (Update Department and Status):**
+```json
+{
+  "departmentId": "dept_new123",
+  "status": "ACTIVE",
+  "reportingTo": "mgr_new456"
+}
+```
+
+**Example Request Body (Update Address and Emergency Contact):**
+```json
+{
+  "currentAddress": {
+    "addressLine1": "789 New Street",
+    "addressLine2": "Floor 5",
+    "city": "Bangalore",
+    "state": "Karnataka",
+    "postalCode": "560001",
+    "country": "India"
+  },
+  "emergencyContactName": "Jane Smith",
+  "emergencyContactPhone": "+919876543212",
+  "emergencyContactRelation": "Spouse"
+}
+```
+
+**Example Request Body (Update Multiple Fields):**
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "email": "john.smith@example.com",
+  "phone": "+919876543210",
+  "designation": "Senior Lead Engineer",
+  "departmentId": "dept_tech001",
+  "status": "ACTIVE",
+  "employmentType": "FULL_TIME",
+  "salary": 95000.00,
+  "confirmationDate": "2024-07-15T00:00:00.000Z",
+  "documents": {
+    "aadhar": "https://example.com/docs/aadhar_updated.pdf",
+    "pan": "https://example.com/docs/pan_updated.pdf",
+    "passport": "https://example.com/docs/passport.pdf"
+  },
+  "metadata": {
+    "notes": "Promoted to Senior Lead",
+    "skills": ["JavaScript", "TypeScript", "Node.js", "React", "AWS"]
+  }
+}
+```
 
 **Response:**
 - Success: `200 OK`
