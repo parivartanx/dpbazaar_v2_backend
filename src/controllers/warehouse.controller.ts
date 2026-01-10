@@ -8,22 +8,50 @@ const warehouseRepository = new WarehouseRepository();
 export class WarehouseController {
   getAllWarehouses = async (req: Request, res: Response): Promise<void> => {
     try {
-      const filters: any = { ...req.query };
-      if (filters.page) filters.page = Number(filters.page);
-      if (filters.limit) filters.limit = Number(filters.limit);
+      const { page, limit, search, type, isActive } = req.query;
+      
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      const filters: any = {
+        page: pageNum,
+        limit: limitNum,
+        search: search as string,
+        type: type as string,
+        isActive: isActive !== undefined ? (isActive === 'true') : undefined,
+      };
 
       const warehouses = await warehouseRepository.getAll(filters);
+      const totalCount = await warehouseRepository.countFiltered({
+        search: search as string,
+        type: type as string,
+        isActive: filters.isActive,
+      });
       
       const response: ApiResponse = {
         success: true,
-        data: { warehouses },
+        data: {
+          warehouses,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         message: 'Warehouses retrieved successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getAllWarehouses: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in fetching warehouses', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in fetching warehouses',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 

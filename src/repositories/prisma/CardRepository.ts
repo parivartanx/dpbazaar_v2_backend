@@ -66,4 +66,21 @@ export class CardRepository implements ICardRepository {
       data: { status: 'ACTIVE' },
     });
   }
+
+  async countFiltered(params?: {
+    search?: string;
+    status?: string;
+    visibility?: string;
+  }): Promise<number> {
+    const { search, status, visibility } = params || {};
+    const where: any = { deletedAt: null };
+
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+    if (status) where.status = status;
+    if (visibility) where.visibility = visibility;
+
+    return prisma.subscriptionCard.count({ where });
+  }
 }

@@ -7,4 +7,5 @@ export interface IVendorRepository {
   update(id: string, data: any): Promise<Vendor>;
   delete(id: string): Promise<void>;
   updateStatus(id: string, status: string): Promise<Vendor>;
+  countFiltered(filters?: any): Promise<number>;
 }

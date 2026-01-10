@@ -4055,11 +4055,17 @@ GET /attributes?search=color&page=1&limit=10
 
 ### GET /cards
 
-**Description:** Get all cards.
+**Description:** Get all cards with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/cards`
+- Query Parameters:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 20)
+  - `search` (optional): Search by card name
+  - `status` (optional): Filter by card status
+  - `visibility` (optional): Filter by visibility (PUBLIC, PRIVATE)
 
 **Response:**
 - Success: `200 OK`
@@ -4069,7 +4075,7 @@ GET /attributes?search=color&page=1&limit=10
 ```json
 {
   "success": true,
-  "message": "Cards retrieved successfully",
+  "message": "Cards fetched successfully",
   "data": {
     "cards": [
       {
@@ -4090,7 +4096,13 @@ GET /attributes?search=color&page=1&limit=10
         "createdAt": "string",
         "updatedAt": "string"
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
@@ -4313,11 +4325,17 @@ GET /attributes?search=color&page=1&limit=10
 
 ### GET /subscription-cards
 
-**Description:** Get all subscription cards.
+**Description:** Get all subscription cards with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/subscription-cards`
+- Query Parameters:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 20)
+  - `search` (optional): Search by card name
+  - `status` (optional): Filter by card status
+  - `visibility` (optional): Filter by visibility (PUBLIC, PRIVATE)
 
 **Response:**
 - Success: `200 OK`
@@ -4327,7 +4345,7 @@ GET /attributes?search=color&page=1&limit=10
 ```json
 {
   "success": true,
-  "message": "Subscription cards retrieved successfully",
+  "message": "Subscription cards fetched successfully",
   "data": {
     "cards": [
       {
@@ -4348,7 +4366,13 @@ GET /attributes?search=color&page=1&limit=10
         "createdAt": "string",
         "updatedAt": "string"
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
@@ -7141,11 +7165,18 @@ GET /customers?search=john&page=1&limit=10
 
 ### GET /reviews
 
-**Description:** Get all reviews.
+**Description:** Get all reviews with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/reviews`
+- Query Parameters:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 20)
+  - `status` (optional): Filter by review status (APPROVED, PENDING, REJECTED)
+  - `productId` (optional): Filter by product ID
+  - `rating` (optional): Filter by rating (1-5)
+  - `search` (optional): Search by review title, comment, or product name
 
 **Response:**
 - Success: `200 OK`
@@ -7155,7 +7186,7 @@ GET /customers?search=john&page=1&limit=10
 ```json
 {
   "success": true,
-  "message": "Reviews retrieved successfully",
+  "message": "All reviews retrieved successfully",
   "data": {
     "reviews": [
       {
@@ -7224,7 +7255,13 @@ GET /customers?search=john&page=1&limit=10
           "slug": "string"
         }
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
@@ -7399,11 +7436,16 @@ GET /customers?search=john&page=1&limit=10
 
 ### GET /vendors
 
-**Description:** Get all vendors.
+**Description:** Get all vendors with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/vendors`
+- Query Parameters:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 20)
+  - `search` (optional): Search by businessName, vendorCode, businessEmail, or gstNumber
+  - `status` (optional): Filter by vendor status (ACTIVE, INACTIVE, PENDING, SUSPENDED)
 
 **Response:**
 - Success: `200 OK`
@@ -7449,7 +7491,13 @@ GET /customers?search=john&page=1&limit=10
           "status": "string"
         }
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
@@ -8021,11 +8069,17 @@ GET /customers?search=john&page=1&limit=10
 
 ### GET /warehouses
 
-**Description:** Get all warehouses.
+**Description:** Get all warehouses with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/warehouses`
+- Query Parameters:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 20)
+  - `search` (optional): Search by warehouse name or code
+  - `type` (optional): Filter by warehouse type
+  - `isActive` (optional): Filter by active status (true/false)
 
 **Response:**
 - Success: `200 OK`
@@ -8061,7 +8115,13 @@ GET /customers?search=john&page=1&limit=10
           "employeeCode": "string"
         }
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
@@ -8262,12 +8322,18 @@ GET /customers?search=john&page=1&limit=10
 
 ### GET /inventories
 
-**Description:** Get all inventories.
-
+**Description:** Get all inventory records with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/inventories`
+- Query Parameters:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 20)
+  - `warehouseId` (optional): Filter by warehouse ID
+  - `productId` (optional): Filter by product ID
+  - `variantId` (optional): Filter by variant ID
+  - `search` (optional): Search by product name, SKU, warehouse name, or warehouse code
 
 **Response:**
 - Success: `200 OK`
@@ -8277,9 +8343,9 @@ GET /customers?search=john&page=1&limit=10
 ```json
 {
   "success": true,
-  "message": "Inventories retrieved successfully",
+  "message": "Inventory records retrieved successfully",
   "data": {
-    "inventories": [
+    "inventory": [
       {
         "id": "string",
         "productId": "string",
@@ -8314,7 +8380,13 @@ GET /customers?search=john&page=1&limit=10
           "code": "string"
         }
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
@@ -8559,11 +8631,18 @@ GET /customers?search=john&page=1&limit=10
 
 ### GET /delivery-agents
 
-**Description:** Get all delivery agents.
+**Description:** Get all delivery agents with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/delivery-agents`
+- Query Parameters:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 20)
+  - `search` (optional): Search by firstName, lastName, email, phone, or agentCode
+  - `status` (optional): Filter by agent status
+  - `zone` (optional): Filter by zone
+  - `isAvailable` (optional): Filter by availability status (true/false)
 
 **Response:**
 - Success: `200 OK`
@@ -8575,7 +8654,7 @@ GET /customers?search=john&page=1&limit=10
   "success": true,
   "message": "Delivery agents retrieved successfully",
   "data": {
-    "deliveryAgents": [
+    "agents": [
       {
         "id": "string",
         "agentCode": "string",
@@ -8618,7 +8697,13 @@ GET /customers?search=john&page=1&limit=10
         "createdAt": "string",
         "updatedAt": "string"
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }
@@ -8895,11 +8980,19 @@ GET /customers?search=john&page=1&limit=10
 
 ### GET /deliveries
 
-**Description:** Get all deliveries.
+**Description:** Get all deliveries with pagination, search, and filtering support.
 
 **Request:**
 - Method: `GET`
 - Endpoint: `/deliveries`
+- Query Parameters:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 20)
+  - `status` (optional): Filter by delivery status
+  - `agentId` (optional): Filter by delivery agent ID
+  - `startDate` (optional): Filter by start date (ISO format)
+  - `endDate` (optional): Filter by end date (ISO format)
+  - `search` (optional): Search by trackingId, receiverName, or orderNumber
 
 **Response:**
 - Success: `200 OK`
@@ -8958,7 +9051,13 @@ GET /customers?search=john&page=1&limit=10
           "agentCode": "string"
         }
       }
-    ]
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "totalItems": 200,
+      "itemsPerPage": 20
+    }
   },
   "timestamp": "string"
 }

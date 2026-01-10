@@ -7,4 +7,5 @@ export interface IInventoryRepository {
   getById(id: string): Promise<Inventory | null>;
   getAll(filters?: any): Promise<Inventory[]>;
   findByProductAndWarehouse(productId: string, warehouseId: string, variantId?: string): Promise<Inventory | null>;
+  countFiltered(filters?: any): Promise<number>;
 }

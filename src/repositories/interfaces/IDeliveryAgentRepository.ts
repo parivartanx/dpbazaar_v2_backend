@@ -8,4 +8,5 @@ export interface IDeliveryAgentRepository {
   getAll(filters?: any): Promise<DeliveryAgent[]>;
   findByCode(code: string): Promise<DeliveryAgent | null>;
   findByEmail(email: string): Promise<DeliveryAgent | null>;
+  countFiltered(filters?: any): Promise<number>;
 }

@@ -95,4 +95,27 @@ export class VendorRepository implements IVendorRepository {
       data: updateData
     });
   }
+
+  async countFiltered(filters?: any): Promise<number> {
+    const { search, status } = filters || {};
+    
+    const whereClause: any = {
+      deletedAt: null
+    };
+
+    if (search) {
+      whereClause.OR = [
+        { businessName: { contains: search, mode: 'insensitive' } },
+        { vendorCode: { contains: search, mode: 'insensitive' } },
+        { businessEmail: { contains: search, mode: 'insensitive' } },
+        { gstNumber: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    return prisma.vendor.count({ where: whereClause });
+  }
 }

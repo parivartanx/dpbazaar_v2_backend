@@ -74,4 +74,24 @@ export class DeliveryAgentRepository implements IDeliveryAgentRepository {
       where: { email }
     });
   }
+
+  async countFiltered(filters?: any): Promise<number> {
+    const { search, status, zone, isAvailable } = filters || {};
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { agentCode: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    if (status) where.status = status;
+    if (isAvailable !== undefined) where.isAvailable = isAvailable === 'true' || isAvailable === true;
+    if (zone) where.zones = { has: zone };
+
+    return prisma.deliveryAgent.count({ where });
+  }
 }

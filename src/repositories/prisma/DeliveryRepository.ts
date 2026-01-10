@@ -95,4 +95,29 @@ export class DeliveryRepository implements IDeliveryRepository {
       orderBy: { createdAt: 'desc' }
     });
   }
+
+  async countFiltered(filters?: any): Promise<number> {
+    const { status, agentId, startDate, endDate, search } = filters || {};
+    const where: any = {};
+
+    if (status) where.status = status;
+    if (agentId) where.deliveryAgentId = agentId;
+    
+    if (startDate && endDate) {
+      where.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      };
+    }
+
+    if (search) {
+      where.OR = [
+        { trackingId: { contains: search, mode: 'insensitive' } },
+        { receiverName: { contains: search, mode: 'insensitive' } },
+        { order: { orderNumber: { contains: search, mode: 'insensitive' } } }
+      ];
+    }
+
+    return prisma.delivery.count({ where });
+  }
 }

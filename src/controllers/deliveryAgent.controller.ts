@@ -15,25 +15,55 @@ export class DeliveryAgentController {
   
   getAllDeliveryAgents = async (req: Request, res: Response): Promise<void> => {
     try {
-      const filters: any = { ...req.query };
-      if (filters.page) filters.page = Number(filters.page);
-      if (filters.limit) filters.limit = Number(filters.limit);
+      const { page, limit, search, status, zone, isAvailable } = req.query;
+      
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      const filters: any = {
+        page: pageNum,
+        limit: limitNum,
+        search: search as string,
+        status: status as string,
+        zone: zone as string,
+        isAvailable: isAvailable !== undefined ? (isAvailable === 'true') : undefined,
+      };
 
       const agents = await deliveryAgentRepository.getAll(filters);
+      const totalCount = await deliveryAgentRepository.countFiltered({
+        search: search as string,
+        status: status as string,
+        zone: zone as string,
+        isAvailable: filters.isAvailable,
+      });
       
       // Transform image keys to public URLs in the agents response
       const transformedAgents = await this.imageUrlTransformer.transformCommonImageFields(agents);
       
       const response: ApiResponse = {
         success: true,
-        data: { agents: transformedAgents },
+        data: {
+          agents: transformedAgents,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         message: 'Delivery agents retrieved successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getAllDeliveryAgents: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in fetching delivery agents', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in fetching delivery agents',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 

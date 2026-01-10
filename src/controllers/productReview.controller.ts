@@ -244,15 +244,42 @@ export class ProductReviewController {
   // Get all reviews (Admin)
   getAllReviews = async (req: Request, res: Response): Promise<void> => {
     try {
-      const filters = req.query;
+      const { page, limit, status, productId, rating, search } = req.query;
+      
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      const filters: any = {
+        page: pageNum,
+        limit: limitNum,
+        status: status as string,
+        productId: productId as string,
+        rating: rating as string,
+        search: search as string,
+      };
+
       const reviews = await reviewRepository.getAll(filters);
+      const totalCount = await reviewRepository.countFiltered({
+        status: status as string,
+        productId: productId as string,
+        rating: rating as string,
+        search: search as string,
+      });
       
       // Transform image keys to public URLs in the reviews response
       const transformedReviews = await this.imageUrlTransformer.transformCommonImageFields(reviews);
       
       const response: ApiResponse = {
         success: true,
-        data: { reviews: transformedReviews },
+        data: {
+          reviews: transformedReviews,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         message: 'All reviews retrieved successfully',
         timestamp: new Date().toISOString(),
       };

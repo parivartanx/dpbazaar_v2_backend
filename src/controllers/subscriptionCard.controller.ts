@@ -16,9 +16,18 @@ export class SubscriptionCardController {
   listCards = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, search, status, visibility } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
       const cards = await subscriptionCardRepo.list({
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
+        search: search as string,
+        status: status as any,
+        visibility: visibility as any,
+      });
+
+      const totalCount = await subscriptionCardRepo.countFiltered({
         search: search as string,
         status: status as any,
         visibility: visibility as any,
@@ -30,7 +39,15 @@ export class SubscriptionCardController {
       const response: ApiResponse = {
         success: true,
         message: 'Subscription cards fetched successfully',
-        data: { cards: transformedCards },
+        data: {
+          cards: transformedCards,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
