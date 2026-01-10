@@ -116,4 +116,17 @@ export class UserSubscriptionCardRepository implements IUserSubscriptionCardRepo
       }
     });
   }
+
+  async countFiltered(params?: {
+    customerId?: string;
+    status?: CardSubscriptionStatus;
+  }): Promise<number> {
+    const { customerId, status } = params || {};
+    const where: any = {};
+
+    if (customerId) where.customerId = customerId;
+    if (status) where.status = status;
+
+    return prisma.userSubscriptionCard.count({ where });
+  }
 }

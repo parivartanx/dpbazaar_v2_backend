@@ -12,4 +12,8 @@ export interface ISessionRepository {
   deleteById(id: string): Promise<Session>;
 
   deleteByUserId(userId: string): Promise<number>;
+  
+  countFiltered(params?: {
+    userId?: string;
+  }): Promise<number>;
 }

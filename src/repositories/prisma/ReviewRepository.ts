@@ -7,8 +7,24 @@ import { USER_FIELDS_SELECT } from '../constants';
 
 export class ReviewRepository implements IReviewRepository {
   async getAll(filters?: any): Promise<Review[]> {
-    return prisma.review.findMany({
-      where: filters,
+    const { page, limit, status, productId, rating, search, ...restFilters } = filters || {};
+    
+    const where: any = { ...restFilters };
+    
+    if (status) where.status = status;
+    if (productId) where.productId = productId;
+    if (rating) where.rating = Number(rating);
+    
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { comment: { contains: search, mode: 'insensitive' } },
+        { product: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const query: any = {
+      where,
       include: { 
         product: { select: { name: true, slug: true, sku: true } }, 
         customer: {
@@ -20,7 +36,14 @@ export class ReviewRepository implements IReviewRepository {
         },
       },
       orderBy: { createdAt: 'desc' }
-    });
+    };
+
+    if (page && limit) {
+      query.skip = (page - 1) * limit;
+      query.take = limit;
+    }
+
+    return prisma.review.findMany(query);
   }
 
   async getById(id: string): Promise<Review | null> {
@@ -73,5 +96,25 @@ export class ReviewRepository implements IReviewRepository {
         sellerRespondedAt: new Date()
       } 
     });
+  }
+
+  async countFiltered(filters?: any): Promise<number> {
+    const { status, productId, rating, search, ...restFilters } = filters || {};
+    
+    const where: any = { ...restFilters };
+    
+    if (status) where.status = status;
+    if (productId) where.productId = productId;
+    if (rating) where.rating = Number(rating);
+    
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { comment: { contains: search, mode: 'insensitive' } },
+        { product: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    return prisma.review.count({ where });
   }
 }

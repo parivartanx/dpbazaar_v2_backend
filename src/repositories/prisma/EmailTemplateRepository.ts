@@ -34,9 +34,45 @@ export class EmailTemplateRepository implements IEmailTemplateRepository {
     });
   }
 
-  async getAll(): Promise<EmailTemplate[]> {
-    return prisma.emailTemplate.findMany({
+  async getAll(filters?: any): Promise<EmailTemplate[]> {
+    const { page, limit, isActive, search } = filters || {};
+    const where: any = {};
+
+    if (isActive !== undefined) where.isActive = isActive === 'true' || isActive === true;
+    if (search) {
+      where.OR = [
+        { code: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { subject: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const query: any = {
+      where,
       orderBy: { createdAt: 'desc' }
-    });
+    };
+
+    if (page && limit) {
+      query.skip = (page - 1) * limit;
+      query.take = limit;
+    }
+
+    return prisma.emailTemplate.findMany(query);
+  }
+
+  async countFiltered(filters?: any): Promise<number> {
+    const { isActive, search } = filters || {};
+    const where: any = {};
+
+    if (isActive !== undefined) where.isActive = isActive === 'true' || isActive === true;
+    if (search) {
+      where.OR = [
+        { code: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { subject: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    return prisma.emailTemplate.count({ where });
   }
 }

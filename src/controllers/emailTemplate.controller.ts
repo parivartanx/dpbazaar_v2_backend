@@ -8,17 +8,47 @@ const emailTemplateRepository = new EmailTemplateRepository();
 export class EmailTemplateController {
   getAllTemplates = async (req: Request, res: Response): Promise<void> => {
     try {
-      const templates = await emailTemplateRepository.getAll();
+      const { page, limit, isActive, search } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      const filters: any = {
+        page: pageNum,
+        limit: limitNum,
+        isActive: isActive !== undefined ? (isActive === 'true') : undefined,
+        search: search as string,
+      };
+
+      const templates = await emailTemplateRepository.getAll(filters);
+      const totalCount = await emailTemplateRepository.countFiltered({
+        isActive: filters.isActive,
+        search: search as string,
+      });
+
       const response: ApiResponse = {
         success: true,
-        data: { templates },
+        data: {
+          templates,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         message: 'Email templates retrieved successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getAllTemplates: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in fetching email templates', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in fetching email templates',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 

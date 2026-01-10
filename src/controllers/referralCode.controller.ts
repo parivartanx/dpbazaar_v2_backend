@@ -18,10 +18,12 @@ export class ReferralCodeController {
   listReferralCodes = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, customerId, isActive } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
       
       const params: any = {
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
         customerId: customerId as string,
       };
       
@@ -30,11 +32,23 @@ export class ReferralCodeController {
       }
       
       const referralCodes = await referralCodeRepo.list(params);
+      const totalCount = await referralCodeRepo.countFiltered({
+        customerId: customerId as string,
+        isActive: params.isActive,
+      });
 
       const response: ApiResponse = {
         success: true,
         message: 'Referral codes fetched successfully',
-        data: { referralCodes },
+        data: {
+          referralCodes,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

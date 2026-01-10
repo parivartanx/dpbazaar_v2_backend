@@ -5,12 +5,12 @@ import { TransactionType, TransactionReason, TransactionStatus } from '@prisma/c
  * CREATE WALLET TRANSACTION SCHEMA
  */
 export const createWalletTransactionSchema = Joi.object({
-  walletId: Joi.string().required().messages({
+  walletId: Joi.string().trim().required().messages({
     'string.empty': 'Wallet ID is required',
     'any.required': 'Wallet ID is required',
   }),
 
-  customerId: Joi.string().required().messages({
+  customerId: Joi.string().trim().required().messages({
     'string.empty': 'Customer ID is required',
     'any.required': 'Customer ID is required',
   }),
@@ -56,40 +56,40 @@ export const createWalletTransactionSchema = Joi.object({
     'any.required': 'Balance after is required',
   }),
 
-  cardId: Joi.string().optional().messages({
+  cardId: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Card ID cannot be empty',
   }),
 
-  subscriptionId: Joi.string().optional().messages({
+  subscriptionId: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Subscription ID cannot be empty',
   }),
 
-  referralId: Joi.string().optional().messages({
+  referralId: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Referral ID cannot be empty',
   }),
 
-  rewardPercent: Joi.number().precision(2).min(0).max(100).optional().messages({
+  rewardPercent: Joi.number().precision(2).min(0).max(100).optional().allow(null).messages({
     'number.base': 'Reward percent must be a number',
     'number.min': 'Reward percent cannot be negative',
     'number.max': 'Reward percent cannot exceed 100',
   }),
 
-  targetAmount: Joi.number().precision(2).min(0).optional().messages({
+  targetAmount: Joi.number().precision(2).min(0).optional().allow(null).messages({
     'number.base': 'Target amount must be a number',
     'number.min': 'Target amount cannot be negative',
   }),
 
-  capPercentage: Joi.number().integer().min(0).max(100).optional().messages({
+  capPercentage: Joi.number().integer().min(0).max(100).optional().allow(null).messages({
     'number.base': 'Cap percentage must be a number',
     'number.min': 'Cap percentage cannot be negative',
     'number.max': 'Cap percentage cannot exceed 100',
   }),
 
-  idempotencyKey: Joi.string().optional().messages({
+  idempotencyKey: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Idempotency key cannot be empty',
   }),
 
-  metadata: Joi.object().optional().messages({
+  metadata: Joi.object().optional().allow(null).messages({
     'object.base': 'Metadata must be an object',
   }),
 });
@@ -120,40 +120,40 @@ export const updateWalletTransactionSchema = Joi.object({
     'number.min': 'Balance after cannot be negative',
   }),
 
-  cardId: Joi.string().optional().messages({
+  cardId: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Card ID cannot be empty',
   }),
 
-  subscriptionId: Joi.string().optional().messages({
+  subscriptionId: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Subscription ID cannot be empty',
   }),
 
-  referralId: Joi.string().optional().messages({
+  referralId: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Referral ID cannot be empty',
   }),
 
-  rewardPercent: Joi.number().precision(2).min(0).max(100).optional().messages({
+  rewardPercent: Joi.number().precision(2).min(0).max(100).optional().allow(null).messages({
     'number.base': 'Reward percent must be a number',
     'number.min': 'Reward percent cannot be negative',
     'number.max': 'Reward percent cannot exceed 100',
   }),
 
-  targetAmount: Joi.number().precision(2).min(0).optional().messages({
+  targetAmount: Joi.number().precision(2).min(0).optional().allow(null).messages({
     'number.base': 'Target amount must be a number',
     'number.min': 'Target amount cannot be negative',
   }),
 
-  capPercentage: Joi.number().integer().min(0).max(100).optional().messages({
+  capPercentage: Joi.number().integer().min(0).max(100).optional().allow(null).messages({
     'number.base': 'Cap percentage must be a number',
     'number.min': 'Cap percentage cannot be negative',
     'number.max': 'Cap percentage cannot exceed 100',
   }),
 
-  idempotencyKey: Joi.string().optional().messages({
+  idempotencyKey: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Idempotency key cannot be empty',
   }),
 
-  metadata: Joi.object().optional().messages({
+  metadata: Joi.object().optional().allow(null).messages({
     'object.base': 'Metadata must be an object',
   }),
 });

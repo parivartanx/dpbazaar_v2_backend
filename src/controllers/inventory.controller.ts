@@ -8,25 +8,52 @@ const inventoryRepository = new InventoryRepository();
 export class InventoryController {
   getAllInventory = async (req: Request, res: Response): Promise<void> => {
     try {
-      const filters = {
-        page: req.query.page ? parseInt(req.query.page as string) : undefined,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-        warehouseId: req.query.warehouseId as string,
-        productId: req.query.productId as string,
-        variantId: req.query.variantId as string,
+      const { page, limit, warehouseId, productId, variantId, search } = req.query;
+      
+      const pageNum = page ? parseInt(page as string) : 1;
+      const limitNum = limit ? parseInt(limit as string) : 20;
+
+      const filters: any = {
+        page: pageNum,
+        limit: limitNum,
+        warehouseId: warehouseId as string,
+        productId: productId as string,
+        variantId: variantId as string,
+        search: search as string,
       };
 
       const inventory = await inventoryRepository.getAll(filters);
+      const totalCount = await inventoryRepository.countFiltered({
+        warehouseId: warehouseId as string,
+        productId: productId as string,
+        variantId: variantId as string,
+        search: search as string,
+      });
+
       const response: ApiResponse = {
         success: true,
-        data: { inventory },
+        data: {
+          inventory,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         message: 'Inventory records retrieved successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getAllInventory: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in fetching inventory', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in fetching inventory',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 
@@ -53,7 +80,13 @@ export class InventoryController {
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getInventoryById: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in fetching inventory record', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in fetching inventory record',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 
@@ -78,7 +111,13 @@ export class InventoryController {
       res.status(201).json(response);
     } catch (error) {
       logger.error(`Error in createInventory: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in creating inventory record', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in creating inventory record',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 
@@ -100,7 +139,13 @@ export class InventoryController {
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in updateInventory: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in updating inventory record', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in updating inventory record',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 
@@ -121,7 +166,13 @@ export class InventoryController {
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in deleteInventory: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in deleting inventory record', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in deleting inventory record',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 }

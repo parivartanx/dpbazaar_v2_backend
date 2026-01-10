@@ -7,4 +7,5 @@ export interface IPaymentRepository {
   update(id: string, data: Prisma.PaymentUpdateInput): Promise<Payment>;
   delete(id: string): Promise<Payment>;
   list(filters?: { orderId?: string; status?: string; method?: string; page?: number; limit?: number }): Promise<Payment[]>;
+  countFiltered(filters?: { orderId?: string; status?: string; method?: string }): Promise<number>;
 }

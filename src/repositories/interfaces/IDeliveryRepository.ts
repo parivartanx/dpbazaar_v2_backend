@@ -8,4 +8,5 @@ export interface IDeliveryRepository {
   getAll(filters?: any): Promise<Delivery[]>;
   findByOrderId(orderId: string): Promise<Delivery | null>;
   findByAgentId(agentId: string): Promise<Delivery[]>;
+  countFiltered(filters?: any): Promise<number>;
 }

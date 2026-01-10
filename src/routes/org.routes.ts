@@ -37,6 +37,8 @@ import {
   toggleActiveSchema,
 } from '../validators/category.validaton';
 import {
+  createProductSchema,
+  updateProductSchema,
   createVariantSchema,
   updateVariantSchema,
 } from '../validators/product.validation';
@@ -299,8 +301,8 @@ router.patch('/categories/:id/activate', checkPermission('categories', Permissio
  */
 router.get('/products', checkPermission('products', PermissionAction.READ), productController.getAllProducts);
 router.get('/products/:id', checkPermission('products', PermissionAction.READ), productController.getProductById);
-router.post('/products', checkPermission('products', PermissionAction.CREATE), productController.createProduct);
-router.put('/products/:id', checkPermission('products', PermissionAction.UPDATE), productController.updateProduct);
+router.post('/products', checkPermission('products', PermissionAction.CREATE), validateJoi(createProductSchema), productController.createProduct);
+router.put('/products/:id', checkPermission('products', PermissionAction.UPDATE), validateJoi(updateProductSchema), productController.updateProduct);
 router.delete('/products/:id', checkPermission('products', PermissionAction.DELETE), productController.softDeleteProduct);
 router.patch('/products/:id/restore', checkPermission('products', PermissionAction.UPDATE), productController.restoreProduct);
 

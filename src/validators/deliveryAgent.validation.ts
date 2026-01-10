@@ -1,10 +1,10 @@
 import Joi from 'joi';
 
 export const createDeliveryAgentSchema = Joi.object({
-  firstName: Joi.string().required().messages({
+  firstName: Joi.string().trim().required().messages({
     'any.required': 'First name is required'
   }),
-  lastName: Joi.string().required().messages({
+  lastName: Joi.string().trim().required().messages({
     'any.required': 'Last name is required'
   }),
   email: Joi.string().email().required().messages({
@@ -17,34 +17,58 @@ export const createDeliveryAgentSchema = Joi.object({
     'string.max': 'Phone number cannot exceed 15 digits',
     'any.required': 'Phone number is required'
   }),
-  agentCode: Joi.string().required().messages({
+  agentCode: Joi.string().trim().required().messages({
     'any.required': 'Agent code is required'
   }),
-  vehicleType: Joi.string().optional().allow(null, ''),
+  alternatePhone: Joi.string().pattern(/^[0-9]+$/).min(10).max(15).optional().allow(null, '').messages({
+    'string.pattern.base': 'Alternate phone number must contain only digits',
+  }),
+  profileImage: Joi.string().uri().optional().allow(null, ''),
+  vehicleType: Joi.string().valid('BIKE', 'SCOOTER', 'CAR', 'VAN').optional().allow(null, ''),
   vehicleNumber: Joi.string().optional().allow(null, ''),
+  vehicleModel: Joi.string().optional().allow(null, ''),
   licenseNumber: Joi.string().optional().allow(null, ''),
+  licenseExpiry: Joi.date().iso().optional().allow(null, ''),
+  insuranceExpiry: Joi.date().iso().optional().allow(null, ''),
   status: Joi.string().valid('ACTIVE', 'INACTIVE', 'ON_LEAVE', 'SUSPENDED', 'TERMINATED').default('ACTIVE'),
   employmentType: Joi.string().valid('FULL_TIME', 'PART_TIME', 'CONTRACT').default('CONTRACT'),
-  zones: Joi.array().items(Joi.string()).optional(),
+  zones: Joi.array().items(Joi.string()).optional().default([]),
+  currentZone: Joi.string().optional().allow(null, ''),
   isAvailable: Joi.boolean().default(true),
-  bankDetails: Joi.object().optional(),
-  identityProof: Joi.object().optional(),
-  addressProof: Joi.object().optional(),
+  availableFrom: Joi.date().iso().optional().allow(null, ''),
+  availableUntil: Joi.date().iso().optional().allow(null, ''),
+  lastKnownLat: Joi.number().min(-90).max(90).optional().allow(null, ''),
+  lastKnownLng: Joi.number().min(-180).max(180).optional().allow(null, ''),
+  bankDetails: Joi.object().optional().allow(null),
+  identityProof: Joi.object().optional().allow(null),
+  addressProof: Joi.object().optional().allow(null),
+  metadata: Joi.object().optional().allow(null),
 });
 
 export const updateDeliveryAgentSchema = Joi.object({
-  firstName: Joi.string().optional(),
-  lastName: Joi.string().optional(),
+  firstName: Joi.string().trim().optional(),
+  lastName: Joi.string().trim().optional(),
   email: Joi.string().email().optional(),
   phone: Joi.string().pattern(/^[0-9]+$/).min(10).max(15).optional(),
-  vehicleType: Joi.string().optional().allow(null, ''),
+  alternatePhone: Joi.string().pattern(/^[0-9]+$/).min(10).max(15).optional().allow(null, ''),
+  profileImage: Joi.string().uri().optional().allow(null, ''),
+  vehicleType: Joi.string().valid('BIKE', 'SCOOTER', 'CAR', 'VAN').optional().allow(null, ''),
   vehicleNumber: Joi.string().optional().allow(null, ''),
+  vehicleModel: Joi.string().optional().allow(null, ''),
   licenseNumber: Joi.string().optional().allow(null, ''),
+  licenseExpiry: Joi.date().iso().optional().allow(null, ''),
+  insuranceExpiry: Joi.date().iso().optional().allow(null, ''),
   status: Joi.string().valid('ACTIVE', 'INACTIVE', 'ON_LEAVE', 'SUSPENDED', 'TERMINATED').optional(),
   employmentType: Joi.string().valid('FULL_TIME', 'PART_TIME', 'CONTRACT').optional(),
   zones: Joi.array().items(Joi.string()).optional(),
+  currentZone: Joi.string().optional().allow(null, ''),
   isAvailable: Joi.boolean().optional(),
-  bankDetails: Joi.object().optional(),
-  identityProof: Joi.object().optional(),
-  addressProof: Joi.object().optional(),
+  availableFrom: Joi.date().iso().optional().allow(null, ''),
+  availableUntil: Joi.date().iso().optional().allow(null, ''),
+  lastKnownLat: Joi.number().min(-90).max(90).optional().allow(null, ''),
+  lastKnownLng: Joi.number().min(-180).max(180).optional().allow(null, ''),
+  bankDetails: Joi.object().optional().allow(null),
+  identityProof: Joi.object().optional().allow(null),
+  addressProof: Joi.object().optional().allow(null),
+  metadata: Joi.object().optional().allow(null),
 });

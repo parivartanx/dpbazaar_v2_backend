@@ -21,9 +21,17 @@ export class WalletController {
   listWallets = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, customerId, type } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
       const wallets = await walletRepo.list({
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
+        customerId: customerId as string,
+        type: type as any,
+      });
+
+      const totalCount = await walletRepo.countFiltered({
         customerId: customerId as string,
         type: type as any,
       });
@@ -31,7 +39,15 @@ export class WalletController {
       const response: ApiResponse = {
         success: true,
         message: 'Wallets fetched successfully',
-        data: { wallets },
+        data: {
+          wallets,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

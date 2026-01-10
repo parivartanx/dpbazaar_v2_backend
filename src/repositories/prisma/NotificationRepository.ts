@@ -72,4 +72,15 @@ export class NotificationRepository implements INotificationRepository {
       data: { isRead: true }
     });
   }
+
+  async countFiltered(filters?: any): Promise<number> {
+    const { userId, type, isRead } = filters || {};
+    const where: any = {};
+
+    if (userId) where.userId = userId;
+    if (type) where.type = type;
+    if (isRead !== undefined) where.isRead = isRead === 'true' || isRead === true;
+
+    return prisma.notification.count({ where });
+  }
 }

@@ -35,4 +35,15 @@ export class SessionRepository implements ISessionRepository {
     const deleted = await prisma.session.deleteMany({ where: { userId } });
     return deleted.count;
   }
+
+  async countFiltered(params?: {
+    userId?: string;
+  }): Promise<number> {
+    const { userId } = params || {};
+    const where: any = {};
+
+    if (userId) where.userId = userId;
+
+    return prisma.session.count({ where });
+  }
 }

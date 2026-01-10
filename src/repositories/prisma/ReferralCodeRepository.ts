@@ -144,4 +144,17 @@ export class ReferralCodeRepository implements IReferralCodeRepository {
       }
     });
   }
+
+  async countFiltered(params?: {
+    customerId?: string;
+    isActive?: boolean;
+  }): Promise<number> {
+    const { customerId, isActive } = params || {};
+    const where: any = {};
+
+    if (customerId) where.customerId = customerId;
+    if (isActive !== undefined) where.isActive = isActive;
+
+    return prisma.referralCode.count({ where });
+  }
 }

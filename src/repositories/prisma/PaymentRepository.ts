@@ -40,4 +40,15 @@ export class PaymentRepository implements IPaymentRepository {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async countFiltered(filters?: { orderId?: string; status?: string; method?: string }): Promise<number> {
+    const { orderId, status, method } = filters || {};
+    
+    const where: any = {};
+    if (orderId) where.orderId = orderId;
+    if (status) where.status = status;
+    if (method) where.method = method;
+
+    return prisma.payment.count({ where });
+  }
 }

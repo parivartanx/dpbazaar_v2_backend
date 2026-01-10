@@ -5,14 +5,18 @@ import { CardSubscriptionStatus } from '@prisma/client';
  * CREATE USER SUBSCRIPTION CARD SCHEMA
  */
 export const createUserSubscriptionCardSchema = Joi.object({
-  customerId: Joi.string().required().messages({
+  customerId: Joi.string().trim().required().messages({
     'string.empty': 'Customer ID is required',
     'any.required': 'Customer ID is required',
   }),
 
-  cardId: Joi.string().required().messages({
+  cardId: Joi.string().trim().required().messages({
     'string.empty': 'Card ID is required',
     'any.required': 'Card ID is required',
+  }),
+
+  referralCodeId: Joi.string().trim().optional().allow(null, '').messages({
+    'string.base': 'Referral code ID must be a string',
   }),
 
   status: Joi.string()
@@ -50,12 +54,12 @@ export const createUserSubscriptionCardSchema = Joi.object({
  * PURCHASE SUBSCRIPTION CARD SCHEMA
  */
 export const purchaseSubscriptionCardSchema = Joi.object({
-  cardId: Joi.string().required().messages({
+  cardId: Joi.string().trim().required().messages({
     'string.empty': 'Card ID is required',
     'any.required': 'Card ID is required',
   }),
 
-  referralCode: Joi.string().optional().allow(null, '').messages({
+  referralCode: Joi.string().trim().optional().allow(null, '').messages({
     'string.empty': 'Referral code cannot be empty',
   }),
 });
@@ -91,4 +95,11 @@ export const updateUserSubscriptionCardSchema = Joi.object({
     'number.base': 'Current amount must be a number',
     'number.min': 'Current amount cannot be negative',
   }),
+
+  referralCodeId: Joi.string().trim().optional().allow(null, '').messages({
+    'string.base': 'Referral code ID must be a string',
+  }),
+
+  cardId: Joi.string().trim().optional(),
+  customerId: Joi.string().trim().optional(),
 });

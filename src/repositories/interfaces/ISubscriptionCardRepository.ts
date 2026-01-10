@@ -26,4 +26,10 @@ export interface ISubscriptionCardRepository {
   softDelete(id: string): Promise<SubscriptionCard>;
 
   restore(id: string): Promise<SubscriptionCard>;
+
+  countFiltered(params?: {
+    search?: string;
+    status?: CardStatus;
+    visibility?: Visibility;
+  }): Promise<number>;
 }

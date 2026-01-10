@@ -163,4 +163,19 @@ export class ReferralHistoryRepository implements IReferralHistoryRepository {
       }
     });
   }
+
+  async countFiltered(params?: {
+    referrerId?: string;
+    referredUserId?: string;
+    status?: ReferralStatus;
+  }): Promise<number> {
+    const { referrerId, referredUserId, status } = params || {};
+    const where: any = {};
+
+    if (referrerId) where.referrerId = referrerId;
+    if (referredUserId) where.referredUserId = referredUserId;
+    if (status) where.status = status;
+
+    return prisma.referralHistory.count({ where });
+  }
 }

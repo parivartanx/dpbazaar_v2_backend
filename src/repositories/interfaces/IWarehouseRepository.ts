@@ -7,4 +7,5 @@ export interface IWarehouseRepository {
   getById(id: string): Promise<Warehouse | null>;
   getAll(filters?: any): Promise<Warehouse[]>;
   getByCode(code: string): Promise<Warehouse | null>;
+  countFiltered(filters?: any): Promise<number>;
 }

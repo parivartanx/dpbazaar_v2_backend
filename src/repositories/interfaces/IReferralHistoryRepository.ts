@@ -26,4 +26,10 @@ export interface IReferralHistoryRepository {
   ): Promise<ReferralHistory>;
 
   delete(id: string): Promise<ReferralHistory>;
+  
+  countFiltered(params?: {
+    referrerId?: string;
+    referredUserId?: string;
+    status?: ReferralStatus;
+  }): Promise<number>;
 }

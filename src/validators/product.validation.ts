@@ -54,10 +54,20 @@ const createProductSchema = Joi.object({
   shortDescription: Joi.string().max(255).optional().allow(null).messages({
     'string.max': 'Short description must be at most {#limit} characters',
   }),
-  sku: Joi.string().max(50).optional().messages({
+  sku: Joi.string().trim().max(50).required().messages({
+    'string.base': 'SKU must be a string',
+    'string.empty': 'SKU is required',
     'string.max': 'SKU must be at most {#limit} characters',
+    'any.required': 'SKU is required',
   }),
-  slug: Joi.string().optional(),
+  slug: Joi.string().trim().required().messages({
+    'string.base': 'Slug must be a string',
+    'string.empty': 'Slug is required',
+    'any.required': 'Slug is required',
+  }),
+  barcode: Joi.string().trim().max(50).optional().allow(null, '').messages({
+    'string.max': 'Barcode must be at most {#limit} characters',
+  }),
   taxRate: Joi.number().min(0).max(100).optional().messages({
     'number.min': 'Tax rate cannot be negative',
     'number.max': 'Tax rate cannot exceed {#limit}%',
@@ -132,7 +142,7 @@ const createVariantSchema = Joi.object({
   }),
 
   attributes: Joi.object()
-    .pattern(Joi.string(), Joi.any())
+    .pattern(Joi.string().trim(), Joi.any())
     .required()
     .messages({
       'object.base': 'Attributes must be a valid object',

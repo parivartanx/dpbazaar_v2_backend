@@ -44,7 +44,7 @@ export class WarehouseRepository implements IWarehouseRepository {
       ];
     }
     if (type) where.type = type;
-    if (isActive !== undefined) where.isActive = isActive === 'true';
+    if (isActive !== undefined) where.isActive = isActive === 'true' || isActive === true;
 
     const query: any = {
       where,
@@ -70,5 +70,21 @@ export class WarehouseRepository implements IWarehouseRepository {
 
   async getByCode(code: string): Promise<Warehouse | null> {
     return prisma.warehouse.findUnique({ where: { code } });
+  }
+
+  async countFiltered(filters?: any): Promise<number> {
+    const { search, type, isActive } = filters || {};
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (type) where.type = type;
+    if (isActive !== undefined) where.isActive = isActive === 'true' || isActive === true;
+
+    return prisma.warehouse.count({ where });
   }
 }

@@ -12,9 +12,18 @@ export class CardController {
   listCards = async (req: Request, res: Response): Promise<void> => {
     try {
       const { page, limit, search, status, visibility } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
       const cards = await cardRepo.list({
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
+        search: search as string,
+        status: status as string,
+        visibility: visibility as string,
+      });
+
+      const totalCount = await cardRepo.countFiltered({
         search: search as string,
         status: status as string,
         visibility: visibility as string,
@@ -23,7 +32,15 @@ export class CardController {
       const response: ApiResponse = {
         success: true,
         message: 'Cards fetched successfully',
-        data: { cards },
+        data: {
+          cards,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

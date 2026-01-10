@@ -12,25 +12,57 @@ export class DeliveryController {
   private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
   getAllDeliveries = async (req: Request, res: Response): Promise<void> => {
     try {
-      const filters: any = { ...req.query };
-      if (filters.page) filters.page = Number(filters.page);
-      if (filters.limit) filters.limit = Number(filters.limit);
+      const { page, limit, status, agentId, startDate, endDate, search } = req.query;
+      
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      const filters: any = {
+        page: pageNum,
+        limit: limitNum,
+        status: status as string,
+        agentId: agentId as string,
+        startDate: startDate as string,
+        endDate: endDate as string,
+        search: search as string,
+      };
 
       const deliveries = await deliveryRepository.getAll(filters);
+      const totalCount = await deliveryRepository.countFiltered({
+        status: status as string,
+        agentId: agentId as string,
+        startDate: startDate as string,
+        endDate: endDate as string,
+        search: search as string,
+      });
       
       // Transform image keys to public URLs in the deliveries response
       const transformedDeliveries = await this.imageUrlTransformer.transformCommonImageFields(deliveries);
       
       const response: ApiResponse = {
         success: true,
-        data: { deliveries: transformedDeliveries },
+        data: {
+          deliveries: transformedDeliveries,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         message: 'Deliveries retrieved successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getAllDeliveries: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in fetching deliveries', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in fetching deliveries',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 

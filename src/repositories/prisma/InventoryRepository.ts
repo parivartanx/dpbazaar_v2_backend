@@ -39,12 +39,22 @@ export class InventoryRepository implements IInventoryRepository {
   }
 
   async getAll(filters?: any): Promise<Inventory[]> {
-    const { page, limit, warehouseId, productId, variantId } = filters || {};
+    const { page, limit, warehouseId, productId, variantId, search } = filters || {};
     const where: any = {};
 
     if (warehouseId) where.warehouseId = warehouseId;
     if (productId) where.productId = productId;
     if (variantId) where.variantId = variantId;
+
+    // Add search capability
+    if (search) {
+      where.OR = [
+        { product: { name: { contains: search, mode: 'insensitive' } } },
+        { product: { sku: { contains: search, mode: 'insensitive' } } },
+        { warehouse: { name: { contains: search, mode: 'insensitive' } } },
+        { warehouse: { code: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
 
     const query: any = {
       where,
@@ -78,5 +88,26 @@ export class InventoryRepository implements IInventoryRepository {
         variantId: variantId || null
       }
     });
+  }
+
+  async countFiltered(filters?: any): Promise<number> {
+    const { warehouseId, productId, variantId, search } = filters || {};
+    const where: any = {};
+
+    if (warehouseId) where.warehouseId = warehouseId;
+    if (productId) where.productId = productId;
+    if (variantId) where.variantId = variantId;
+
+    // Add search capability if needed - search in related product/warehouse names
+    if (search) {
+      where.OR = [
+        { product: { name: { contains: search, mode: 'insensitive' } } },
+        { product: { sku: { contains: search, mode: 'insensitive' } } },
+        { warehouse: { name: { contains: search, mode: 'insensitive' } } },
+        { warehouse: { code: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    return prisma.inventory.count({ where });
   }
 }

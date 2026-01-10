@@ -8,22 +8,49 @@ const notificationRepository = new NotificationRepository();
 export class NotificationController {
   getAllNotifications = async (req: Request, res: Response): Promise<void> => {
     try {
-      const filters: any = { ...req.query };
-      if (filters.page) filters.page = Number(filters.page);
-      if (filters.limit) filters.limit = Number(filters.limit);
+      const { page, limit, userId, type, isRead } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      const filters: any = {
+        page: pageNum,
+        limit: limitNum,
+        userId: userId as string,
+        type: type as string,
+        isRead: isRead !== undefined ? (isRead === 'true') : undefined,
+      };
 
       const notifications = await notificationRepository.getAll(filters);
+      const totalCount = await notificationRepository.countFiltered({
+        userId: userId as string,
+        type: type as string,
+        isRead: filters.isRead,
+      });
       
       const response: ApiResponse = {
         success: true,
-        data: { notifications },
+        data: {
+          notifications,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         message: 'Notifications retrieved successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getAllNotifications: ${error}`);
-      res.status(500).json({ success: false, message: 'Problem in fetching notifications', error: (error as Error).message });
+      const response: ApiResponse = {
+        success: false,
+        message: 'Problem in fetching notifications',
+        error: (error as Error).message,
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
     }
   };
 

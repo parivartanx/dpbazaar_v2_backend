@@ -9,23 +9,48 @@ export class VendorController {
   // List Vendors
   getAllVendors = async (req: Request, res: Response): Promise<void> => {
     try {
-        const filters: any = { ...req.query };
-        // parse page/limit numbers
-        if (filters.page) filters.page = Number(filters.page);
-        if (filters.limit) filters.limit = Number(filters.limit);
+        const { page, limit, search, status } = req.query;
+        
+        const pageNum = Number(page) || 1;
+        const limitNum = Number(limit) || 20;
+
+        const filters: any = {
+          page: pageNum,
+          limit: limitNum,
+          search: search as string,
+          status: status as string,
+        };
 
         const vendors = await vendorRepository.getAll(filters);
+        const totalCount = await vendorRepository.countFiltered({
+          search: search as string,
+          status: status as string,
+        });
         
         const response: ApiResponse = {
             success: true,
-            data: { vendors },
+            data: {
+              vendors,
+              pagination: {
+                currentPage: pageNum,
+                totalPages: Math.ceil(totalCount / limitNum),
+                totalItems: totalCount,
+                itemsPerPage: limitNum,
+              },
+            },
             message: 'Vendors retrieved successfully',
             timestamp: new Date().toISOString(),
         };
         res.status(200).json(response);
     } catch (error) {
         logger.error(`Error in getAllVendors: ${error}`);
-        res.status(500).json({ success: false, message: 'Problem in fetching vendors', error: (error as Error).message });
+        const response: ApiResponse = {
+          success: false,
+          message: 'Problem in fetching vendors',
+          error: (error as Error).message,
+          timestamp: new Date().toISOString(),
+        };
+        res.status(500).json(response);
     }
   };
 
@@ -53,7 +78,13 @@ export class VendorController {
         res.status(200).json(response);
     } catch (error) {
         logger.error(`Error in getVendorById: ${error}`);
-        res.status(500).json({ success: false, message: 'Problem in fetching vendor', error: (error as Error).message });
+        const response: ApiResponse = {
+          success: false,
+          message: 'Problem in fetching vendor',
+          error: (error as Error).message,
+          timestamp: new Date().toISOString(),
+        };
+        res.status(500).json(response);
     }
   };
 
@@ -70,7 +101,13 @@ export class VendorController {
         res.status(201).json(response);
     } catch (error) {
         logger.error(`Error in createVendor: ${error}`);
-        res.status(500).json({ success: false, message: 'Problem in creating vendor', error: (error as Error).message });
+        const response: ApiResponse = {
+          success: false,
+          message: 'Problem in creating vendor',
+          error: (error as Error).message,
+          timestamp: new Date().toISOString(),
+        };
+        res.status(500).json(response);
     }
   };
 
@@ -93,7 +130,13 @@ export class VendorController {
         res.status(200).json(response);
     } catch (error) {
         logger.error(`Error in updateVendor: ${error}`);
-        res.status(500).json({ success: false, message: 'Problem in updating vendor', error: (error as Error).message });
+        const response: ApiResponse = {
+          success: false,
+          message: 'Problem in updating vendor',
+          error: (error as Error).message,
+          timestamp: new Date().toISOString(),
+        };
+        res.status(500).json(response);
     }
   };
 
@@ -115,7 +158,13 @@ export class VendorController {
         res.status(200).json(response);
     } catch (error) {
         logger.error(`Error in deleteVendor: ${error}`);
-        res.status(500).json({ success: false, message: 'Problem in deleting vendor', error: (error as Error).message });
+        const response: ApiResponse = {
+          success: false,
+          message: 'Problem in deleting vendor',
+          error: (error as Error).message,
+          timestamp: new Date().toISOString(),
+        };
+        res.status(500).json(response);
     }
   };
   
@@ -140,7 +189,13 @@ export class VendorController {
         res.status(200).json(response);
     } catch (error) {
         logger.error(`Error in updateVendorStatus: ${error}`);
-        res.status(500).json({ success: false, message: 'Problem in updating vendor status', error: (error as Error).message });
+        const response: ApiResponse = {
+          success: false,
+          message: 'Problem in updating vendor status',
+          error: (error as Error).message,
+          timestamp: new Date().toISOString(),
+        };
+        res.status(500).json(response);
     }
   };
 }

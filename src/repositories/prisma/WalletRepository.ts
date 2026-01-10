@@ -65,4 +65,17 @@ export class WalletRepository implements IWalletRepository {
       where: { id },
     });
   }
+
+  async countFiltered(params?: {
+    customerId?: string;
+    type?: WalletType;
+  }): Promise<number> {
+    const { customerId, type } = params || {};
+    const where: any = {};
+
+    if (customerId) where.customerId = customerId;
+    if (type) where.type = type;
+
+    return prisma.wallet.count({ where });
+  }
 }

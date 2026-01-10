@@ -8,16 +8,29 @@ const sessionRepo = new SessionRepository();
 export class SessionController {
   listSessions = async (req: Request, res: Response): Promise<void> => {
     const { userId, page, limit } = req.query;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 20;
     try {
       const sessions = await sessionRepo.getAll({
         userId: userId as string,
-        page: Number(page) || 1,
-        limit: Number(limit) || 20,
+        page: pageNum,
+        limit: limitNum,
+      });
+      const totalCount = await sessionRepo.countFiltered({
+        userId: userId as string,
       });
       const response: ApiResponse = {
         success: true,
         message: 'Sessions retrieved successfully',
-        data: { sessions },
+        data: {
+          sessions,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          },
+        },
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);

@@ -35,14 +35,10 @@ export const createVendorSchema = Joi.object({
   }).required().messages({
     'any.required': 'Business Address is required',
   }),
-  warehouseAddresses: Joi.array().items(Joi.object()).optional(),
-  bankDetails: Joi.object({
-    accountNumber: Joi.string().required(),
-    ifscCode: Joi.string().required(),
-    accountHolderName: Joi.string().required(),
-    bankName: Joi.string().required(),
-  }).optional(),
+  warehouseAddresses: Joi.array().items(Joi.object()).optional().allow(null),
+  bankDetails: Joi.object().optional().allow(null),
   commissionRate: Joi.number().min(0).max(100).default(10).optional(),
+  metadata: Joi.object().optional().allow(null),
 });
 
 export const updateVendorSchema = Joi.object({

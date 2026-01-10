@@ -5,10 +5,14 @@ import { CardStatus, Visibility } from '@prisma/client';
  * CREATE SUBSCRIPTION CARD SCHEMA
  */
 export const createSubscriptionCardSchema = Joi.object({
-  name: Joi.string().min(2).max(100).required().messages({
+  name: Joi.string().trim().min(2).max(100).required().messages({
     'string.empty': 'Card name is required',
     'string.min': 'Card name must be at least 2 characters',
     'any.required': 'Card name is required',
+  }),
+
+  slug: Joi.string().trim().optional().allow(null, '').messages({
+    'string.base': 'Slug must be a string',
   }),
 
   price: Joi.number().precision(2).min(0).required().messages({
@@ -92,9 +96,13 @@ export const createSubscriptionCardSchema = Joi.object({
  * UPDATE SUBSCRIPTION CARD SCHEMA
  */
 export const updateSubscriptionCardSchema = Joi.object({
-  name: Joi.string().min(2).max(100).optional().messages({
+  name: Joi.string().trim().min(2).max(100).optional().messages({
     'string.empty': 'Card name cannot be empty',
     'string.min': 'Card name must be at least 2 characters',
+  }),
+
+  slug: Joi.string().trim().optional().allow(null, '').messages({
+    'string.base': 'Slug must be a string',
   }),
 
   price: Joi.number().precision(2).min(0).optional().messages({
