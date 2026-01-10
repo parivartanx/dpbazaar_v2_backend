@@ -276,16 +276,12 @@ export class ProductController {
         search,
         category,
         brand,
-        stockStatus
+        stockStatus,
       };
 
-      // Only filter by status if provided (for public route, we typically want ACTIVE products)
-      // But allow override via query param
+      // Only include status filter if explicitly provided (admin should see all statuses by default)
       if (status) {
         filters.status = status;
-      } else {
-        // Default to ACTIVE for public products
-        filters.status = 'ACTIVE';
       }
 
       // Convert string booleans to actual booleans
@@ -387,13 +383,11 @@ export class ProductController {
           pagination: {
             currentPage: page,
             totalPages,
-            totalCount,
-            limit,
-            hasNextPage: page < totalPages,
-            hasPrevPage: page > 1
+            totalItems: totalCount,
+            itemsPerPage: limit,
           }
         },
-        message: 'Products Found',
+        message: 'Products fetched successfully',
         timestamp: new Date().toISOString(),
       };
       res.status(200).json(response);
@@ -547,10 +541,20 @@ export class ProductController {
       if (!product) {
         const response: ApiResponse = {
           success: false,
-          message: 'Not Found',
+          message: 'Product not found',
           timestamp: new Date().toISOString(),
         };
         res.status(404).json(response);
+        return;
+      }
+
+      // Check if product is soft-deleted
+      if (product.deletedAt) {
+        res.status(404).json({
+          success: false,
+          message: 'Product not found',
+          timestamp: new Date().toISOString(),
+        });
         return;
       }
 
@@ -559,7 +563,7 @@ export class ProductController {
       
       res.status(200).json({
         success: true,
-        message: 'Product Found',
+        message: 'Product fetched successfully',
         data: { product: transformedProduct },
         timeStamp: new Date().toISOString(),
       });
@@ -626,18 +630,39 @@ export class ProductController {
   createProduct = async (req: Request, res: Response): Promise<void> => {
     try {
       const product = await this.repo.create(req.body);
+      
+      // Transform image keys to signed URLs in the product response
+      
       res.status(201).json({
         success: true,
-        message: 'Product Created',
-        data: { product },
-        timeStamp: new Date().toISOString(),
+        message: 'Product created successfully',
+        data: { product: product },
+        timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma unique constraint error (P2002) - SKU/slug/barcode uniqueness
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        let fieldName = 'field';
+        if (target?.includes('sku')) fieldName = 'SKU';
+        else if (target?.includes('slug')) fieldName = 'slug';
+        else if (target?.includes('barcode')) fieldName = 'barcode';
+        
+        res.status(409).json({
+          success: false,
+          error: 'Duplicate product',
+          message: `A product with this ${fieldName} already exists. Field(s): ${target?.join(', ') || 'sku, slug, barcode'}`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in creating Product',
+        message: 'Problem in Creating Product',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -651,7 +676,18 @@ export class ProductController {
         res.status(400).json({
           success: false,
           message: 'Product ID is required',
-          timeStamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if product exists before updating
+      const existingProduct = await this.repo.getById(id);
+      if (!existingProduct) {
+        res.status(404).json({
+          success: false,
+          message: 'Product not found',
+          timestamp: new Date().toISOString(),
         });
         return;
       }
@@ -663,16 +699,34 @@ export class ProductController {
       
       res.status(200).json({
         success: true,
-        message: 'product updated',
+        message: 'Product updated successfully',
         data: { product: transformedProduct },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma unique constraint error (P2002) - SKU/slug/barcode uniqueness
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        let fieldName = 'field';
+        if (target?.includes('sku')) fieldName = 'SKU';
+        else if (target?.includes('slug')) fieldName = 'slug';
+        else if (target?.includes('barcode')) fieldName = 'barcode';
+        
+        res.status(409).json({
+          success: false,
+          error: 'Duplicate product',
+          message: `A product with this ${fieldName} already exists. Field(s): ${target?.join(', ') || 'sku, slug, barcode'}`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in updating Product',
+        message: 'Problem in Updating Product',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -686,7 +740,28 @@ export class ProductController {
         res.status(400).json({
           success: false,
           message: 'Product ID is required',
-          timeStamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if product exists before deleting
+      const existingProduct = await this.repo.getById(id);
+      if (!existingProduct) {
+        res.status(404).json({
+          success: false,
+          message: 'Product not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if already soft-deleted
+      if (existingProduct.deletedAt) {
+        res.status(400).json({
+          success: false,
+          message: 'Product is already deleted',
+          timestamp: new Date().toISOString(),
         });
         return;
       }
@@ -698,16 +773,16 @@ export class ProductController {
       
       res.status(200).json({
         success: true,
-        message: 'Product deleted',
+        message: 'Product deleted successfully',
         data: { product: transformedProduct },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       logger.error(`error: ${error}`);
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in deleting Product',
+        message: 'Problem in Deleting Product',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -721,7 +796,28 @@ export class ProductController {
         res.status(400).json({
           success: false,
           message: 'Product ID is required',
-          timeStamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if product exists before restoring
+      const existingProduct = await this.repo.getById(id);
+      if (!existingProduct) {
+        res.status(404).json({
+          success: false,
+          message: 'Product not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if product is not soft-deleted
+      if (!existingProduct.deletedAt) {
+        res.status(400).json({
+          success: false,
+          message: 'Product is not deleted',
+          timestamp: new Date().toISOString(),
         });
         return;
       }
@@ -733,16 +829,16 @@ export class ProductController {
       
       res.status(200).json({
         success: true,
-        message: 'Product recovered successfully',
+        message: 'Product restored successfully',
         data: { product: transformedProduct },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       logger.error(`error: ${error}`);
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in restoring Product',
+        message: 'Problem in Restoring Product',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -920,10 +1016,23 @@ export class VariantController {
         res.status(400).json({
           success: false,
           message: 'Product ID is required',
-          timeStamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
         });
         return;
       }
+
+      // Check if product exists
+      const productRepo = new ProductRepository();
+      const product = await productRepo.getById(id);
+      if (!product) {
+        res.status(404).json({
+          success: false,
+          message: 'Product not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const variants = await this.repo.getByProduct(id);
       
       // Transform image keys to public URLs in the variants response
@@ -931,16 +1040,16 @@ export class VariantController {
       
       res.status(200).json({
         success: true,
-        message: 'Variants found',
+        message: 'Variants fetched successfully',
         data: { variants: transformedVariants },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       logger.error(`error: ${error}`);
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in getting ProductVariants',
+        message: 'Problem in Fetching Product Variants',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -954,10 +1063,23 @@ export class VariantController {
         res.status(400).json({
           success: false,
           message: 'Product ID is required',
-          timeStamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
         });
         return;
       }
+
+      // Check if product exists
+      const productRepo = new ProductRepository();
+      const product = await productRepo.getById(id);
+      if (!product) {
+        res.status(404).json({
+          success: false,
+          message: 'Product not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const variant = await this.repo.create(id, req.body);
       
       // Transform image keys to public URLs in the variant response
@@ -965,16 +1087,29 @@ export class VariantController {
       
       res.status(201).json({
         success: true,
-        message: 'variant created',
+        message: 'Variant created successfully',
         data: { variant: transformedVariant },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma unique constraint error (P2002) - variantSku uniqueness
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        res.status(409).json({
+          success: false,
+          error: 'Duplicate variant',
+          message: `A variant with this ${target?.includes('variantSku') ? 'SKU' : 'field'} already exists. Field(s): ${target?.join(', ') || 'variantSku'}`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in creating Product variants',
+        message: 'Problem in Creating Product Variant',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -988,10 +1123,22 @@ export class VariantController {
         res.status(400).json({
           success: false,
           message: 'Variant ID is required',
-          timeStamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
         });
         return;
       }
+
+      // Check if variant exists
+      const existingVariant = await this.repo.getById(id);
+      if (!existingVariant) {
+        res.status(404).json({
+          success: false,
+          message: 'Variant not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const variant = await this.repo.update(id, req.body);
       
       // Transform image keys to public URLs in the variant response
@@ -999,16 +1146,29 @@ export class VariantController {
       
       res.status(200).json({
         success: true,
-        message: 'variant updated',
+        message: 'Variant updated successfully',
         data: { variant: transformedVariant },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma unique constraint error (P2002) - variantSku uniqueness
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        res.status(409).json({
+          success: false,
+          error: 'Duplicate variant',
+          message: `A variant with this ${target?.includes('variantSku') ? 'SKU' : 'field'} already exists. Field(s): ${target?.join(', ') || 'variantSku'}`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in updating Product variants',
+        message: 'Problem in Updating Product Variant',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -1022,22 +1182,46 @@ export class VariantController {
         res.status(400).json({
           success: false,
           message: 'Variant ID is required',
-          timeStamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
         });
         return;
       }
+
+      // Check if variant exists
+      const existingVariant = await this.repo.getById(id);
+      if (!existingVariant) {
+        res.status(404).json({
+          success: false,
+          message: 'Variant not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       await this.repo.delete(id);
       res.status(200).json({
         success: true,
-        message: 'variant deleted successfully',
-        timeStamp: new Date().toISOString(),
+        message: 'Variant deleted successfully',
+        timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma foreign key constraint (P2003) - variant has inventory/order items
+      if (error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          error: 'Cannot delete variant',
+          message: 'Variant cannot be deleted because it has associated inventory or order items. Please remove or reassign them first.',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in deleting Product variants',
+        message: 'Problem in Deleting Product Variant',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -1051,27 +1235,49 @@ export class VariantController {
         res.status(400).json({
           success: false,
           message: 'Variant ID is required',
-          timeStamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
         });
         return;
       }
-      const variant = await this.repo.toggleActive(id, req.body.isActive);
+
+      // Check if variant exists
+      const existingVariant = await this.repo.getById(id);
+      if (!existingVariant) {
+        res.status(404).json({
+          success: false,
+          message: 'Variant not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const isActive = req.body.isActive;
+      if (typeof isActive !== 'boolean') {
+        res.status(400).json({
+          success: false,
+          message: 'isActive must be a boolean value',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const variant = await this.repo.toggleActive(id, isActive);
       
       // Transform image keys to public URLs in the variant response
       const transformedVariant = await this.imageUrlTransformer.transformCommonImageFields(variant);
       
       res.status(200).json({
         success: true,
-        message: 'variant toggle activated',
+        message: 'Variant active status updated successfully',
         data: { variant: transformedVariant },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       logger.error(`error: ${error}`);
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in toggle variant',
+        message: 'Problem in Toggling Variant Active Status',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -1089,19 +1295,46 @@ export class AttributeController {
   // Types
   getAllAttributes = async (req: Request, res: Response): Promise<void> => {
     try {
-      const attrs = await this.repo.getAllTypes();
+      const { search, page, limit } = req.query;
+      const pageNum = Number(page) || 1;
+      const limitNum = Number(limit) || 20;
+
+      let attrs = await this.repo.getAllTypes();
+
+      // Apply search filter if provided
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        attrs = attrs.filter(attr => 
+          attr.name.toLowerCase().includes(searchLower) ||
+          attr.dataType.toLowerCase().includes(searchLower)
+        );
+      }
+
+      // Apply pagination
+      const totalCount = attrs.length;
+      const startIndex = (pageNum - 1) * limitNum;
+      const paginatedAttrs = attrs.slice(startIndex, startIndex + limitNum);
+
       res.status(200).json({
         success: true,
-        message: 'Attribute Found',
-        data: { attrs },
-        timeStamp: new Date().toISOString(),
+        message: 'Attributes fetched successfully',
+        data: { 
+          attrs: paginatedAttrs,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+            totalItems: totalCount,
+            itemsPerPage: limitNum,
+          }
+        },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       logger.error(`error: ${error}`);
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in fetching Attributes',
+        message: 'Problem in Fetching Attributes',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -1113,16 +1346,29 @@ export class AttributeController {
       const attr = await this.repo.createType(req.body);
       res.status(201).json({
         success: true,
-        message: 'Attribute created',
+        message: 'Attribute created successfully',
         data: { attr },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma unique constraint error (P2002) - name uniqueness
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        res.status(409).json({
+          success: false,
+          error: 'Duplicate attribute',
+          message: `An attribute with this name already exists. Field(s): ${target?.join(', ') || 'name'}`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in creating Attribute',
+        message: 'Problem in Creating Attribute',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -1134,19 +1380,53 @@ export class AttributeController {
     res: Response
   ): Promise<void> => {
     try {
-      const attr = await this.repo.updateType(req.params.id, req.body);
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'Attribute ID is required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if attribute exists
+      const existingAttr = await this.repo.getTypeById(id);
+      if (!existingAttr) {
+        res.status(404).json({
+          success: false,
+          message: 'Attribute not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const attr = await this.repo.updateType(id, req.body);
       res.status(200).json({
         success: true,
-        message: 'Attribute Updated',
+        message: 'Attribute updated successfully',
         data: { attr },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`error: ${error}`);
+      
+      // Handle Prisma unique constraint error (P2002) - name uniqueness
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        res.status(409).json({
+          success: false,
+          error: 'Duplicate attribute',
+          message: `An attribute with this name already exists. Field(s): ${target?.join(', ') || 'name'}`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in updating Attribute',
+        message: 'Problem in Updating Attribute',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);
@@ -1158,18 +1438,51 @@ export class AttributeController {
     res: Response
   ): Promise<void> => {
     try {
-      await this.repo.deleteType(req.params.id);
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'Attribute ID is required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Check if attribute exists
+      const existingAttr = await this.repo.getTypeById(id);
+      if (!existingAttr) {
+        res.status(404).json({
+          success: false,
+          message: 'Attribute not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      await this.repo.deleteType(id);
       res.status(200).json({
         success: true,
-        message: 'Attribute deleted',
-        timeStamp: new Date().toISOString(),
+        message: 'Attribute deleted successfully',
+        timestamp: new Date().toISOString(),
       });
-    } catch (error) {
-      logger.error(`Registration error: ${error}`);
+    } catch (error: any) {
+      logger.error(`error: ${error}`);
+      
+      // Handle Prisma foreign key constraint (P2003) - attribute has product/category associations
+      if (error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          error: 'Cannot delete attribute',
+          message: 'Attribute cannot be deleted because it has associated products or categories. Please remove associations first.',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         error: (error as Error).message,
-        message: 'Problem in deleting attribute',
+        message: 'Problem in Deleting Attribute',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);

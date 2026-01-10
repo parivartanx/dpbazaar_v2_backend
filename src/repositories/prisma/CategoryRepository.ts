@@ -155,6 +155,131 @@ export class CategoryRepository implements ICategoryRepository {
     });
   }
 
+  async filterCategories(params: {
+    search?: string;
+    isActive?: boolean;
+    isFeatured?: boolean;
+    parentId?: string;
+    level?: number;
+    page?: number;
+    limit?: number;
+    flat?: boolean;
+  }): Promise<Category[]> {
+    const {
+      search,
+      isActive,
+      isFeatured,
+      parentId,
+      level,
+      page = 1,
+      limit = 20,
+      flat = false,
+    } = params;
+
+    const where: any = {};
+
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
+
+    if (isFeatured !== undefined) {
+      where.isFeatured = isFeatured;
+    }
+
+    if (parentId !== undefined) {
+      where.parentId = parentId || null;
+    }
+
+    if (level !== undefined) {
+      where.level = level;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { slug: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } },
+        { path: { contains: search, mode: 'insensitive' as const } },
+      ];
+    }
+
+    const includeConfig: any = {
+      parent: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          level: true,
+          path: true,
+        },
+      },
+    };
+
+    // If flat list, don't include nested children (just direct children count)
+    if (!flat) {
+      includeConfig.children = {
+        where: { isActive: true },
+        include: {
+          children: {
+            where: { isActive: true },
+            orderBy: { displayOrder: 'asc' },
+          },
+        },
+        orderBy: { displayOrder: 'asc' },
+      };
+    }
+
+    return prisma.category.findMany({
+      where,
+      include: includeConfig,
+      orderBy: [
+        { level: 'asc' },
+        { displayOrder: 'asc' },
+      ],
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+  }
+
+  async countFilteredCategories(params: {
+    search?: string;
+    isActive?: boolean;
+    isFeatured?: boolean;
+    parentId?: string;
+    level?: number;
+  }): Promise<number> {
+    const { search, isActive, isFeatured, parentId, level } = params;
+
+    const where: any = {};
+
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
+
+    if (isFeatured !== undefined) {
+      where.isFeatured = isFeatured;
+    }
+
+    if (parentId !== undefined) {
+      where.parentId = parentId || null;
+    }
+
+    if (level !== undefined) {
+      where.level = level;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { slug: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } },
+        { path: { contains: search, mode: 'insensitive' as const } },
+      ];
+    }
+
+    return prisma.category.count({ where });
+  }
+
   async update(
     id: string,
     data: Prisma.CategoryUpdateInput

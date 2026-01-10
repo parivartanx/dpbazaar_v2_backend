@@ -19,7 +19,9 @@ export class CustomerRepository implements ICustomerRepository {
       where.OR = [
         { user: { firstName: { contains: search, mode: 'insensitive' } } },
         { user: { lastName: { contains: search, mode: 'insensitive' } } },
-        { customerCode: { contains: search } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+        { user: { phone: { contains: search, mode: 'insensitive' } } },
+        { customerCode: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -34,6 +36,27 @@ export class CustomerRepository implements ICustomerRepository {
         },
       },
     });
+  }
+
+  async countFiltered(params?: {
+    tier?: string;
+    search?: string;
+  }): Promise<number> {
+    const { tier, search } = params || {};
+    const where: Prisma.CustomerWhereInput = { deletedAt: null };
+
+    if (tier) where.tier = tier;
+    if (search) {
+      where.OR = [
+        { user: { firstName: { contains: search, mode: 'insensitive' } } },
+        { user: { lastName: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+        { user: { phone: { contains: search, mode: 'insensitive' } } },
+        { customerCode: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    return prisma.customer.count({ where });
   }
 
   async findById(id: string): Promise<Customer | null> {

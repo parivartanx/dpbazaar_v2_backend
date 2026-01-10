@@ -6,4 +6,14 @@ export interface IBrandRepository {
   findById(id: string): Promise<Brand | null>;
   update(id: string, data: Prisma.BrandUpdateInput): Promise<Brand>;
   delete(id: string): Promise<void>;
+  filterBrands(params: {
+    search?: string;
+    isActive?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<Brand[]>;
+  countFilteredBrands(params: {
+    search?: string;
+    isActive?: boolean;
+  }): Promise<number>;
 }

@@ -33,6 +33,8 @@ import { PermissionAction } from '@prisma/client';
 import {
   createCategorySchema,
   updateCategorySchema,
+  toggleFeatureSchema,
+  toggleActiveSchema,
 } from '../validators/category.validaton';
 import {
   createVariantSchema,
@@ -293,16 +295,16 @@ router.get('/categories/:id', checkPermission('categories', PermissionAction.REA
 router.post('/categories', checkPermission('categories', PermissionAction.CREATE), validateJoi(createCategorySchema), categoryController.createCategory);
 router.put('/categories/:id', checkPermission('categories', PermissionAction.UPDATE), validateJoi(updateCategorySchema), categoryController.updateCategory);
 router.delete('/categories/:id', checkPermission('categories', PermissionAction.DELETE), categoryController.deleteCategory);
-router.patch('/categories/:id/feature', checkPermission('categories', PermissionAction.UPDATE), categoryController.toggleFeature);
-router.patch('/categories/:id/activate', checkPermission('categories', PermissionAction.UPDATE), categoryController.toggleActive);
+router.patch('/categories/:id/feature', checkPermission('categories', PermissionAction.UPDATE), validateJoi(toggleFeatureSchema), categoryController.toggleFeature);
+router.patch('/categories/:id/activate', checkPermission('categories', PermissionAction.UPDATE), validateJoi(toggleActiveSchema), categoryController.toggleActive);
 
 /**
  * PRODUCT MANAGEMENT
  */
 router.get('/products', checkPermission('products', PermissionAction.READ), productController.getAllProducts);
-router.get('/products/:id', productController.getProductById);
+router.get('/products/:id', checkPermission('products', PermissionAction.READ), productController.getProductById);
 router.post('/products', checkPermission('products', PermissionAction.CREATE), productController.createProduct);
-router.put('/products/:id', productController.updateProduct);
+router.put('/products/:id', checkPermission('products', PermissionAction.UPDATE), productController.updateProduct);
 router.delete('/products/:id', checkPermission('products', PermissionAction.DELETE), productController.softDeleteProduct);
 router.patch('/products/:id/restore', checkPermission('products', PermissionAction.UPDATE), productController.restoreProduct);
 
@@ -371,7 +373,6 @@ router.delete('/user-subscription-cards/:id', checkPermission('user_subscription
 /** CUSTOMER ROUTES */
 router.get('/customers', checkPermission('customers', PermissionAction.READ), customerCtrl.listCustomers);
 router.get('/customers/:id', checkPermission('customers', PermissionAction.READ), customerCtrl.getCustomer);
-router.post('/customers', checkPermission('customers', PermissionAction.CREATE), validateJoi(createCustomerSchema), customerCtrl.createCustomer);
 router.put('/customers/:id', checkPermission('customers', PermissionAction.UPDATE), validateJoi(updateCustomerSchema), customerCtrl.updateCustomer);
 router.delete('/customers/:id', checkPermission('customers', PermissionAction.DELETE), customerCtrl.deleteCustomer);
 router.post('/customers/:id/restore', checkPermission('customers', PermissionAction.UPDATE), customerCtrl.restoreCustomer);
@@ -385,7 +386,6 @@ router.delete('/segments/:id', checkPermission('segments', PermissionAction.DELE
 /** WALLET MANAGEMENT ROUTES */
 router.get('/wallets', checkPermission('wallets', PermissionAction.READ), walletController.listWallets);
 router.get('/wallets/:id', checkPermission('wallets', PermissionAction.READ), walletController.getWallet);
-router.post('/wallets', checkPermission('wallets', PermissionAction.CREATE), validateJoi(createWalletSchema), walletController.createWallet);
 router.put('/wallets/:id', checkPermission('wallets', PermissionAction.UPDATE), validateJoi(updateWalletSchema), walletController.updateWallet);
 router.delete('/wallets/:id', checkPermission('wallets', PermissionAction.DELETE), walletController.deleteWallet);
 
@@ -401,18 +401,13 @@ router.delete('/wallet-transactions/:id', checkPermission('wallet_transactions',
  */
 router.get('/orders', checkPermission('orders', PermissionAction.READ), orderController.getAllOrders);
 router.get('/orders/:id', checkPermission('orders', PermissionAction.READ), orderController.getOrderById);
-router.post('/orders', checkPermission('orders', PermissionAction.CREATE), validateJoi(createOrderSchema), orderController.createOrder);
-router.put('/orders/:id', checkPermission('orders', PermissionAction.UPDATE), validateJoi(updateOrderSchema), orderController.updateOrder);
-router.delete('/orders/:id', checkPermission('orders', PermissionAction.DELETE), orderController.deleteOrder);
 router.patch('/orders/:id/status', checkPermission('orders', PermissionAction.UPDATE), validateJoi(updateOrderStatusSchema), orderController.updateOrderStatus);
 router.patch('/orders/:id/cancel', checkPermission('orders', PermissionAction.UPDATE), validateJoi(cancelOrderSchema), orderController.cancelOrder);
 router.patch('/orders/:id/confirm', checkPermission('orders', PermissionAction.UPDATE), orderController.confirmOrder);
-router.patch('/orders/:id/restore', checkPermission('orders', PermissionAction.UPDATE), orderController.restoreOrder);
 
 /**
  * RETURN MANAGEMENT
  */
-router.post('/returns', checkPermission('returns', PermissionAction.CREATE), validateJoi(createReturnSchema), orderController.createReturnRequest);
 router.get('/returns/:returnId', checkPermission('returns', PermissionAction.READ), orderController.getReturnById);
 router.get('/returns', checkPermission('returns', PermissionAction.READ), orderController.getAllReturns);
 router.patch('/returns/:returnId/status', checkPermission('returns', PermissionAction.UPDATE), validateJoi(updateReturnStatusSchema), orderController.updateReturnStatus);
@@ -486,7 +481,6 @@ router.delete('/deliveries/:id', checkPermission('deliveries', PermissionAction.
  */
 router.get('/delivery-earnings', checkPermission('delivery_earnings', PermissionAction.READ), deliveryEarningController.getAllEarnings);
 router.get('/delivery-earnings/:id', checkPermission('delivery_earnings', PermissionAction.READ), deliveryEarningController.getEarningById);
-router.post('/delivery-earnings', checkPermission('delivery_earnings', PermissionAction.CREATE), validateJoi(createDeliveryEarningSchema), deliveryEarningController.createEarning);
 router.put('/delivery-earnings/:id', checkPermission('delivery_earnings', PermissionAction.UPDATE), validateJoi(updateDeliveryEarningSchema), deliveryEarningController.updateEarning);
 router.delete('/delivery-earnings/:id', checkPermission('delivery_earnings', PermissionAction.DELETE), deliveryEarningController.deleteEarning);
 
@@ -502,8 +496,6 @@ router.patch('/referral-codes/:id/deactivate', checkPermission('referral_codes',
 
 router.get('/referral-history', checkPermission('referral_history', PermissionAction.READ), referralHistoryController.listReferralHistories);
 router.get('/referral-history/:id', checkPermission('referral_history', PermissionAction.READ), referralHistoryController.getReferralHistory);
-router.post('/referral-history', checkPermission('referral_history', PermissionAction.CREATE), validateJoi(createReferralHistorySchema), referralHistoryController.createReferralHistory);
-router.put('/referral-history/:id', checkPermission('referral_history', PermissionAction.UPDATE), validateJoi(updateReferralHistorySchema), referralHistoryController.updateReferralHistory);
 router.delete('/referral-history/:id', checkPermission('referral_history', PermissionAction.DELETE), referralHistoryController.deleteReferralHistory);
 
 /**
@@ -511,8 +503,6 @@ router.delete('/referral-history/:id', checkPermission('referral_history', Permi
  */
 router.get('/notifications', checkPermission('notifications', PermissionAction.READ), notificationController.getAllNotifications);
 router.get('/notifications/:id', checkPermission('notifications', PermissionAction.READ), notificationController.getNotificationById);
-router.post('/notifications', checkPermission('notifications', PermissionAction.CREATE), validateJoi(createNotificationSchema), notificationController.createNotification);
-router.put('/notifications/:id', checkPermission('notifications', PermissionAction.UPDATE), validateJoi(updateNotificationSchema), notificationController.updateNotification);
 router.delete('/notifications/:id', checkPermission('notifications', PermissionAction.DELETE), notificationController.deleteNotification);
 
 /**

@@ -291,16 +291,16 @@ curl -X POST http://localhost:4000/v1/file-upload/presigned-url \
 // Step 1: Generate presigned URL
 const generatePresignedUrl = async (fileName, fileType, folderPath = '') => {
   const response = await fetch('http://localhost:4000/v1/file-upload/presigned-url', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
       fileName,
       fileType,
       folderPath
-    })
-  });
+  })
+});
 
   const result = await response.json();
   
@@ -526,7 +526,7 @@ const signedUrl = await getSignedUrl('uploads/1767853341050-abc123.jpg');
 ```javascript
 const deleteFile = async (fileKey, adminToken) => {
   const response = await fetch(`http://localhost:4000/v1/file-upload/${encodeURIComponent(fileKey)}`, {
-    method: 'DELETE',
+  method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${adminToken}`
     }
@@ -846,8 +846,8 @@ const uploadMultipleFiles = async (files, folderPath = 'uploads') => {
         body: file,
         headers: {
           'Content-Type': file.type
-        }
-      });
+  }
+});
 
       return { key, fileName: file.name, success: true };
     } catch (error) {

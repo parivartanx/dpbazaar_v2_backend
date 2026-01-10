@@ -8,6 +8,11 @@ export interface ICustomerRepository {
     search?: string;
   }): Promise<Customer[]>;
 
+  countFiltered(params?: {
+    tier?: string;
+    search?: string;
+  }): Promise<number>;
+
   findById(id: string): Promise<Customer | null>;
   findByUserId(userId: string): Promise<Customer | null>;
 
