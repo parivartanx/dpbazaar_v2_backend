@@ -1104,10 +1104,6 @@ export class OrderRepository implements IOrderRepository {
     });
   }
   
-  private async createReturnRecord(data: any): Promise<any> {
-    return this.createReturnRecordInTransaction(prisma, data);
-  }
-
   private async createReturnRecordInTransaction(tx: any, data: any): Promise<any> {
     // Check if the same order items have already been returned to prevent duplicate returns
     if (data.items && Array.isArray(data.items) && data.items.length > 0) {
@@ -1202,10 +1198,6 @@ export class OrderRepository implements IOrderRepository {
     });
   }
   
-  private async processApprovedReturn(returnRecord: any, data: any): Promise<void> {
-    return this.processApprovedReturnInTransaction(prisma, returnRecord, data);
-  }
-
   private async processApprovedReturnInTransaction(tx: any, returnRecord: any, data: any): Promise<void> {
       // Check if all items in the order are returned to determine if the entire order is returned
       const order = await tx.order.findUnique({
