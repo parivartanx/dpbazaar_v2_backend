@@ -1180,8 +1180,33 @@ export class DesktopController {
             res.status(500).json(response);
             return;
           }
+        } else if (paymentMethod === 'RAZORPAY' || paymentMethod === 'STRIPE') {
+          // For gateway payments (RAZORPAY, STRIPE), use PaymentService
+          const paymentService = new PaymentService();
+          try {
+            await paymentService.processPayment({
+              orderId: order.id,
+              amount: Number(order.totalAmount),
+              paymentMethod: paymentMethod as any,
+              customerId: finalCustomerId,
+              razorpayPaymentId: paymentDetails?.razorpayPaymentId,
+              razorpayOrderId: paymentDetails?.razorpayOrderId,
+              razorpaySignature: paymentDetails?.razorpaySignature,
+              stripePaymentIntentId: paymentDetails?.stripePaymentIntentId,
+            });
+          } catch (paymentError) {
+            const response: ApiResponse = {
+              success: false,
+              error: (paymentError as Error).message,
+              message: `Failed to process ${paymentMethod} payment`,
+              timestamp: new Date().toISOString(),
+            };
+            res.status(500).json(response);
+            return;
+          }
         } else {
-          // For other payment methods, use the existing createPayment method
+          // For other payment methods (CASH, COD, SPLIT, CREDIT_CARD, DEBIT_CARD, NET_BANKING, UPI, etc.)
+          // Use the existing createPayment method
           await this.createPayment(order.id, order.totalAmount, paymentMethod, paymentDetails);
         }
       }
@@ -1286,17 +1311,39 @@ export class DesktopController {
       throw new Error(`Order with ID ${orderId} does not exist when creating payment`);
     }
     
+    let cashAmount = 0;
+    let onlineAmount = 0;
+    
+    // Handle split payment calculation
+    if (method === 'SPLIT') {
+      cashAmount = Number(details?.cash) || 0;
+      // Calculate online amount as total - cash to ensure correctness
+      onlineAmount = Number(amount) - cashAmount;
+      
+      // Validate that cash + online equals total amount
+      if (Math.abs(cashAmount + onlineAmount - Number(amount)) > 0.01) {
+        throw new Error(`Split payment amounts don't match. Cash: ${cashAmount}, Online: ${onlineAmount}, Total: ${amount}`);
+      }
+    } else if (method === 'CASH' || method === 'COD') {
+      cashAmount = Number(amount);
+      onlineAmount = 0;
+    } else {
+      // For online payment methods, online amount should be the total
+      cashAmount = 0;
+      onlineAmount = Number(amount);
+    }
+    
     await prisma.payment.create({
       data: {
         order: {
           connect: { id: orderId }
         },
         amount: Number(amount),
-        cash: Number(details?.cash) || 0,
-        online: Number(details?.online) || 0,
+        cash: cashAmount,
+        online: onlineAmount,
         method: method as any, // Type assertion for payment method
         status: 'SUCCESS',
-        gatewayName: details?.gatewayName || 'CASH',
+        gatewayName: details?.gatewayName || (method === 'CASH' || method === 'COD' ? 'CASH' : 'ONLINE'),
         gatewayPaymentId: details?.gatewayPaymentId || null,
         currency: 'INR',
         paidAt: new Date(),
