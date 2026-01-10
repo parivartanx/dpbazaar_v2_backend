@@ -248,7 +248,6 @@ export class AddressController {
 
   createMyAddress = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      console.log(req.body);
       const userId = req.user?.userId;
       if (!userId) {
         const response: ApiResponse = {
@@ -261,9 +260,12 @@ export class AddressController {
       }
 
       const customerId = await getCustomerIdFromUserId(userId);
+      
+      // Ensure country has a default value if not provided
       const addressData = {
         ...req.body,
         customerId,
+        country: req.body.country || 'India', // Default to India if not provided
       };
 
       const address = await addressRepo.create(addressData);
@@ -277,12 +279,23 @@ export class AddressController {
     } catch (error) {
       logger.error(`Error creating address: ${error}`);
       const errorMessage = (error as Error).message;
+      
+      // Provide more specific error messages
+      let errorDetail = 'Invalid data provided for address creation';
+      if (errorMessage.includes('Customer with ID') || errorMessage.includes('Customer ID is required')) {
+        errorDetail = errorMessage;
+      } else if (errorMessage.includes('required')) {
+        errorDetail = errorMessage;
+      } else if (errorMessage.includes('must be')) {
+        errorDetail = errorMessage;
+      } else if (errorMessage.includes('pattern')) {
+        errorDetail = errorMessage;
+      }
+      
       const response: ApiResponse = {
         success: false,
         message: 'Failed to create address',
-        error: errorMessage.includes('Customer with ID') || errorMessage.includes('Customer ID is required') 
-          ? errorMessage 
-          : 'Invalid data provided for address creation',
+        error: errorDetail,
         timestamp: new Date().toISOString(),
       };
       res.status(400).json(response);

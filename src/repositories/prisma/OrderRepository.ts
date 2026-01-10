@@ -315,12 +315,71 @@ export class OrderRepository implements IOrderRepository {
       },
     });
 
-    // Update product sales count
+    // Update product sales count and decrease inventory
     for (const item of itemsWithDetails) {
+      // Update product sales count
       await prisma.product.update({
         where: { id: item.productId },
         data: { salesCount: { increment: item.quantity } },
       });
+
+      // Decrease inventory quantity
+      // Find inventory record for this product/variant
+      const inventory = await prisma.inventory.findFirst({
+        where: {
+          productId: item.productId,
+          variantId: item.variantId || null,
+        },
+      });
+
+      if (inventory) {
+        // Check if sufficient quantity is available
+        if (inventory.availableQuantity < item.quantity) {
+          throw new Error(
+            `Insufficient stock for product ${item.productName}. ` +
+            `Available: ${inventory.availableQuantity}, Requested: ${item.quantity}`
+          );
+        }
+
+        // Decrement available quantity
+        await prisma.inventory.update({
+          where: { id: inventory.id },
+          data: {
+            availableQuantity: { decrement: item.quantity },
+            updatedAt: new Date(),
+          },
+        });
+
+        // Create stock movement record
+        await prisma.stockMovement.create({
+          data: {
+            inventoryId: inventory.id,
+            warehouseId: inventory.warehouseId,
+            type: 'SALE',
+            quantity: -item.quantity, // Negative for outgoing stock
+            referenceType: 'ORDER',
+            referenceId: order.id,
+            reason: 'Order placement',
+            notes: `Order ${order.orderNumber} - ${item.productName}`,
+            performedAt: new Date(),
+          },
+        });
+
+        // Update product stock status if inventory becomes low
+        if (inventory.availableQuantity - item.quantity <= inventory.minStockLevel) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stockStatus: inventory.availableQuantity - item.quantity <= 0 
+                ? 'OUT_OF_STOCK' 
+                : 'LOW_STOCK',
+            },
+          });
+        }
+      } else {
+        // Log warning if no inventory record found (for non-inventory tracked items)
+        console.warn(`No inventory record found for product ${item.productId}, variant ${item.variantId || 'none'}`);
+      }
     }
 
     return order;
@@ -1014,23 +1073,43 @@ export class OrderRepository implements IOrderRepository {
 
   // Return Management Methods
   async createReturn(data: any): Promise<any> {
-    // First, validate return items and create the return record
-    const returnRecord = await this.createReturnRecord(data);
-    
-    // Then, handle the approved return operations in separate transactions
-    if (data.status === 'APPROVED') {
-      await this.processApprovedReturn(returnRecord, data);
-    }
-    
-    return returnRecord;
+    // Wrap everything in a transaction to ensure atomicity
+    return await prisma.$transaction(async (tx) => {
+      // First, validate return items and create the return record
+      const returnRecord = await this.createReturnRecordInTransaction(tx, data);
+      
+      // Then, handle the approved return operations in the same transaction
+      if (data.status === 'APPROVED') {
+        await this.processApprovedReturnInTransaction(tx, returnRecord, data);
+      }
+      
+      // Fetch and return the complete return record
+      return await tx.return.findUnique({
+        where: { id: returnRecord.id },
+        include: {
+          order: {
+            include: {
+              items: true,
+            },
+          },
+          items: {
+            include: {
+              orderItem: true,
+            },
+          },
+        },
+      });
+    }, {
+      timeout: 30000, // 30 second timeout for long-running transactions
+    });
   }
   
-  private async createReturnRecord(data: any): Promise<any> {
+  private async createReturnRecordInTransaction(tx: any, data: any): Promise<any> {
     // Check if the same order items have already been returned to prevent duplicate returns
     if (data.items && Array.isArray(data.items) && data.items.length > 0) {
       for (const item of data.items) {
         // Get all existing returns for this order item
-        const existingReturns = await prisma.returnItem.findMany({
+        const existingReturns = await tx.returnItem.findMany({
           where: {
             orderItemId: item.orderItemId,
           },
@@ -1041,7 +1120,7 @@ export class OrderRepository implements IOrderRepository {
         
         // Calculate total quantity already returned for this order item
         let totalReturnedQuantity = 0;
-        existingReturns.forEach((existingReturnItem) => {
+        existingReturns.forEach((existingReturnItem: any) => {
           if (existingReturnItem.return.status !== 'REJECTED') {
             // Only count items from returns that were not rejected
             totalReturnedQuantity += existingReturnItem.quantity;
@@ -1049,7 +1128,7 @@ export class OrderRepository implements IOrderRepository {
         });
         
         // Get the original order item to check the purchased quantity
-        const originalOrderItem = await prisma.orderItem.findUnique({
+        const originalOrderItem = await tx.orderItem.findUnique({
           where: { id: item.orderItemId }
         });
         
@@ -1114,13 +1193,12 @@ export class OrderRepository implements IOrderRepository {
     if (data.createdBy !== undefined) returnData.createdBy = data.createdBy;
 
     // Create the return record
-    return await prisma.return.create({
+    return await tx.return.create({
       data: returnData,
     });
   }
   
-  private async processApprovedReturn(returnRecord: any, data: any): Promise<void> {
-    return prisma.$transaction(async (tx) => {
+  private async processApprovedReturnInTransaction(tx: any, returnRecord: any, data: any): Promise<void> {
       // Check if all items in the order are returned to determine if the entire order is returned
       const order = await tx.order.findUnique({
         where: { id: data.orderId },
@@ -1129,7 +1207,7 @@ export class OrderRepository implements IOrderRepository {
       
       if (order) {
         // Calculate total items in order vs total items returned
-        const totalOrderItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+        const totalOrderItems = order.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
         
         // Get total quantity of items already returned for this order
         let totalReturnedItems = 0;
@@ -1245,7 +1323,6 @@ export class OrderRepository implements IOrderRepository {
           data: { status: newOrderStatus },
         });
       }
-    });
   }
 
   async getReturnById(returnId: string): Promise<any> {

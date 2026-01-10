@@ -697,7 +697,7 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
 - Method: `POST`
 - Endpoint: `/employees`
 - Content-Type: `application/json`
-- Body:
+- Body Schema:
 ```json
 {
   "firstName": "string (required, min 2 chars)",
@@ -724,6 +724,69 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
   "currentAddress": "object (optional)",
   "permanentAddress": "object (optional)",
   "metadata": "object (optional)"
+}
+```
+
+**Example Request Body (Minimum Required Fields):**
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "password": "SecurePass123",
+  "employeeCode": "EMP001",
+  "designation": "Software Engineer",
+  "joiningDate": "2024-01-15T00:00:00.000Z"
+}
+```
+
+**Example Request Body (All Fields):**
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "middleName": "Michael",
+  "email": "john.doe@example.com",
+  "password": "SecurePass123",
+  "phone": "+919876543210",
+  "employeeCode": "EMP001",
+  "departmentId": "dept_abc123",
+  "designation": "Senior Software Engineer",
+  "reportingTo": "mgr_xyz789",
+  "status": "ACTIVE",
+  "employmentType": "FULL_TIME",
+  "joiningDate": "2024-01-15T00:00:00.000Z",
+  "confirmationDate": "2024-04-15T00:00:00.000Z",
+  "lastWorkingDate": null,
+  "salary": 75000.50,
+  "currency": "INR",
+  "documents": {
+    "aadhar": "https://example.com/docs/aadhar.pdf",
+    "pan": "https://example.com/docs/pan.pdf"
+  },
+  "emergencyContactName": "Jane Doe",
+  "emergencyContactPhone": "+919876543211",
+  "emergencyContactRelation": "Spouse",
+  "currentAddress": {
+    "addressLine1": "123 Main Street",
+    "addressLine2": "Apartment 4B",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "postalCode": "400001",
+    "country": "India"
+  },
+  "permanentAddress": {
+    "addressLine1": "456 Park Avenue",
+    "addressLine2": "Block C",
+    "city": "Delhi",
+    "state": "Delhi",
+    "postalCode": "110001",
+    "country": "India"
+  },
+  "metadata": {
+    "notes": "High performer",
+    "skills": ["JavaScript", "TypeScript", "Node.js"]
+  }
 }
 ```
 
@@ -796,7 +859,69 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
 - Endpoint: `/employees/:id`
 - Path Parameter: `id` (employee ID)
 - Content-Type: `application/json`
-- Body: (all fields optional - same as POST /employees)
+- Body: (all fields optional - same schema as POST /employees, but all fields are optional for updates)
+
+**Example Request Body (Update Basic Info):**
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "phone": "+919876543210",
+  "designation": "Lead Software Engineer",
+  "salary": 85000.00
+}
+```
+
+**Example Request Body (Update Department and Status):**
+```json
+{
+  "departmentId": "dept_new123",
+  "status": "ACTIVE",
+  "reportingTo": "mgr_new456"
+}
+```
+
+**Example Request Body (Update Address and Emergency Contact):**
+```json
+{
+  "currentAddress": {
+    "addressLine1": "789 New Street",
+    "addressLine2": "Floor 5",
+    "city": "Bangalore",
+    "state": "Karnataka",
+    "postalCode": "560001",
+    "country": "India"
+  },
+  "emergencyContactName": "Jane Smith",
+  "emergencyContactPhone": "+919876543212",
+  "emergencyContactRelation": "Spouse"
+}
+```
+
+**Example Request Body (Update Multiple Fields):**
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "email": "john.smith@example.com",
+  "phone": "+919876543210",
+  "designation": "Senior Lead Engineer",
+  "departmentId": "dept_tech001",
+  "status": "ACTIVE",
+  "employmentType": "FULL_TIME",
+  "salary": 95000.00,
+  "confirmationDate": "2024-07-15T00:00:00.000Z",
+  "documents": {
+    "aadhar": "https://example.com/docs/aadhar_updated.pdf",
+    "pan": "https://example.com/docs/pan_updated.pdf",
+    "passport": "https://example.com/docs/passport.pdf"
+  },
+  "metadata": {
+    "notes": "Promoted to Senior Lead",
+    "skills": ["JavaScript", "TypeScript", "Node.js", "React", "AWS"]
+  }
+}
+```
 
 **Response:**
 - Success: `200 OK`
@@ -5289,13 +5414,13 @@ GET /customers?search=john&page=1&limit=10
 
 ## Wallet Management
 
-### GET /admin/wallets
+### GET /wallets
 
 **Description:** Get all wallets.
 
 **Request:**
 - Method: `GET`
-- Endpoint: `/admin/wallets`
+- Endpoint: `/wallets`
 
 **Response:**
 - Success: `200 OK`
@@ -5322,13 +5447,13 @@ GET /customers?search=john&page=1&limit=10
 }
 ```
 
-### GET /admin/wallets/:id
+### GET /wallets/:id
 
 **Description:** Get wallet by ID.
 
 **Request:**
 - Method: `GET`
-- Endpoint: `/admin/wallets/:id`
+- Endpoint: `/wallets/:id`
 - Path Parameter: `id` (wallet ID)
 
 **Response:**
@@ -5354,13 +5479,13 @@ GET /customers?search=john&page=1&limit=10
 }
 ```
 
-### POST /admin/wallets
+### POST /wallets
 
 **Description:** Create a new wallet.
 
 **Request:**
 - Method: `POST`
-- Endpoint: `/admin/wallets`
+- Endpoint: `/wallets`
 - Content-Type: `application/json`
 - Body: `{ customerId: string, type: string, balance: number }`
 
@@ -5387,13 +5512,13 @@ GET /customers?search=john&page=1&limit=10
 }
 ```
 
-### PUT /admin/wallets/:id
+### PUT /wallets/:id
 
 **Description:** Update a wallet.
 
 **Request:**
 - Method: `PUT`
-- Endpoint: `/admin/wallets/:id`
+- Endpoint: `/wallets/:id`
 - Path Parameter: `id` (wallet ID)
 - Content-Type: `application/json`
 - Body: `{ type: string, balance: number }`
@@ -5421,13 +5546,13 @@ GET /customers?search=john&page=1&limit=10
 }
 ```
 
-### DELETE /admin/wallets/:id
+### DELETE /wallets/:id
 
 **Description:** Delete a wallet.
 
 **Request:**
 - Method: `DELETE`
-- Endpoint: `/admin/wallets/:id`
+- Endpoint: `/wallets/:id`
 - Path Parameter: `id` (wallet ID)
 
 **Response:**
@@ -5461,13 +5586,13 @@ GET /customers?search=john&page=1&limit=10
 
 ## Wallet Transaction Management
 
-### GET /admin/wallet-transactions
+### GET /wallet-transactions
 
 **Description:** Get all wallet transactions.
 
 **Request:**
 - Method: `GET`
-- Endpoint: `/admin/wallet-transactions`
+- Endpoint: `/wallet-transactions`
 
 **Response:**
 - Success: `200 OK`
@@ -5544,13 +5669,13 @@ GET /customers?search=john&page=1&limit=10
 }
 ```
 
-### GET /admin/wallet-transactions/:id
+### GET /wallet-transactions/:id
 
 **Description:** Get wallet transaction by ID.
 
 **Request:**
 - Method: `GET`
-- Endpoint: `/admin/wallet-transactions/:id`
+- Endpoint: `/wallet-transactions/:id`
 - Path Parameter: `id` (wallet transaction ID)
 
 **Response:**
@@ -5594,13 +5719,13 @@ GET /customers?search=john&page=1&limit=10
 }
 ```
 
-### POST /admin/wallet-transactions
+### POST /wallet-transactions
 
 **Description:** Create a new wallet transaction.
 
 **Request:**
 - Method: `POST`
-- Endpoint: `/admin/wallet-transactions`
+- Endpoint: `/wallet-transactions`
 - Content-Type: `application/json`
 - Body: `{ walletId: string, type: string, reason: string, amount: number, cardId: string, subscriptionId: string, referralId: string, rewardPercent: number, targetAmount: number, capPercentage: number, idempotencyKey: string, metadata: object }`
 
@@ -5645,13 +5770,13 @@ GET /customers?search=john&page=1&limit=10
 }
 ```
 
-### PUT /admin/wallet-transactions/:id
+### PUT /wallet-transactions/:id
 
 **Description:** Update a wallet transaction.
 
 **Request:**
 - Method: `PUT`
-- Endpoint: `/admin/wallet-transactions/:id`
+- Endpoint: `/wallet-transactions/:id`
 - Path Parameter: `id` (wallet transaction ID)
 - Content-Type: `application/json`
 - Body: `{ type: string, reason: string, status: string, amount: number, metadata: object }`
@@ -5697,13 +5822,13 @@ GET /customers?search=john&page=1&limit=10
 }
 ```
 
-### DELETE /admin/wallet-transactions/:id
+### DELETE /wallet-transactions/:id
 
 **Description:** Delete a wallet transaction.
 
 **Request:**
 - Method: `DELETE`
-- Endpoint: `/admin/wallet-transactions/:id`
+- Endpoint: `/wallet-transactions/:id`
 - Path Parameter: `id` (wallet transaction ID)
 
 **Response:**
@@ -9341,6 +9466,65 @@ GET /customers?search=john&page=1&limit=10
 
 ## Referral Management
 
+### GET /referral-codes
+
+**Description:** Get all referral codes with pagination and filtering support.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/referral-codes`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `customerId` (string): Filter by customer ID
+  - `isActive` (boolean): Filter by active status (true/false)
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Referral codes fetched successfully",
+  "data": {
+    "referralCodes": [
+      {
+        "id": "string",
+        "code": "string",
+        "customerId": "string",
+        "isActive": true,
+        "createdAt": "string",
+        "deactivatedAt": null,
+        "customer": {
+          "id": "string",
+          "customerCode": "string",
+          "user": {
+            "firstName": "string",
+            "lastName": "string",
+            "email": "string"
+          }
+        }
+      }
+    ]
+  },
+  "timestamp": "string"
+}
+```
+
+**Example Requests:**
+```bash
+# Get all referral codes
+GET /referral-codes?page=1&limit=20
+
+# Get active referral codes for a specific customer
+GET /referral-codes?customerId=cust123&isActive=true&page=1&limit=10
+
+# Get inactive referral codes
+GET /referral-codes?isActive=false
+```
+
 ### GET /referral-codes/:id
 
 **Description:** Get referral code by ID.
@@ -9785,6 +9969,114 @@ GET /customers?search=john&page=1&limit=10
 
 ## Notification Management
 
+### GET /notifications
+
+**Description:** Get all notifications with pagination and filtering support.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/notifications`
+- Query Parameters (all optional):
+  - `page` (number): Page number
+  - `limit` (number): Items per page
+  - `userId` (string): Filter by user ID
+  - `type` (string): Filter by notification type
+  - `isRead` (boolean): Filter by read status (true/false)
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Notifications retrieved successfully",
+  "data": {
+    "notifications": [
+      {
+        "id": "string",
+        "userId": "string",
+        "type": "string",
+        "title": "string",
+        "message": "string",
+        "data": {},
+        "isRead": false,
+        "readAt": null,
+        "sentViaEmail": false,
+        "sentViaSms": false,
+        "sentViaPush": false,
+        "expiresAt": null,
+        "createdAt": "string",
+        "updatedAt": "string",
+        "user": {
+          "firstName": "string",
+          "lastName": "string"
+        }
+      }
+    ]
+  },
+  "timestamp": "string"
+}
+```
+
+**Example Requests:**
+```bash
+# Get all notifications
+GET /notifications?page=1&limit=20
+
+# Get unread notifications for a user
+GET /notifications?userId=user123&isRead=false
+
+# Get notifications by type
+GET /notifications?type=ORDER_UPDATE&page=1&limit=10
+```
+
+### GET /notifications/:id
+
+**Description:** Get notification by ID.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/notifications/:id`
+- Path Parameter: `id` (notification ID)
+
+**Response:**
+- Success: `200 OK`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (notification not found), `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Notification retrieved successfully",
+  "data": {
+    "notification": {
+      "id": "string",
+      "userId": "string",
+      "type": "string",
+      "title": "string",
+      "message": "string",
+      "data": {},
+      "isRead": false,
+      "readAt": null,
+      "sentViaEmail": false,
+      "sentViaSms": false,
+      "sentViaPush": false,
+      "expiresAt": null,
+      "createdAt": "string",
+      "updatedAt": "string",
+      "user": {
+        "firstName": "string",
+        "lastName": "string",
+        "email": "string"
+      }
+    }
+  },
+  "timestamp": "string"
+}
+```
+
 ### POST /notifications
 
 **Description:** Create a new notification.
@@ -9925,6 +10217,77 @@ GET /customers?search=john&page=1&limit=10
 
 ## Email Template Management
 
+### GET /email-templates
+
+**Description:** Get all email templates.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/email-templates`
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Email templates retrieved successfully",
+  "data": {
+    "templates": [
+      {
+        "id": "string",
+        "code": "string",
+        "name": "string",
+        "subject": "string",
+        "body": "string",
+        "variables": [],
+        "isActive": true,
+        "createdAt": "string",
+        "updatedAt": "string"
+      }
+    ]
+  },
+  "timestamp": "string"
+}
+```
+
+### GET /email-templates/:id
+
+**Description:** Get email template by ID.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/email-templates/:id`
+- Path Parameter: `id` (template ID)
+
+**Response:**
+- Success: `200 OK`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (template not found), `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Email template retrieved successfully",
+  "data": {
+    "template": {
+      "id": "string",
+      "code": "string",
+      "name": "string",
+      "subject": "string",
+      "body": "string",
+      "variables": [],
+      "isActive": true,
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  },
+  "timestamp": "string"
+}
+```
+
 ### POST /email-templates
 
 **Description:** Create a new email template.
@@ -10034,6 +10397,112 @@ GET /customers?search=john&page=1&limit=10
 ```
 
 ## Address Management
+
+### GET /addresses
+
+**Description:** Get all addresses with pagination and filtering support.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/addresses`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 20)
+  - `customerId` (string): Filter by customer ID
+  - `search` (string): Search in fullName, addressLine1, addressLine2, city, state, postalCode
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Addresses fetched successfully",
+  "data": {
+    "addresses": [
+      {
+        "id": "string",
+        "customerId": "string",
+        "fullName": "string",
+        "phone": "string",
+        "alternatePhone": "string",
+        "addressLine1": "string",
+        "addressLine2": "string",
+        "landmark": "string",
+        "city": "string",
+        "state": "string",
+        "country": "string",
+        "postalCode": "string",
+        "isDefault": false,
+        "addressType": "HOME|WORK|OTHER",
+        "deliveryInstructions": "string",
+        "deletedAt": null,
+        "createdAt": "string",
+        "updatedAt": "string"
+      }
+    ]
+  },
+  "timestamp": "string"
+}
+```
+
+**Example Requests:**
+```bash
+# Get all addresses
+GET /addresses?page=1&limit=20
+
+# Get addresses for a specific customer
+GET /addresses?customerId=cust123&page=1&limit=10
+
+# Search addresses
+GET /addresses?search=Mumbai&page=1&limit=20
+```
+
+### GET /addresses/:id
+
+**Description:** Get address by ID.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/addresses/:id`
+- Path Parameter: `id` (address ID)
+
+**Response:**
+- Success: `200 OK`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (address not found), `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Address fetched successfully",
+  "data": {
+    "address": {
+      "id": "string",
+      "customerId": "string",
+      "fullName": "string",
+      "phone": "string",
+      "alternatePhone": "string",
+      "addressLine1": "string",
+      "addressLine2": "string",
+      "landmark": "string",
+      "city": "string",
+      "state": "string",
+      "country": "string",
+      "postalCode": "string",
+      "isDefault": false,
+      "addressType": "HOME|WORK|OTHER",
+      "deliveryInstructions": "string",
+      "deletedAt": null,
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  },
+  "timestamp": "string"
+}
+```
 
 ### POST /addresses
 
@@ -10790,6 +11259,74 @@ GET /customers?search=john&page=1&limit=10
 
 ## Payment Management
 
+### GET /payments
+
+**Description:** Get all payments with pagination and filtering support.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/payments`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 10)
+  - `status` (string): Filter by payment status (PENDING, SUCCESS, FAILED, etc.)
+  - `orderId` (string): Filter by order ID
+  - `method` (string): Filter by payment method (CASH, ONLINE, WALLET, SPLIT, etc.)
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Payments retrieved successfully",
+  "data": {
+    "payments": [
+      {
+        "id": "string",
+        "orderId": "string",
+        "amount": 0,
+        "cash": 0,
+        "online": 0,
+        "currency": "INR",
+        "method": "CASH|ONLINE|WALLET|SPLIT|etc",
+        "status": "PENDING|SUCCESS|FAILED",
+        "gatewayName": "string",
+        "gatewayOrderId": "string",
+        "gatewayPaymentId": "string",
+        "gatewaySignature": "string",
+        "gatewayResponse": {},
+        "cardLast4": "string",
+        "cardBrand": "string",
+        "bankName": "string",
+        "upiId": "string",
+        "isRefundable": true,
+        "refundedAmount": 0,
+        "paidAt": "string",
+        "failedAt": null,
+        "createdAt": "string",
+        "updatedAt": "string"
+      }
+    ]
+  },
+  "timestamp": "string"
+}
+```
+
+**Example Requests:**
+```bash
+# Get all payments
+GET /payments?page=1&limit=20
+
+# Get successful payments for a specific order
+GET /payments?orderId=order123&status=SUCCESS
+
+# Get payments by method
+GET /payments?method=ONLINE&page=1&limit=10
+```
+
 ### GET /payments/:id
 
 **Description:** Get payment by ID.
@@ -11090,6 +11627,116 @@ GET /customers?search=john&page=1&limit=10
 ```
 
 ## Invoice Management
+
+### GET /invoices
+
+**Description:** Get all invoices with pagination and filtering support.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/invoices`
+- Query Parameters (all optional):
+  - `page` (number): Page number (default: 1)
+  - `limit` (number): Items per page (default: 10)
+  - `status` (string): Filter by invoice status
+  - `orderId` (string): Filter by order ID
+  - `invoiceNumber` (string): Search by invoice number
+  - `startDate` (string): Filter by start date (ISO date)
+  - `endDate` (string): Filter by end date (ISO date)
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Invoices retrieved successfully",
+  "data": {
+    "invoices": [
+      {
+        "id": "string",
+        "invoiceNumber": "string",
+        "orderId": "string",
+        "amount": 0,
+        "taxAmount": 0,
+        "totalAmount": 0,
+        "status": "string",
+        "issuedAt": "string",
+        "dueDate": "string",
+        "paidAt": null,
+        "createdAt": "string",
+        "updatedAt": "string",
+        "order": {
+          "id": "string",
+          "orderNumber": "string",
+          "customerName": "string",
+          "totalAmount": 0
+        }
+      }
+    ],
+    "total": 0,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 0
+  },
+  "timestamp": "string"
+}
+```
+
+**Example Requests:**
+```bash
+# Get all invoices
+GET /invoices?page=1&limit=20
+
+# Get invoices for a specific order
+GET /invoices?orderId=order123
+
+# Get invoices by date range
+GET /invoices?startDate=2024-01-01&endDate=2024-12-31&page=1&limit=10
+
+# Search by invoice number
+GET /invoices?invoiceNumber=INV-2024&page=1&limit=20
+```
+
+### GET /invoices/:id
+
+**Description:** Get invoice by ID.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/invoices/:id`
+- Path Parameter: `id` (invoice ID)
+
+**Response:**
+- Success: `200 OK`
+- Error: `400 Bad Request` (missing ID), `404 Not Found` (invoice not found), `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Invoice retrieved successfully",
+  "data": {
+    "invoice": {
+      "id": "string",
+      "invoiceNumber": "string",
+      "orderId": "string",
+      "amount": 0,
+      "taxAmount": 0,
+      "totalAmount": 0,
+      "status": "string",
+      "issuedAt": "string",
+      "dueDate": "string",
+      "paidAt": null,
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  },
+  "timestamp": "string"
+}
+```
 
 ### POST /invoices
 
@@ -11489,6 +12136,84 @@ GET /customers?search=john&page=1&limit=10
 ```
 
 ## System Setting Management
+
+### GET /system-settings
+
+**Description:** Get all system settings.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/system-settings`
+
+**Response:**
+- Success: `200 OK`
+- Error: `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "System settings retrieved successfully",
+  "data": {
+    "settings": [
+      {
+        "key": "string",
+        "value": "string|number|boolean|object",
+        "type": "STRING|NUMBER|BOOLEAN|JSON",
+        "description": "string",
+        "category": "string",
+        "isPublic": false,
+        "createdAt": "string",
+        "updatedAt": "string"
+      }
+    ]
+  },
+  "timestamp": "string"
+}
+```
+
+### GET /system-settings/:key
+
+**Description:** Get system setting by key.
+
+**Request:**
+- Method: `GET`
+- Endpoint: `/system-settings/:key`
+- Path Parameter: `key` (setting key)
+
+**Response:**
+- Success: `200 OK`
+- Error: `400 Bad Request` (missing key), `404 Not Found` (setting not found), `500 Internal Server Error`
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "System setting retrieved successfully",
+  "data": {
+    "setting": {
+      "key": "string",
+      "value": "string|number|boolean|object",
+      "type": "STRING|NUMBER|BOOLEAN|JSON",
+      "description": "string",
+      "category": "string",
+      "isPublic": false,
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  },
+  "timestamp": "string"
+}
+```
+
+**Example Requests:**
+```bash
+# Get all system settings
+GET /system-settings
+
+# Get a specific setting by key
+GET /system-settings/MAINTENANCE_MODE
+```
 
 ### POST /system-settings
 
