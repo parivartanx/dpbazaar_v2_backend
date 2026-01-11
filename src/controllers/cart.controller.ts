@@ -122,7 +122,7 @@ export class CartController {
         });
       }
 
-      const { productId, variantId, quantity = 1, mrp, sellingPrice, discount } = req.body;
+      const { productId, variantId, productSku, quantity = 1, mrp, sellingPrice, discount } = req.body;
 
       if (!productId) {
         const response: ApiResponse = {
@@ -134,12 +134,66 @@ export class CartController {
         return;
       }
 
+      // Resolve variantId from productSku if provided
+      let resolvedVariantId: string | null = variantId || null;
+      
+      if (productSku && !variantId) {
+        // Check if productSku matches a variant's variantSku
+        const variant = await prisma.productVariant.findUnique({
+          where: { variantSku: productSku },
+          select: { id: true, productId: true }
+        });
+        
+        if (variant) {
+          // Verify the variant belongs to the provided product
+          if (variant.productId !== productId) {
+            const response: ApiResponse = {
+              success: false,
+              message: 'Product SKU does not match the provided product ID',
+              timestamp: new Date().toISOString(),
+            };
+            res.status(400).json(response);
+            return;
+          }
+          resolvedVariantId = variant.id;
+        } else {
+          // Check if productSku matches the product's SKU (no variant)
+          const product = await prisma.product.findUnique({
+            where: { id: productId },
+            select: { sku: true }
+          });
+          
+          if (!product) {
+            const response: ApiResponse = {
+              success: false,
+              message: 'Product not found',
+              timestamp: new Date().toISOString(),
+            };
+            res.status(404).json(response);
+            return;
+          }
+          
+          if (product.sku !== productSku) {
+            const response: ApiResponse = {
+              success: false,
+              message: 'Product SKU does not match',
+              timestamp: new Date().toISOString(),
+            };
+            res.status(400).json(response);
+            return;
+          }
+          
+          // Product has no variant, so variantId should be null
+          resolvedVariantId = null;
+        }
+      }
+
       // Check if item already exists in cart
       const existingItem = await prisma.cartItem.findFirst({
         where: {
           cartId: cart.id,
           productId,
-          variantId: variantId || null
+          variantId: resolvedVariantId
         }
       });
 
@@ -172,7 +226,7 @@ export class CartController {
         data: {
           cartId: cart.id,
           productId,
-          variantId: variantId || undefined,
+          variantId: resolvedVariantId,
           quantity,
           mrp: mrp || 0,
           sellingPrice: sellingPrice || 0,

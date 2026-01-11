@@ -5,6 +5,7 @@ import { EmployeePermissionRepository } from '../repositories/prisma/EmployeePer
 import { PermissionRepository } from '../repositories/prisma/PermissionRepository';
 import { UserRepository } from '../repositories/prisma/UserRepository';
 import { UserRole, EmployeeStatus, PermissionAction } from '@prisma/client';
+import { prisma } from '../config/prismaClient';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { R2Service } from '../services/r2.service';
@@ -281,36 +282,72 @@ export class EmployeeController {
 
       // Check if user already exists with this email
       const existingUser = await this.userRepo.findByEmail(email);
+      
+      let userToUse;
+      
       if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          error: 'User with this email already exists',
-          message: 'A user with this email address already exists. Please use a different email or create employee for existing user.',
-          timestamp: new Date().toISOString(),
+        // Check if this user is already an employee
+        const existingEmployee = await prisma!.employee.findUnique({
+          where: { userId: existingUser.id },
+          select: { id: true, employeeCode: true }
         });
-      }
-
-      // Create User first with role EMPLOYEE
-      const newUser = await this.userRepo.create({
-        firstName,
-        lastName,
-        email,
-        password,
-        role: UserRole.EMPLOYEE,
-        isEmailVerified: false,
-      });
-
-      // Update phone and middleName if provided
-      if (phone || middleName) {
-        await this.userRepo.update(newUser.id, {
-          phone: phone || null,
-          middleName: middleName || null,
+        
+        if (existingEmployee) {
+          return res.status(400).json({
+            success: false,
+            error: 'Employee already exists',
+            message: `This user is already an employee with code: ${existingEmployee.employeeCode}. Cannot create duplicate employee record.`,
+            timestamp: new Date().toISOString(),
+          });
+        }
+        
+        // User exists but is not an employee - use existing user
+        userToUse = existingUser;
+        
+        // Update user fields if provided
+        const updateData: any = {};
+        if (firstName) updateData.firstName = firstName;
+        if (lastName) updateData.lastName = lastName;
+        if (phone) updateData.phone = phone;
+        if (middleName !== undefined) updateData.middleName = middleName;
+        if (password) updateData.password = password; // Will be hashed in UserRepository
+        
+        // Update role to EMPLOYEE if not already
+        if (existingUser.role !== UserRole.EMPLOYEE) {
+          updateData.role = UserRole.EMPLOYEE;
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          await this.userRepo.update(existingUser.id, updateData);
+          // Fetch updated user
+          userToUse = await this.userRepo.findById(existingUser.id);
+          if (!userToUse) {
+            throw new Error('Failed to retrieve updated user');
+          }
+        }
+      } else {
+        // Create new User with role EMPLOYEE
+        userToUse = await this.userRepo.create({
+          firstName,
+          lastName,
+          email,
+          password,
+          role: UserRole.EMPLOYEE,
+          isEmailVerified: false,
         });
+
+        // Update phone and middleName if provided
+        if (phone || middleName) {
+          await this.userRepo.update(userToUse.id, {
+            phone: phone || null,
+            middleName: middleName || null,
+          });
+        }
       }
 
       // Prepare employee data - Prisma handles null/undefined values automatically
       const employeeData: any = {
-        userId: newUser.id,
+        userId: userToUse.id,
         employeeCode,
         designation,
         joiningDate: new Date(joiningDate),
