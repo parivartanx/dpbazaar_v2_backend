@@ -7,6 +7,7 @@ import { UserRepository } from '../repositories/prisma/UserRepository';
 import { AuthService } from '../services/auth.service';
 import { PaymentService } from '../services/payment.service';
 import { prisma } from '../config/prismaClient';
+import { PaymentMethod } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { smsService } from '../services/sms.service';
 import { USER_FIELDS_SELECT } from '../repositories/constants';
@@ -1300,6 +1301,71 @@ export class DesktopController {
     return customer.id;
   }
   
+  // Helper method to get default gateway name based on payment method
+  private getDefaultGatewayName(paymentMethod: PaymentMethod): string {
+    // Map payment methods to appropriate gateway names
+    // Use the payment method name as gateway name, which matches the pattern used in payment.service.ts
+    switch (paymentMethod) {
+      case PaymentMethod.CASH:
+        return 'CASH';
+      case PaymentMethod.COD:
+        return 'COD';
+      case PaymentMethod.WALLET:
+        return 'WALLET';
+      case PaymentMethod.STRIPE:
+        return 'STRIPE';
+      case PaymentMethod.RAZORPAY:
+        return 'RAZORPAY';
+      case PaymentMethod.UPI:
+      case PaymentMethod.CREDIT_CARD:
+      case PaymentMethod.DEBIT_CARD:
+      case PaymentMethod.NET_BANKING:
+      case PaymentMethod.SPLIT:
+      case PaymentMethod.EMI:
+      default:
+        // Use the payment method enum value as the gateway name
+        return paymentMethod;
+    }
+  }
+
+  // Helper method to map payment method string to PaymentMethod enum
+  private mapPaymentMethod(method: string): PaymentMethod {
+    const methodUpper = method.toUpperCase();
+    
+    // Valid PaymentMethod enum values from Prisma schema
+    const validMethods: PaymentMethod[] = [
+      PaymentMethod.CREDIT_CARD,
+      PaymentMethod.DEBIT_CARD,
+      PaymentMethod.NET_BANKING,
+      PaymentMethod.UPI,
+      PaymentMethod.WALLET,
+      PaymentMethod.SPLIT,
+      PaymentMethod.EMI,
+      PaymentMethod.COD,
+      PaymentMethod.CASH,
+      PaymentMethod.STRIPE,
+      PaymentMethod.RAZORPAY,
+    ];
+    
+    // Map non-standard payment method strings to valid enum values
+    const methodMap: Record<string, PaymentMethod> = {
+      'ONLINE': PaymentMethod.UPI, // Default online payments to UPI
+    };
+    
+    // Check if it's a mapped value
+    if (methodMap[methodUpper]) {
+      return methodMap[methodUpper];
+    }
+    
+    // Check if it's already a valid enum value
+    if (validMethods.includes(methodUpper as PaymentMethod)) {
+      return methodUpper as PaymentMethod;
+    }
+    
+    // Throw error for invalid payment methods
+    throw new Error(`Invalid payment method: ${method}. Valid methods are: ${validMethods.join(', ')}`);
+  }
+
   // Helper method to create payment record
   private async createPayment(orderId: string, amount: any, method: string, details?: any): Promise<void> {
     // Verify that the order exists before creating payment
@@ -1311,11 +1377,14 @@ export class DesktopController {
       throw new Error(`Order with ID ${orderId} does not exist when creating payment`);
     }
     
+    // Map the payment method string to PaymentMethod enum
+    const paymentMethod = this.mapPaymentMethod(method);
+    
     let cashAmount = 0;
     let onlineAmount = 0;
     
     // Handle split payment calculation
-    if (method === 'SPLIT') {
+    if (paymentMethod === PaymentMethod.SPLIT) {
       cashAmount = Number(details?.cash) || 0;
       // Calculate online amount as total - cash to ensure correctness
       onlineAmount = Number(amount) - cashAmount;
@@ -1324,7 +1393,7 @@ export class DesktopController {
       if (Math.abs(cashAmount + onlineAmount - Number(amount)) > 0.01) {
         throw new Error(`Split payment amounts don't match. Cash: ${cashAmount}, Online: ${onlineAmount}, Total: ${amount}`);
       }
-    } else if (method === 'CASH' || method === 'COD') {
+    } else if (paymentMethod === PaymentMethod.CASH || paymentMethod === PaymentMethod.COD) {
       cashAmount = Number(amount);
       onlineAmount = 0;
     } else {
@@ -1341,9 +1410,9 @@ export class DesktopController {
         amount: Number(amount),
         cash: cashAmount,
         online: onlineAmount,
-        method: method as any, // Type assertion for payment method
+        method: paymentMethod,
         status: 'SUCCESS',
-        gatewayName: details?.gatewayName || (method === 'CASH' || method === 'COD' ? 'CASH' : 'ONLINE'),
+        gatewayName: details?.gatewayName || this.getDefaultGatewayName(paymentMethod),
         gatewayPaymentId: details?.gatewayPaymentId || null,
         currency: 'INR',
         paidAt: new Date(),
