@@ -581,7 +581,6 @@ This document provides comprehensive API documentation for all admin routes in t
         },
         "status": "ACTIVE",
         "designation": "string",
-        "reportingTo": "string",
         "joiningDate": "string",
         "salary": "number",
         "metadata": {},
@@ -693,6 +692,12 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
 
 **Description:** Create a new employee. **Automatically creates a new User account** with the provided details and links it to the employee record. The user is created with the `EMPLOYEE` role.
 
+**ID Generation:**
+- **userId**: Automatically generated as meaningful 10-character ID (format: EMP + 3 letters from firstName + 3 letters from lastName + 2 digits)
+  - Example: John Doe → `EMPJOHDO12`
+- **employeeCode**: Automatically generated as sequential code (format: EMP + 5 digits)
+  - Example: `EMP00001`, `EMP00002`, etc.
+
 **Request:**
 - Method: `POST`
 - Endpoint: `/employees`
@@ -706,10 +711,9 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
   "email": "string (required, valid email)",
   "password": "string (required, min 6 chars)",
   "phone": "string (optional, 10-15 digits)",
-  "employeeCode": "string (required)",
+  "employeeCode": "string (optional, auto-generated if not provided)",
   "departmentId": "string (optional, null for no department)",
   "designation": "string (required)",
-  "reportingTo": "string (optional, employee ID of manager)",
   "status": "ACTIVE | INACTIVE | SUSPENDED (optional, default: ACTIVE)",
   "employmentType": "FULL_TIME | PART_TIME | CONTRACT (optional, default: FULL_TIME)",
   "joiningDate": "string (required, ISO date)",
@@ -752,7 +756,6 @@ GET /employees?employmentType=FULL_TIME&sortBy=joiningDate&sortOrder=desc
   "employeeCode": "EMP001",
   "departmentId": "dept_abc123",
   "designation": "Senior Software Engineer",
-  "reportingTo": "mgr_xyz789",
   "status": "ACTIVE",
   "employmentType": "FULL_TIME",
   "joiningDate": "2024-01-15T00:00:00.000Z",

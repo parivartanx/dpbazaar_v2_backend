@@ -10,6 +10,7 @@ import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
+import { generateEmployeeUserId, generateEmployeeCode } from '../utils/idGenerator';
 
 /**
  * ===========================
@@ -223,6 +224,7 @@ export class DepartmentController {
 export class EmployeeController {
   private repo = new EmployeeRepository();
   private userRepo = new UserRepository();
+  private departmentRepo = new DepartmentRepository();
   private r2Service = new R2Service();
   private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
 
@@ -260,10 +262,9 @@ export class EmployeeController {
         phone,
         middleName,
         // Employee fields
-        employeeCode,
+        employeeCode: inputEmployeeCode,
         departmentId,
         designation,
-        reportingTo,
         status,
         employmentType,
         joiningDate,
@@ -279,6 +280,8 @@ export class EmployeeController {
         permanentAddress,
         metadata,
       } = req.body;
+
+      let employeeCode = inputEmployeeCode;
 
       // Check if user already exists with this email
       const existingUser = await this.userRepo.findByEmail(email);
@@ -326,14 +329,27 @@ export class EmployeeController {
           }
         }
       } else {
-        // Create new User with role EMPLOYEE
-        userToUse = await this.userRepo.create({
-          firstName,
-          lastName,
-          email,
-          password,
-          role: UserRole.EMPLOYEE,
-          isEmailVerified: false,
+        // Generate meaningful user ID and employee code
+        const generatedUserId = generateEmployeeUserId(firstName, lastName);
+        
+        // Get last employee code to generate next sequential code
+        const lastEmployee = await prisma.employee.findFirst({
+          orderBy: { employeeCode: 'desc' },
+          select: { employeeCode: true }
+        });
+        const generatedEmployeeCode = generateEmployeeCode(lastEmployee?.employeeCode);
+
+        // Create new User with custom ID and role EMPLOYEE
+        userToUse = await prisma.user.create({
+          data: {
+            id: generatedUserId,
+            firstName,
+            lastName,
+            email,
+            password,
+            role: UserRole.EMPLOYEE,
+            isEmailVerified: false,
+          }
         });
 
         // Update phone and middleName if provided
@@ -341,6 +357,22 @@ export class EmployeeController {
           await this.userRepo.update(userToUse.id, {
             phone: phone || null,
             middleName: middleName || null,
+          });
+        }
+        
+        // Override the employeeCode with our generated one
+        employeeCode = generatedEmployeeCode;
+      }
+
+      // Validate department if departmentId is provided
+      if (departmentId) {
+        const department = await this.departmentRepo.findById(departmentId);
+        if (!department) {
+          return res.status(400).json({
+            success: false,
+            error: 'Department not found',
+            message: `Department with ID ${departmentId} does not exist. Please provide a valid department ID or leave it empty.`,
+            timestamp: new Date().toISOString(),
           });
         }
       }
@@ -355,7 +387,6 @@ export class EmployeeController {
         employmentType: employmentType || 'FULL_TIME',
         currency: currency || 'INR',
         departmentId: departmentId || null,
-        reportingTo: reportingTo || null,
         confirmationDate: confirmationDate ? new Date(confirmationDate) : null,
         lastWorkingDate: lastWorkingDate ? new Date(lastWorkingDate) : null,
         salary: salary ?? null,
@@ -422,8 +453,7 @@ export class EmployeeController {
         employmentType: employmentType as string,
       });
 
-      // Transform image keys to public URLs in the employees response
-      const transformedEmployees = await this.imageUrlTransformer.transformCommonImageFields(employees);
+      const transformedEmployees = employees; // Temporarily bypass to test date serialization
 
       // Flatten employee responses by merging user fields
       const flattenedEmployees = this.flattenEmployeeArray(transformedEmployees);
