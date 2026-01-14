@@ -26,14 +26,14 @@ export class DesktopController {
         limit = 20,
         search,
         barcode,
-        category
+        category,
         // sortBy and sortOrder are not used in this implementation
       } = req.query;
 
       // Build search filters
       const filters: any = {
         page: parseInt(page as string),
-        limit: parseInt(limit as string)
+        limit: parseInt(limit as string),
       };
 
       // Add search term if provided
@@ -52,7 +52,8 @@ export class DesktopController {
         filters.barcode = barcode as string;
       }
 
-      const { products, totalCount } = await this.productRepo.getAllWithFilters(filters);
+      const { products, totalCount } =
+        await this.productRepo.getAllWithFilters(filters);
 
       const response: ApiResponse = {
         success: true,
@@ -63,8 +64,8 @@ export class DesktopController {
             totalPages: Math.ceil(totalCount / filters.limit),
             totalCount,
             hasNextPage: filters.page < Math.ceil(totalCount / filters.limit),
-            hasPrevPage: filters.page > 1
-          }
+            hasPrevPage: filters.page > 1,
+          },
         },
         message: 'Products retrieved successfully',
         timestamp: new Date().toISOString(),
@@ -92,13 +93,13 @@ export class DesktopController {
         search,
         userId,
         startDate,
-        endDate
+        endDate,
         // sortBy and sortOrder are not used in this implementation
       } = req.query;
 
       // Build filters for orders
       const filters: any = {
-        source: 'SYSTEM' // Only system-generated bills for desktop app
+        source: 'SYSTEM', // Only system-generated bills for desktop app
       };
 
       // Add date filters if provided
@@ -121,7 +122,7 @@ export class DesktopController {
 
       const pagination = {
         page: parseInt(page as string),
-        limit: parseInt(limit as string)
+        limit: parseInt(limit as string),
       };
 
       const result = await this.orderRepo.getAllOrders(filters, pagination);
@@ -130,17 +131,23 @@ export class DesktopController {
       const simplifiedBills = result.orders.map(order => {
         // Type assertion to handle the limited fields from the repository
         const typedOrder: any = order;
-        
+
         // Calculate item count from the items array
-        const itemCount = Array.isArray(typedOrder.items) ? typedOrder.items.length : 0;
-        
+        const itemCount = Array.isArray(typedOrder.items)
+          ? typedOrder.items.length
+          : 0;
+
         // Get payment method from payments array (most recent payment)
         let paymentMethod = 'CASH'; // Default to CASH for SYSTEM orders
-        if (typedOrder.payments && Array.isArray(typedOrder.payments) && typedOrder.payments.length > 0) {
+        if (
+          typedOrder.payments &&
+          Array.isArray(typedOrder.payments) &&
+          typedOrder.payments.length > 0
+        ) {
           const latestPayment = typedOrder.payments[0]; // Already ordered by createdAt desc
           paymentMethod = latestPayment.method || 'CASH';
         }
-        
+
         // Extract creator information
         let creator = null;
         if (typedOrder.creator) {
@@ -151,7 +158,7 @@ export class DesktopController {
             role: typedOrder.creator.role,
           };
         }
-        
+
         return {
           id: typedOrder.id,
           orderNumber: typedOrder.orderNumber,
@@ -183,9 +190,10 @@ export class DesktopController {
             currentPage: pagination.page,
             totalPages: Math.ceil(result.total / pagination.limit),
             totalCount: result.total,
-            hasNextPage: pagination.page < Math.ceil(result.total / pagination.limit),
-            hasPrevPage: pagination.page > 1
-          }
+            hasNextPage:
+              pagination.page < Math.ceil(result.total / pagination.limit),
+            hasPrevPage: pagination.page > 1,
+          },
         },
         message: 'Bill history retrieved successfully',
         timestamp: new Date().toISOString(),
@@ -203,20 +211,15 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-  
+
   // Bill history Excel export API
   getBillHistoryExcel = async (req: Request, res: Response): Promise<void> => {
     try {
-      const {
-        search,
-        userId,
-        startDate,
-        endDate
-      } = req.query;
+      const { search, userId, startDate, endDate } = req.query;
 
       // Build filters for orders
       const filters: any = {
-        source: 'SYSTEM' // Only system-generated bills for desktop app
+        source: 'SYSTEM', // Only system-generated bills for desktop app
       };
 
       // Add date filters if provided
@@ -236,40 +239,47 @@ export class DesktopController {
       if (userId) {
         filters.createdBy = userId as string;
       }
-      
+
       // Get all bills without pagination for Excel export
       const pagination = {
         page: 1,
         limit: 10000, // Large limit for export
       };
-      
+
       const result = await this.orderRepo.getAllOrders(filters, pagination);
-      
+
       // Transform orders to include only essential fields for desktop bill history
       const simplifiedBills = result.orders.map(order => {
         // Type assertion to handle the limited fields from the repository
         const typedOrder: any = order;
-        
+
         // Calculate item count from the items array
-        const itemCount = Array.isArray(typedOrder.items) ? typedOrder.items.length : 0;
-        
+        const itemCount = Array.isArray(typedOrder.items)
+          ? typedOrder.items.length
+          : 0;
+
         // Get payment method from payments array (most recent payment)
         let paymentMethod = 'CASH'; // Default to CASH for SYSTEM orders
-        if (typedOrder.payments && Array.isArray(typedOrder.payments) && typedOrder.payments.length > 0) {
+        if (
+          typedOrder.payments &&
+          Array.isArray(typedOrder.payments) &&
+          typedOrder.payments.length > 0
+        ) {
           const latestPayment = typedOrder.payments[0]; // Already ordered by createdAt desc
           paymentMethod = latestPayment.method || 'CASH';
         }
-        
+
         // Extract creator information
         let creatorName = '';
         let creatorEmail = '';
         let creatorRole = '';
         if (typedOrder.creator) {
-          creatorName = `${typedOrder.creator.firstName || ''} ${typedOrder.creator.lastName || ''}`.trim();
+          creatorName =
+            `${typedOrder.creator.firstName || ''} ${typedOrder.creator.lastName || ''}`.trim();
           creatorEmail = typedOrder.creator.email || '';
           creatorRole = typedOrder.creator.role || '';
         }
-        
+
         return {
           id: typedOrder.id,
           orderNumber: typedOrder.orderNumber,
@@ -291,24 +301,24 @@ export class DesktopController {
           creatorRole: creatorRole,
         };
       });
-      
+
       // Format dates to IST
       const formatISTDate = (date: Date | string | null | undefined) => {
         if (!date) return '';
         const d = new Date(date);
         // Convert to IST (GMT+5:30)
-        const istDate = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
-        return istDate.toLocaleString('en-IN', { 
+        const istDate = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        return istDate.toLocaleString('en-IN', {
           timeZone: 'Asia/Kolkata',
-          year: 'numeric', 
-          month: 'short', 
+          year: 'numeric',
+          month: 'short',
           day: 'numeric',
           hour: 'numeric',
           minute: 'numeric',
-          hour12: true
+          hour12: true,
         });
       };
-      
+
       // Prepare Excel data
       const excelData = simplifiedBills.map(bill => [
         bill.orderNumber,
@@ -329,7 +339,7 @@ export class DesktopController {
         formatISTDate(bill.createdAt),
         formatISTDate(bill.updatedAt),
       ]);
-      
+
       // Define headers for CSV
       const headers = [
         'Order Number',
@@ -348,27 +358,39 @@ export class DesktopController {
         'Created By Email',
         'Created By Role',
         'Created At',
-        'Updated At'
+        'Updated At',
       ];
-      
+
       // Convert to CSV format for Excel
       const csvContent = [
         headers.join(','),
-        ...excelData.map(row => row.map(value => {
-          if (value === null || value === undefined) {
-            value = '';
-          }
-          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
-            return `"${value.replace(/"/g, '""')}"`;
-          }
-          return value;
-        }).join(','))
+        ...excelData.map(row =>
+          row
+            .map(value => {
+              if (value === null || value === undefined) {
+                value = '';
+              }
+              if (
+                typeof value === 'string' &&
+                (value.includes(',') ||
+                  value.includes('"') ||
+                  value.includes('\n'))
+              ) {
+                return `"${value.replace(/"/g, '""')}"`;
+              }
+              return value;
+            })
+            .join(',')
+        ),
       ].join('\n');
-      
+
       // Set response headers for Excel download
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=bill-history.csv');
-      
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename=bill-history.csv'
+      );
+
       res.status(200).send(csvContent);
     } catch (error) {
       logger.error(`Error in getBillHistoryExcel: ${error}`);
@@ -381,7 +403,7 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-  
+
   // Helper function to round to 2 decimal places
   private roundToTwoDecimals = (value: number): number => {
     return Math.round(value * 100) / 100;
@@ -400,7 +422,9 @@ export class DesktopController {
       end.setHours(23, 59, 59, 999);
 
       // Calculate previous period for percentage changes
-      const periodDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      const periodDays = Math.ceil(
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      );
       const prevStart = new Date(start);
       prevStart.setDate(prevStart.getDate() - periodDays);
       const prevEnd = new Date(start);
@@ -411,8 +435,8 @@ export class DesktopController {
         source: 'SYSTEM',
         createdAt: {
           gte: start,
-          lte: end
-        }
+          lte: end,
+        },
       };
 
       if (userId) {
@@ -424,8 +448,8 @@ export class DesktopController {
         source: 'SYSTEM',
         createdAt: {
           gte: prevStart,
-          lte: prevEnd
-        }
+          lte: prevEnd,
+        },
       };
 
       if (userId) {
@@ -442,54 +466,56 @@ export class DesktopController {
                 quantity: true,
                 productName: true,
                 productId: true,
-                sellingPrice: true
-              }
+                sellingPrice: true,
+              },
             },
             payments: {
               where: {
-                status: 'SUCCESS'
+                status: 'SUCCESS',
               },
               select: {
                 amount: true,
                 cash: true,
                 online: true,
-                method: true
-              }
-            }
+                method: true,
+              },
+            },
           },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         }),
         prisma.order.findMany({
           where: prevWhereClause,
           include: {
             payments: {
               where: {
-                status: 'SUCCESS'
+                status: 'SUCCESS',
               },
               select: {
-                amount: true
-              }
-            }
-          }
+                amount: true,
+              },
+            },
+          },
         }),
         prisma.return.findMany({
           where: {
             createdAt: {
               gte: start,
-              lte: end
+              lte: end,
             },
             order: {
               source: 'SYSTEM',
-              ...(userId ? {
-                createdBy: userId as string
-              } : {})
-            }
+              ...(userId
+                ? {
+                    createdBy: userId as string,
+                  }
+                : {}),
+            },
           },
           select: {
             refundAmount: true,
-            status: true
-          }
-        })
+            status: true,
+          },
+        }),
       ]);
 
       // Calculate KPIs for current period
@@ -503,14 +529,14 @@ export class DesktopController {
       // Process orders to calculate metrics
       orders.forEach(order => {
         totalSales += Number(order.totalAmount);
-        
+
         // Sum items sold
         if (order.items && Array.isArray(order.items)) {
           order.items.forEach((item: any) => {
             itemsSold += item.quantity || 0;
           });
         }
-        
+
         // Calculate payment breakdown
         if (order.payments && order.payments.length > 0) {
           order.payments.forEach((payment: any) => {
@@ -518,20 +544,25 @@ export class DesktopController {
             const cash = Number(payment.cash || 0);
             const online = Number(payment.online || 0);
 
-            // Check payment method
-            if (payment.method === 'CASH' || payment.method === 'COD') {
-              cashPayments += amount;
-            } else if (payment.method === 'WALLET') {
-              walletPayments += amount;
-            } else {
-              // ONLINE payment methods (CREDIT_CARD, DEBIT_CARD, UPI, NET_BANKING, etc.)
-              onlinePayments += amount;
-            }
+            switch (payment.method) {
+              case 'CASH':
+              case 'COD':
+                cashPayments += amount;
+                break;
 
-            // Also check cash/online fields if method is SPLIT
-            if (payment.method === 'SPLIT') {
-              if (cash > 0) cashPayments += cash;
-              if (online > 0) onlinePayments += online;
+              case 'WALLET':
+                walletPayments += amount;
+                break;
+
+              case 'SPLIT':
+                cashPayments += cash;
+                onlinePayments += online;
+                break;
+
+              default:
+                // ONLINE methods like UPI, CARD, NET_BANKING, etc.
+                onlinePayments += amount;
+                break;
             }
           });
         } else {
@@ -553,12 +584,14 @@ export class DesktopController {
       const prevTotalBills = prevOrders.length;
 
       // Calculate percentage changes
-      const salesChangePercent = prevTotalSales > 0 
-        ? ((totalSales - prevTotalSales) / prevTotalSales) * 100 
-        : 0;
-      const billsChangePercent = prevTotalBills > 0 
-        ? ((totalBills - prevTotalBills) / prevTotalBills) * 100 
-        : 0;
+      const salesChangePercent =
+        prevTotalSales > 0
+          ? ((totalSales - prevTotalSales) / prevTotalSales) * 100
+          : 0;
+      const billsChangePercent =
+        prevTotalBills > 0
+          ? ((totalBills - prevTotalBills) / prevTotalBills) * 100
+          : 0;
 
       // Calculate average bill value
       const avgBillValue = totalBills > 0 ? totalSales / totalBills : 0;
@@ -566,7 +599,7 @@ export class DesktopController {
       // Generate daily sales data (last 7 days including today)
       const dailySales: { day: string; sales: number }[] = [];
       const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      
+
       for (let i = 6; i >= 0; i--) {
         const date = new Date(end);
         date.setDate(date.getDate() - i);
@@ -583,14 +616,27 @@ export class DesktopController {
 
         dailySales.push({
           day: daysOfWeek[date.getDay()] || 'Sun',
-          sales: this.roundToTwoDecimals(daySales)
+          sales: this.roundToTwoDecimals(daySales),
         });
       }
 
       // Generate monthly trend data (last 12 months)
       const monthlyTrend: { month: string; sales: number }[] = [];
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
+      const monthNames = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+
       for (let i = 11; i >= 0; i--) {
         const date = new Date(end);
         date.setMonth(date.getMonth() - i);
@@ -608,13 +654,15 @@ export class DesktopController {
 
         monthlyTrend.push({
           month: `${monthNames[date.getMonth()]} ${date.getFullYear().toString().slice(-2)}`,
-          sales: this.roundToTwoDecimals(monthSales)
+          sales: this.roundToTwoDecimals(monthSales),
         });
       }
 
       // Calculate top selling products from order items in the date range
-      const productSalesMap: { [key: string]: { name: string; quantity: number; price: number } } = {};
-      
+      const productSalesMap: {
+        [key: string]: { name: string; quantity: number; price: number };
+      } = {};
+
       orders.forEach(order => {
         if (order.items && Array.isArray(order.items)) {
           order.items.forEach((item: any) => {
@@ -623,7 +671,7 @@ export class DesktopController {
               productSalesMap[productId] = {
                 name: item.productName || 'Unknown Product',
                 quantity: 0,
-                price: Number(item.sellingPrice || 0)
+                price: Number(item.sellingPrice || 0),
               };
             }
             productSalesMap[productId].quantity += item.quantity || 0;
@@ -637,7 +685,7 @@ export class DesktopController {
           id: productId,
           name: data.name,
           quantity: data.quantity,
-          price: this.roundToTwoDecimals(data.price)
+          price: this.roundToTwoDecimals(data.price),
         }))
         .sort((a, b) => b.quantity - a.quantity)
         .slice(0, 10);
@@ -647,18 +695,24 @@ export class DesktopController {
         {
           method: 'Cash',
           amount: this.roundToTwoDecimals(cashPayments),
-          percentage: this.roundToTwoDecimals(totalSales > 0 ? (cashPayments / totalSales) * 100 : 0)
+          percentage: this.roundToTwoDecimals(
+            totalSales > 0 ? (cashPayments / totalSales) * 100 : 0
+          ),
         },
         {
           method: 'Online',
           amount: this.roundToTwoDecimals(onlinePayments),
-          percentage: this.roundToTwoDecimals(totalSales > 0 ? (onlinePayments / totalSales) * 100 : 0)
+          percentage: this.roundToTwoDecimals(
+            totalSales > 0 ? (onlinePayments / totalSales) * 100 : 0
+          ),
         },
         {
           method: 'Wallet',
           amount: this.roundToTwoDecimals(walletPayments),
-          percentage: this.roundToTwoDecimals(totalSales > 0 ? (walletPayments / totalSales) * 100 : 0)
-        }
+          percentage: this.roundToTwoDecimals(
+            totalSales > 0 ? (walletPayments / totalSales) * 100 : 0
+          ),
+        },
       ].filter(pm => pm.amount > 0); // Only include methods with payments
 
       const response: ApiResponse = {
@@ -670,14 +724,14 @@ export class DesktopController {
             avgBillValue: this.roundToTwoDecimals(avgBillValue),
             itemsSold,
             salesChangePercent: this.roundToTwoDecimals(salesChangePercent),
-            billsChangePercent: this.roundToTwoDecimals(billsChangePercent)
+            billsChangePercent: this.roundToTwoDecimals(billsChangePercent),
           },
           paymentBreakdown: {
             cashPayments: this.roundToTwoDecimals(cashPayments),
             onlinePayments: this.roundToTwoDecimals(onlinePayments),
             walletPayments: this.roundToTwoDecimals(walletPayments),
             totalReturns,
-            totalReturnAmount: this.roundToTwoDecimals(totalReturnAmount)
+            totalReturnAmount: this.roundToTwoDecimals(totalReturnAmount),
           },
           dailySales,
           monthlyTrend,
@@ -685,8 +739,8 @@ export class DesktopController {
           paymentMethods: paymentMethodsBreakdown,
           dateRange: {
             startDate: start.toISOString(),
-            endDate: end.toISOString()
-          }
+            endDate: end.toISOString(),
+          },
         },
         message: 'Dashboard data retrieved successfully',
         timestamp: new Date().toISOString(),
@@ -719,7 +773,7 @@ export class DesktopController {
       const filters: any = {
         source: 'SYSTEM',
         startDate,
-        endDate
+        endDate,
       };
 
       // If userId is provided, filter by createdBy
@@ -731,7 +785,9 @@ export class DesktopController {
       const result = await this.orderRepo.getAllOrders(filters);
 
       // Group by day
-      const dailySales: { [key: string]: { date: string; sales: number; orders: number } } = {};
+      const dailySales: {
+        [key: string]: { date: string; sales: number; orders: number };
+      } = {};
 
       // Initialize all days
       for (let i = 0; i < 7; i++) {
@@ -753,14 +809,14 @@ export class DesktopController {
       });
 
       // Convert to array and sort
-      const salesData = Object.values(dailySales).sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
+      const salesData = Object.values(dailySales).sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
       );
 
       const response: ApiResponse = {
         success: true,
         data: {
-          dailySales: salesData
+          dailySales: salesData,
         },
         message: 'Daily sales data retrieved successfully',
         timestamp: new Date().toISOString(),
@@ -786,7 +842,7 @@ export class DesktopController {
 
       // Build filters
       const filters: any = {
-        source: 'SYSTEM'
+        source: 'SYSTEM',
       };
 
       // If userId is provided, filter by createdBy
@@ -798,21 +854,22 @@ export class DesktopController {
       const result = await this.orderRepo.getAllOrders(filters);
 
       // Count payment methods
-      const paymentMethods: Record<string, { count: number; amount: number }> = {
-        CASH: { count: 0, amount: 0 },
-        ONLINE: { count: 0, amount: 0 },
-        WALLET: { count: 0, amount: 0 }
-      };
+      const paymentMethods: Record<string, { count: number; amount: number }> =
+        {
+          CASH: { count: 0, amount: 0 },
+          ONLINE: { count: 0, amount: 0 },
+          WALLET: { count: 0, amount: 0 },
+        };
 
       result.orders.forEach(order => {
         // For simplicity, we're assuming SYSTEM source means CASH
         // In a real implementation, you would check actual payment records
         const method = order.source === 'SYSTEM' ? 'CASH' : 'ONLINE';
-        
+
         if (!paymentMethods[method]) {
           paymentMethods[method] = { count: 0, amount: 0 };
         }
-        
+
         paymentMethods[method].count += 1;
         paymentMethods[method].amount += Number(order.totalAmount);
       });
@@ -820,7 +877,7 @@ export class DesktopController {
       const response: ApiResponse = {
         success: true,
         data: {
-          paymentMethods
+          paymentMethods,
         },
         message: 'Payment methods distribution retrieved successfully',
         timestamp: new Date().toISOString(),
@@ -870,18 +927,18 @@ export class DesktopController {
 
       // Transform the order data to avoid duplicate/unnecessary information
       const orderWithIncludes = order as any;
-      
+
       // Transform items to include only necessary fields and add return status
       const transformedItems = orderWithIncludes.items.map((item: any) => {
         // Calculate total quantity already returned for this order item
         let totalReturnedQuantity = item.refundedQuantity || 0; // Use the refundedQuantity from the order item
-        
+
         // Calculate available quantity for return
         const availableForReturn = item.quantity - totalReturnedQuantity;
-        
+
         // Determine if this item can be returned
         const canReturn = availableForReturn > 0;
-        
+
         // Create a simplified item with only necessary fields
         return {
           id: item.id,
@@ -909,47 +966,53 @@ export class DesktopController {
             totalReturned: totalReturnedQuantity,
             availableForReturn: availableForReturn,
             canReturn: canReturn,
-          }
+          },
         };
       });
-      
+
       // Transform returns to include only necessary fields
-      const transformedReturns = (orderWithIncludes.returns || []).map((ret: any) => ({
-        id: ret.id,
-        orderId: ret.orderId,
-        returnNumber: ret.returnNumber,
-        type: ret.type,
-        reason: ret.reason,
-        detailedReason: ret.detailedReason,
-        status: ret.status,
-        customerComments: ret.customerComments,
-        images: ret.images,
-        pickupAddress: ret.pickupAddress,
-        pickupScheduledDate: ret.pickupScheduledDate,
-        pickupCompletedAt: ret.pickupCompletedAt,
-        inspectionNotes: ret.inspectionNotes,
-        inspectionCompletedAt: ret.inspectionCompletedAt,
-        inspectedBy: ret.inspectedBy,
-        refundAmount: ret.refundAmount,
-        refundMethod: ret.refundMethod,
-        exchangeOrderId: ret.exchangeOrderId,
-        approvedAt: ret.approvedAt,
-        rejectedAt: ret.rejectedAt,
-        processedAt: ret.processedAt,
-        createdAt: ret.createdAt,
-        updatedAt: ret.updatedAt,
-        source: ret.source,
-        createdBy: ret.createdBy
-      }));
-      
+      const transformedReturns = (orderWithIncludes.returns || []).map(
+        (ret: any) => ({
+          id: ret.id,
+          orderId: ret.orderId,
+          returnNumber: ret.returnNumber,
+          type: ret.type,
+          reason: ret.reason,
+          detailedReason: ret.detailedReason,
+          status: ret.status,
+          customerComments: ret.customerComments,
+          images: ret.images,
+          pickupAddress: ret.pickupAddress,
+          pickupScheduledDate: ret.pickupScheduledDate,
+          pickupCompletedAt: ret.pickupCompletedAt,
+          inspectionNotes: ret.inspectionNotes,
+          inspectionCompletedAt: ret.inspectionCompletedAt,
+          inspectedBy: ret.inspectedBy,
+          refundAmount: ret.refundAmount,
+          refundMethod: ret.refundMethod,
+          exchangeOrderId: ret.exchangeOrderId,
+          approvedAt: ret.approvedAt,
+          rejectedAt: ret.rejectedAt,
+          processedAt: ret.processedAt,
+          createdAt: ret.createdAt,
+          updatedAt: ret.updatedAt,
+          source: ret.source,
+          createdBy: ret.createdBy,
+        })
+      );
+
       // Get payment method from payments array (most recent payment)
       let paymentMethod = 'CASH'; // Default to CASH for SYSTEM orders
-      if (orderWithIncludes.payments && Array.isArray(orderWithIncludes.payments) && orderWithIncludes.payments.length > 0) {
+      if (
+        orderWithIncludes.payments &&
+        Array.isArray(orderWithIncludes.payments) &&
+        orderWithIncludes.payments.length > 0
+      ) {
         // Payments are already ordered by createdAt desc from repository
         const latestPayment = orderWithIncludes.payments[0];
         paymentMethod = latestPayment.method || 'CASH';
       }
-      
+
       // Extract creator information
       let creator = null;
       if (orderWithIncludes.creator) {
@@ -960,7 +1023,7 @@ export class DesktopController {
           role: orderWithIncludes.creator.role,
         };
       }
-      
+
       const orderWithReturnStatus = {
         id: orderWithIncludes.id,
         orderNumber: orderWithIncludes.orderNumber,
@@ -1000,7 +1063,7 @@ export class DesktopController {
         items: transformedItems,
 
         // Include the actual returns array for frontend access
-        returns: transformedReturns
+        returns: transformedReturns,
       };
 
       const response: ApiResponse = {
@@ -1039,7 +1102,7 @@ export class DesktopController {
       const response: ApiResponse = {
         success: true,
         data: {
-          monthlyTrend: monthlyStats
+          monthlyTrend: monthlyStats,
         },
         message: 'Monthly trend data retrieved successfully',
         timestamp: new Date().toISOString(),
@@ -1061,16 +1124,35 @@ export class DesktopController {
   // Create order API for desktop sales
   createOrder = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { customerId, items, shippingAddressId, billingAddressId, customerNotes, discountCode, paymentMethod, paymentDetails, customerName, customerPhone } = req.body;
+      const {
+        customerId,
+        items,
+        shippingAddressId,
+        billingAddressId,
+        customerNotes,
+        discountCode,
+        paymentMethod,
+        paymentDetails,
+        customerName,
+        customerPhone,
+      } = req.body;
 
       // Counter sale: if no customerId provided, create customer based on phone number
       let finalCustomerId = customerId;
       if (!customerId && customerPhone) {
-        finalCustomerId = await this.createOrGetCustomer(customerPhone, customerName);
+        finalCustomerId = await this.createOrGetCustomer(
+          customerPhone,
+          customerName
+        );
       }
 
       // Validate required fields
-      if (!finalCustomerId || !items || !Array.isArray(items) || items.length === 0) {
+      if (
+        !finalCustomerId ||
+        !items ||
+        !Array.isArray(items) ||
+        items.length === 0
+      ) {
         const response: ApiResponse = {
           success: false,
           error: 'Missing required fields',
@@ -1116,7 +1198,7 @@ export class DesktopController {
 
       // Create the order
       const order = await this.orderRepo.createOrder(orderData);
-      
+
       // Create payment record if payment method is provided
       if (paymentMethod) {
         // For wallet payments, we need to verify the customer first
@@ -1134,7 +1216,7 @@ export class DesktopController {
               },
             },
           });
-          
+
           if (!user || !user.customer) {
             const response: ApiResponse = {
               success: false,
@@ -1145,12 +1227,12 @@ export class DesktopController {
             res.status(400).json(response);
             return;
           }
-          
+
           // Check if customer has sufficient wallet balance
           const wallet = await prisma.wallet.findFirst({
-            where: { customerId: user.customer.id }
+            where: { customerId: user.customer.id },
           });
-          
+
           if (!wallet || Number(wallet.balance) < Number(order.totalAmount)) {
             const response: ApiResponse = {
               success: false,
@@ -1161,7 +1243,7 @@ export class DesktopController {
             res.status(400).json(response);
             return;
           }
-          
+
           // Process wallet payment using the payment service
           const paymentService = new PaymentService();
           try {
@@ -1208,7 +1290,12 @@ export class DesktopController {
         } else {
           // For other payment methods (CASH, COD, SPLIT, CREDIT_CARD, DEBIT_CARD, NET_BANKING, UPI, etc.)
           // Use the existing createPayment method
-          await this.createPayment(order.id, order.totalAmount, paymentMethod, paymentDetails);
+          await this.createPayment(
+            order.id,
+            order.totalAmount,
+            paymentMethod,
+            paymentDetails
+          );
         }
       }
 
@@ -1231,9 +1318,12 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-  
+
   // Helper method to create or get customer by phone number
-  private async createOrGetCustomer(phone: string, name?: string): Promise<string> {
+  private async createOrGetCustomer(
+    phone: string,
+    name?: string
+  ): Promise<string> {
     // Try to find existing customer by phone
     const existingUsers = await prisma.user.findMany({
       where: { phone },
@@ -1268,16 +1358,16 @@ export class DesktopController {
         },
       },
     });
-    
+
     const existingCustomer = existingUsers.find(user => user.customer);
-    
+
     if (existingCustomer && existingCustomer.customer) {
       return existingCustomer.customer.id;
     }
-    
+
     // If customer doesn't exist, create a new counter customer
     const counterCustomerName = name || `CounterUser${Date.now()}`;
-    
+
     // Create a new user
     const newUser = await prisma.user.create({
       data: {
@@ -1287,20 +1377,20 @@ export class DesktopController {
         phone,
         password: await bcrypt.hash('defaultPassword123', 10),
         role: 'CUSTOMER',
-      }
+      },
     });
-    
+
     // Create customer record (firstName/lastName are now in User, not Customer)
     const customer = await prisma.customer.create({
       data: {
         userId: newUser.id,
         customerCode: `CUST${Date.now()}`,
-      }
+      },
     });
-    
+
     return customer.id;
   }
-  
+
   // Helper method to get default gateway name based on payment method
   private getDefaultGatewayName(paymentMethod: PaymentMethod): string {
     // Map payment methods to appropriate gateway names
@@ -1331,7 +1421,7 @@ export class DesktopController {
   // Helper method to map payment method string to PaymentMethod enum
   private mapPaymentMethod(method: string): PaymentMethod {
     const methodUpper = method.toUpperCase();
-    
+
     // Valid PaymentMethod enum values from Prisma schema
     const validMethods: PaymentMethod[] = [
       PaymentMethod.CREDIT_CARD,
@@ -1346,54 +1436,68 @@ export class DesktopController {
       PaymentMethod.STRIPE,
       PaymentMethod.RAZORPAY,
     ];
-    
+
     // Map non-standard payment method strings to valid enum values
     const methodMap: Record<string, PaymentMethod> = {
-      'ONLINE': PaymentMethod.UPI, // Default online payments to UPI
+      ONLINE: PaymentMethod.UPI, // Default online payments to UPI
     };
-    
+
     // Check if it's a mapped value
     if (methodMap[methodUpper]) {
       return methodMap[methodUpper];
     }
-    
+
     // Check if it's already a valid enum value
     if (validMethods.includes(methodUpper as PaymentMethod)) {
       return methodUpper as PaymentMethod;
     }
-    
+
     // Throw error for invalid payment methods
-    throw new Error(`Invalid payment method: ${method}. Valid methods are: ${validMethods.join(', ')}`);
+    throw new Error(
+      `Invalid payment method: ${method}. Valid methods are: ${validMethods.join(', ')}`
+    );
   }
 
   // Helper method to create payment record
-  private async createPayment(orderId: string, amount: any, method: string, details?: any): Promise<void> {
+  private async createPayment(
+    orderId: string,
+    amount: any,
+    method: string,
+    details?: any
+  ): Promise<void> {
     // Verify that the order exists before creating payment
     const order = await prisma.order.findUnique({
-      where: { id: orderId }
+      where: { id: orderId },
     });
-    
+
     if (!order) {
-      throw new Error(`Order with ID ${orderId} does not exist when creating payment`);
+      throw new Error(
+        `Order with ID ${orderId} does not exist when creating payment`
+      );
     }
-    
+
     // Map the payment method string to PaymentMethod enum
     const paymentMethod = this.mapPaymentMethod(method);
-    
+
     let cashAmount = 0;
     let onlineAmount = 0;
-    
+
     // Handle split payment calculation
     if (paymentMethod === PaymentMethod.SPLIT) {
       cashAmount = Number(details?.cash) || 0;
       // Calculate online amount as total - cash to ensure correctness
       onlineAmount = Number(amount) - cashAmount;
-      
+
       // Validate that cash + online equals total amount
       if (Math.abs(cashAmount + onlineAmount - Number(amount)) > 0.01) {
-        throw new Error(`Split payment amounts don't match. Cash: ${cashAmount}, Online: ${onlineAmount}, Total: ${amount}`);
+        throw new Error(
+          `Split payment amounts don't match. Cash: ${cashAmount}, Online: ${onlineAmount}, Total: ${amount}`
+        );
       }
-    } else if (paymentMethod === PaymentMethod.CASH || paymentMethod === PaymentMethod.COD) {
+    } else if (
+      paymentMethod === PaymentMethod.CASH ||
+      paymentMethod === PaymentMethod.COD
+    ) {
       cashAmount = Number(amount);
       onlineAmount = 0;
     } else {
@@ -1401,36 +1505,40 @@ export class DesktopController {
       cashAmount = 0;
       onlineAmount = Number(amount);
     }
-    
+
     await prisma.payment.create({
       data: {
         order: {
-          connect: { id: orderId }
+          connect: { id: orderId },
         },
         amount: Number(amount),
         cash: cashAmount,
         online: onlineAmount,
         method: paymentMethod,
         status: 'SUCCESS',
-        gatewayName: details?.gatewayName || this.getDefaultGatewayName(paymentMethod),
+        gatewayName:
+          details?.gatewayName || this.getDefaultGatewayName(paymentMethod),
         gatewayPaymentId: details?.gatewayPaymentId || null,
         currency: 'INR',
         paidAt: new Date(),
-      }
+      },
     });
-    
+
     // Update order status to CONFIRMED
     await this.orderRepo.updateOrderStatus(orderId, 'CONFIRMED');
-    
+
     // Update order's payment status to SUCCESS
     await prisma.order.update({
       where: { id: orderId },
       data: { paymentStatus: 'SUCCESS' },
     });
   }
-  
+
   // Top selling products API
-  getTopSellingProducts = async (req: Request, res: Response): Promise<void> => {
+  getTopSellingProducts = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       // Get top 10 products by sales count
       const topProducts = await this.productRepo.getBestSellers();
@@ -1441,7 +1549,7 @@ export class DesktopController {
       const response: ApiResponse = {
         success: true,
         data: {
-          topProducts: limitedProducts
+          topProducts: limitedProducts,
         },
         message: 'Top selling products retrieved successfully',
         timestamp: new Date().toISOString(),
@@ -1554,18 +1662,12 @@ export class DesktopController {
   getAllDiscounts = async (req: Request, res: Response): Promise<void> => {
     try {
       // Get query parameters for filtering and pagination
-      const {
-        page = 1,
-        limit = 20,
-        search,
-        isActive,
-        type
-      } = req.query;
+      const { page = 1, limit = 20, search, isActive, type } = req.query;
 
       // Build filters for discounts
       const filters: any = {
         page: parseInt(page as string),
-        limit: parseInt(limit as string)
+        limit: parseInt(limit as string),
       };
 
       // Add search filter if provided
@@ -1587,71 +1689,96 @@ export class DesktopController {
       const discounts = await prisma.discount.findMany({
         where: {
           AND: [
-            filters.search ? {
-              OR: [
-                { code: { contains: filters.search, mode: 'insensitive' } },
-                { description: { contains: filters.search, mode: 'insensitive' } }
-              ]
-            } : {},
-            filters.isActive !== undefined ? { isActive: filters.isActive } : {},
-            filters.type ? { type: filters.type } : {}
-          ]
+            filters.search
+              ? {
+                  OR: [
+                    { code: { contains: filters.search, mode: 'insensitive' } },
+                    {
+                      description: {
+                        contains: filters.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  ],
+                }
+              : {},
+            filters.isActive !== undefined
+              ? { isActive: filters.isActive }
+              : {},
+            filters.type ? { type: filters.type } : {},
+          ],
         },
         skip: (filters.page - 1) * filters.limit,
         take: filters.limit,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
 
       // Since Prisma doesn't directly support filtering by array values in include,
       // we need to fetch related data separately and attach it to each discount
-      const discountsWithDetails = await Promise.all(discounts.map(async (discount) => {
-        // Get detailed information for applicable categories
-        const categories = discount.applicableCategories && discount.applicableCategories.length > 0
-          ? await prisma.category.findMany({
-              where: { id: { in: discount.applicableCategories } },
-              select: { id: true, name: true, slug: true }
-            })
-          : [];
-        
-        // Get detailed information for applicable products
-        const products = discount.applicableProducts && discount.applicableProducts.length > 0
-          ? await prisma.product.findMany({
-              where: { id: { in: discount.applicableProducts } },
-              select: { id: true, name: true, sku: true, slug: true }
-            })
-          : [];
-        
-        // Get detailed information for applicable brands
-        const brands = discount.applicableBrands && discount.applicableBrands.length > 0
-          ? await prisma.brand.findMany({
-              where: { id: { in: discount.applicableBrands } },
-              select: { id: true, name: true, slug: true }
-            })
-          : [];
-        
-        // Return discount with detailed applicable information
-        return {
-          ...discount,
-          applicableCategories: categories, // Replace IDs with full category objects
-          applicableProducts: products,     // Replace IDs with full product objects
-          applicableBrands: brands          // Replace IDs with full brand objects
-        };
-      }));
+      const discountsWithDetails = await Promise.all(
+        discounts.map(async discount => {
+          // Get detailed information for applicable categories
+          const categories =
+            discount.applicableCategories &&
+            discount.applicableCategories.length > 0
+              ? await prisma.category.findMany({
+                  where: { id: { in: discount.applicableCategories } },
+                  select: { id: true, name: true, slug: true },
+                })
+              : [];
+
+          // Get detailed information for applicable products
+          const products =
+            discount.applicableProducts &&
+            discount.applicableProducts.length > 0
+              ? await prisma.product.findMany({
+                  where: { id: { in: discount.applicableProducts } },
+                  select: { id: true, name: true, sku: true, slug: true },
+                })
+              : [];
+
+          // Get detailed information for applicable brands
+          const brands =
+            discount.applicableBrands && discount.applicableBrands.length > 0
+              ? await prisma.brand.findMany({
+                  where: { id: { in: discount.applicableBrands } },
+                  select: { id: true, name: true, slug: true },
+                })
+              : [];
+
+          // Return discount with detailed applicable information
+          return {
+            ...discount,
+            applicableCategories: categories, // Replace IDs with full category objects
+            applicableProducts: products, // Replace IDs with full product objects
+            applicableBrands: brands, // Replace IDs with full brand objects
+          };
+        })
+      );
 
       // Get total count for pagination
       const totalCount = await prisma.discount.count({
         where: {
           AND: [
-            filters.search ? {
-              OR: [
-                { code: { contains: filters.search, mode: 'insensitive' } },
-                { description: { contains: filters.search, mode: 'insensitive' } }
-              ]
-            } : {},
-            filters.isActive !== undefined ? { isActive: filters.isActive } : {},
-            filters.type ? { type: filters.type } : {}
-          ]
-        }
+            filters.search
+              ? {
+                  OR: [
+                    { code: { contains: filters.search, mode: 'insensitive' } },
+                    {
+                      description: {
+                        contains: filters.search,
+                        mode: 'insensitive',
+                      },
+                    },
+                  ],
+                }
+              : {},
+            filters.isActive !== undefined
+              ? { isActive: filters.isActive }
+              : {},
+            filters.type ? { type: filters.type } : {},
+          ],
+        },
       });
 
       const response: ApiResponse = {
@@ -1663,8 +1790,8 @@ export class DesktopController {
             totalPages: Math.ceil(totalCount / filters.limit),
             totalCount,
             hasNextPage: filters.page < Math.ceil(totalCount / filters.limit),
-            hasPrevPage: filters.page > 1
-          }
+            hasPrevPage: filters.page > 1,
+          },
         },
         message: 'Discounts retrieved successfully',
         timestamp: new Date().toISOString(),
@@ -1684,10 +1811,13 @@ export class DesktopController {
   };
 
   // Get customer wallet details by mobile number
-  getCustomerWalletByMobile = async (req: Request, res: Response): Promise<void> => {
+  getCustomerWalletByMobile = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { mobileNumber } = req.params;
-      
+
       // Find user by mobile number first, then get related customer
       const user = await prisma.user.findFirst({
         where: {
@@ -1703,7 +1833,7 @@ export class DesktopController {
           },
         },
       });
-      
+
       if (!user || !user.customer) {
         const response: ApiResponse = {
           success: false,
@@ -1714,14 +1844,14 @@ export class DesktopController {
         res.status(404).json(response);
         return;
       }
-      
+
       // Find customer's wallet
       const wallet = await prisma.wallet.findFirst({
         where: {
-          customerId: user.customer.id
-        }
+          customerId: user.customer.id,
+        },
       });
-      
+
       if (!wallet) {
         const response: ApiResponse = {
           success: false,
@@ -1732,7 +1862,7 @@ export class DesktopController {
         res.status(404).json(response);
         return;
       }
-      
+
       const response: ApiResponse = {
         success: true,
         data: {
@@ -1747,12 +1877,12 @@ export class DesktopController {
             balance: wallet.balance,
             type: wallet.type,
             createdAt: wallet.createdAt,
-          }
+          },
         },
         message: 'Customer wallet retrieved successfully',
         timestamp: new Date().toISOString(),
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in getCustomerWalletByMobile: ${error}`);
@@ -1765,12 +1895,15 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-  
+
   // Send OTP for wallet payment verification
-  sendOtpForWalletPayment = async (req: Request, res: Response): Promise<void> => {
+  sendOtpForWalletPayment = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { mobileNumber } = req.body;
-      
+
       // Validate mobile number
       if (!mobileNumber) {
         const response: ApiResponse = {
@@ -1782,17 +1915,17 @@ export class DesktopController {
         res.status(400).json(response);
         return;
       }
-      
+
       // Find user by mobile number
       const user = await prisma.user.findFirst({
         where: {
           phone: mobileNumber,
         },
         include: {
-          customer: true
-        }
+          customer: true,
+        },
       });
-      
+
       if (!user || !user.customer) {
         const response: ApiResponse = {
           success: false,
@@ -1803,22 +1936,22 @@ export class DesktopController {
         res.status(404).json(response);
         return;
       }
-      
+
       // Generate a 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      
+
       // Set OTP to expire in 5 minutes
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 5);
-      
+
       // Check if an OTP record already exists for this phone and type
       const existingOtp = await prisma.otp.findFirst({
         where: {
           phone: mobileNumber,
           type: 'WALLET',
-        }
+        },
       });
-      
+
       if (existingOtp) {
         // Update the existing OTP record
         await prisma.otp.update({
@@ -1828,7 +1961,7 @@ export class DesktopController {
             status: 'PENDING',
             expiresAt,
             updatedAt: new Date(),
-          }
+          },
         });
       } else {
         // Create a new OTP record
@@ -1840,16 +1973,16 @@ export class DesktopController {
             type: 'WALLET',
             status: 'PENDING',
             expiresAt,
-          }
+          },
         });
       }
-      
+
       let response: ApiResponse;
-      
+
       // Send OTP via SMS service
       try {
         await smsService.sendOtp(mobileNumber, otp);
-        
+
         response = {
           success: true,
           data: {
@@ -1864,7 +1997,7 @@ export class DesktopController {
         };
       } catch (error) {
         logger.error(`Failed to send OTP via SMS: ${error}`);
-        
+
         // In case of SMS failure, still return success but log the error
         response = {
           success: true,
@@ -1878,9 +2011,9 @@ export class DesktopController {
           timestamp: new Date().toISOString(),
         };
       }
-      
+
       res.status(200).json(response);
-      
+
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in sendOtpForWalletPayment: ${error}`);
@@ -1893,24 +2026,28 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-  
+
   // Verify OTP and get wallet details
-  verifyOtpAndGetWalletDetails = async (req: Request, res: Response): Promise<void> => {
+  verifyOtpAndGetWalletDetails = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { mobileNumber, otp } = req.body;
-      
+
       // Validate required fields
       if (!mobileNumber || !otp) {
         const response: ApiResponse = {
           success: false,
           error: 'Mobile number and OTP are required',
-          message: 'Mobile number and OTP are required to verify and get wallet details',
+          message:
+            'Mobile number and OTP are required to verify and get wallet details',
           timestamp: new Date().toISOString(),
         };
         res.status(400).json(response);
         return;
       }
-      
+
       // Find user by mobile number first, then get related customer
       const user = await prisma.user.findFirst({
         where: {
@@ -1926,7 +2063,7 @@ export class DesktopController {
           },
         },
       });
-      
+
       if (!user || !user.customer) {
         const response: ApiResponse = {
           success: false,
@@ -1937,7 +2074,7 @@ export class DesktopController {
         res.status(404).json(response);
         return;
       }
-      
+
       // Find the OTP record
       const otpRecord = await prisma.otp.findFirst({
         where: {
@@ -1946,11 +2083,11 @@ export class DesktopController {
           type: 'WALLET',
           status: 'PENDING',
           expiresAt: {
-            gte: new Date() // Not expired
-          }
-        }
+            gte: new Date(), // Not expired
+          },
+        },
       });
-      
+
       if (!otpRecord) {
         const response: ApiResponse = {
           success: false,
@@ -1961,14 +2098,14 @@ export class DesktopController {
         res.status(400).json(response);
         return;
       }
-      
+
       // Find customer's wallet
       const wallet = await prisma.wallet.findFirst({
         where: {
-          customerId: user.customer.id
-        }
+          customerId: user.customer.id,
+        },
       });
-      
+
       if (!wallet) {
         const response: ApiResponse = {
           success: false,
@@ -1979,7 +2116,7 @@ export class DesktopController {
         res.status(404).json(response);
         return;
       }
-      
+
       // Update the OTP record to mark as verified
       await prisma.otp.update({
         where: { id: otpRecord.id },
@@ -1987,9 +2124,9 @@ export class DesktopController {
           status: 'VERIFIED',
           verifiedAt: new Date(),
           updatedAt: new Date(),
-        }
+        },
       });
-      
+
       const response: ApiResponse = {
         success: true,
         data: {
@@ -2004,12 +2141,12 @@ export class DesktopController {
             balance: wallet.balance,
             type: wallet.type,
             createdAt: wallet.createdAt,
-          }
+          },
         },
         message: 'OTP verified successfully and wallet details retrieved',
         timestamp: new Date().toISOString(),
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in verifyOtpAndGetWalletDetails: ${error}`);
@@ -2027,7 +2164,7 @@ export class DesktopController {
   createReturnRequest = async (req: Request, res: Response): Promise<void> => {
     try {
       const returnData = req.body;
-        
+
       // Validate required fields
       if (!returnData.orderId || !returnData.type || !returnData.reason) {
         const response: ApiResponse = {
@@ -2038,14 +2175,19 @@ export class DesktopController {
         res.status(400).json(response);
         return;
       }
-      
+
       // If return items are provided, validate them
-      if (returnData.items && Array.isArray(returnData.items) && returnData.items.length > 0) {
+      if (
+        returnData.items &&
+        Array.isArray(returnData.items) &&
+        returnData.items.length > 0
+      ) {
         for (const item of returnData.items) {
           if (!item.orderItemId || !item.quantity || item.quantity <= 0) {
             const response: ApiResponse = {
               success: false,
-              message: 'Each return item must have a valid orderItemId and quantity',
+              message:
+                'Each return item must have a valid orderItemId and quantity',
               timestamp: new Date().toISOString(),
             };
             res.status(400).json(response);
@@ -2053,15 +2195,17 @@ export class DesktopController {
           }
         }
       }
-        
+
       // Generate return number
       const returnNumber = `RET-${Date.now()}`;
-        
+
       // Get the user who is creating the return (from authentication middleware)
       const createdBy = (req as any).user?.userId || null;
-        
+
       // Fetch the original order to calculate refund amount
-      const originalOrder = await this.orderRepo.getOrderById(returnData.orderId);
+      const originalOrder = await this.orderRepo.getOrderById(
+        returnData.orderId
+      );
       if (!originalOrder) {
         const response: ApiResponse = {
           success: false,
@@ -2071,14 +2215,18 @@ export class DesktopController {
         res.status(404).json(response);
         return;
       }
-      
+
       let calculatedRefundAmount = 0;
-      
+
       // If return items are provided, calculate the refund amount
-      if (returnData.items && Array.isArray(returnData.items) && returnData.items.length > 0) {
+      if (
+        returnData.items &&
+        Array.isArray(returnData.items) &&
+        returnData.items.length > 0
+      ) {
         // Type assertion to handle the items array
         const orderItems = (originalOrder as any).items;
-        
+
         if (!orderItems || !Array.isArray(orderItems)) {
           const response: ApiResponse = {
             success: false,
@@ -2088,11 +2236,13 @@ export class DesktopController {
           res.status(400).json(response);
           return;
         }
-        
+
         // Calculate refund amount based on returned items
         for (const returnItem of returnData.items) {
-          const orderItem = orderItems.find((item: any) => item.id === returnItem.orderItemId);
-          
+          const orderItem = orderItems.find(
+            (item: any) => item.id === returnItem.orderItemId
+          );
+
           if (!orderItem) {
             const response: ApiResponse = {
               success: false,
@@ -2102,16 +2252,17 @@ export class DesktopController {
             res.status(400).json(response);
             return;
           }
-          
+
           // Calculate refund for this item: (sellingPrice * quantity returned)
-          const itemRefund = Number(orderItem.sellingPrice) * returnItem.quantity;
+          const itemRefund =
+            Number(orderItem.sellingPrice) * returnItem.quantity;
           calculatedRefundAmount += itemRefund;
         }
       }
-      
+
       // Determine refund method for counter return
       const refundMethod = returnData.refundMethod || 'CASH'; // Default to CASH for counter returns
-      
+
       // Create return with immediate approval status since it's from desktop manager
       const returnRequest = await this.orderRepo.createReturn({
         ...returnData,
@@ -2122,7 +2273,7 @@ export class DesktopController {
         refundMethod, // Set refund method (CASH, STORE_CREDIT, etc.)
         ...(createdBy && { createdBy }), // Add createdBy if user is authenticated
       });
-        
+
       const response: ApiResponse = {
         success: true,
         data: { return: returnRequest },
@@ -2141,27 +2292,19 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-  
+
   // Get all returns API for desktop manager
   getReturns = async (req: Request, res: Response): Promise<void> => {
     try {
-      const {
-        status,
-        orderId,
-        type,
-        page,
-        limit,
-        search,
-        startDate,
-        endDate
-      } = req.query;
-  
+      const { status, orderId, type, page, limit, search, startDate, endDate } =
+        req.query;
+
       const filters: any = {};
       if (status) filters.status = status;
       if (orderId) filters.orderId = orderId as string;
       if (type) filters.type = type as string;
       if (search) filters.search = search as string;
-        
+
       // Add date filters if provided
       if (startDate) {
         filters.startDate = new Date(startDate as string);
@@ -2169,23 +2312,26 @@ export class DesktopController {
       if (endDate) {
         filters.endDate = new Date(endDate as string);
       }
-        
+
       // For desktop, we might want to filter by the user who created the return
       const createdBy = (req as any).user?.userId || null;
       if (createdBy) {
         filters.createdBy = createdBy;
       }
-            
+
       // Only return SYSTEM sourced returns for desktop (counter returns)
       filters.source = 'SYSTEM';
-      
+
       const pagination = {
         page: page ? parseInt(page as string) : 1,
         limit: limit ? parseInt(limit as string) : 10,
       };
-      
-      const result = await this.orderRepo.getDesktopReturns(filters, pagination);
-      
+
+      const result = await this.orderRepo.getDesktopReturns(
+        filters,
+        pagination
+      );
+
       const response: ApiResponse = {
         success: true,
         data: {
@@ -2210,25 +2356,18 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-  
+
   // Get returns data in Excel format
   getReturnsExcel = async (req: Request, res: Response): Promise<void> => {
     try {
-      const {
-        status,
-        orderId,
-        type,
-        search,
-        startDate,
-        endDate
-      } = req.query;
+      const { status, orderId, type, search, startDate, endDate } = req.query;
 
       const filters: any = {};
       if (status) filters.status = status;
       if (orderId) filters.orderId = orderId as string;
       if (type) filters.type = type as string;
       if (search) filters.search = search as string;
-        
+
       // Add date filters if provided
       if (startDate) {
         filters.startDate = new Date(startDate as string);
@@ -2236,24 +2375,27 @@ export class DesktopController {
       if (endDate) {
         filters.endDate = new Date(endDate as string);
       }
-        
+
       // For desktop, we might want to filter by the user who created the return
       const createdBy = (req as any).user?.userId || null;
       if (createdBy) {
         filters.createdBy = createdBy;
       }
-            
+
       // Only return SYSTEM sourced returns for desktop (counter returns)
       filters.source = 'SYSTEM';
-      
+
       // Get all returns without pagination for Excel export
       const pagination = {
         page: 1,
         limit: 10000, // Large limit for export
       };
-      
-      const result = await this.orderRepo.getDesktopReturns(filters, pagination);
-      
+
+      const result = await this.orderRepo.getDesktopReturns(
+        filters,
+        pagination
+      );
+
       // Prepare Excel data
       const excelData = result.returns.map((returnItem: any) => {
         // Format dates to IST
@@ -2261,18 +2403,18 @@ export class DesktopController {
           if (!date) return '';
           const d = new Date(date);
           // Convert to IST (GMT+5:30)
-          const istDate = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
-          return istDate.toLocaleString('en-IN', { 
+          const istDate = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+          return istDate.toLocaleString('en-IN', {
             timeZone: 'Asia/Kolkata',
-            year: 'numeric', 
-            month: 'short', 
+            year: 'numeric',
+            month: 'short',
             day: 'numeric',
             hour: 'numeric',
             minute: 'numeric',
-            hour12: true
+            hour12: true,
           });
         };
-        
+
         return [
           returnItem.returnNumber,
           returnItem.type,
@@ -2288,7 +2430,7 @@ export class DesktopController {
           formatISTDate(returnItem.updatedAt),
         ];
       });
-      
+
       // Define headers for CSV
       const headers = [
         'Return Number',
@@ -2302,27 +2444,36 @@ export class DesktopController {
         'Customer Name',
         'Customer Phone',
         'Created At',
-        'Updated At'
+        'Updated At',
       ];
-      
+
       // Convert to CSV format for Excel
       const csvContent = [
         headers.join(','),
-        ...excelData.map(row => row.map(value => {
-          if (value === null || value === undefined) {
-            value = '';
-          }
-          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
-            return `"${value.replace(/"/g, '""')}"`;
-          }
-          return value;
-        }).join(','))
+        ...excelData.map(row =>
+          row
+            .map(value => {
+              if (value === null || value === undefined) {
+                value = '';
+              }
+              if (
+                typeof value === 'string' &&
+                (value.includes(',') ||
+                  value.includes('"') ||
+                  value.includes('\n'))
+              ) {
+                return `"${value.replace(/"/g, '""')}"`;
+              }
+              return value;
+            })
+            .join(',')
+        ),
       ].join('\n');
-      
+
       // Set response headers for Excel download
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=returns.csv');
-      
+
       res.status(200).send(csvContent);
     } catch (error) {
       logger.error(`Returns Excel export error: ${error}`);
@@ -2335,12 +2486,12 @@ export class DesktopController {
       res.status(500).json(response);
     }
   };
-  
+
   // Verify OTP for payment
   verifyOtpForPayment = async (req: Request, res: Response): Promise<void> => {
     try {
       const { mobileNumber, otp, amount } = req.body;
-      
+
       // Validate required fields
       if (!mobileNumber || !otp || !amount) {
         const response: ApiResponse = {
@@ -2352,7 +2503,7 @@ export class DesktopController {
         res.status(400).json(response);
         return;
       }
-      
+
       // Find user by mobile number first, then get related customer
       const user = await prisma.user.findFirst({
         where: {
@@ -2368,7 +2519,7 @@ export class DesktopController {
           },
         },
       });
-      
+
       if (!user || !user.customer) {
         const response: ApiResponse = {
           success: false,
@@ -2379,7 +2530,7 @@ export class DesktopController {
         res.status(404).json(response);
         return;
       }
-      
+
       // Find the OTP record
       const otpRecord = await prisma.otp.findFirst({
         where: {
@@ -2388,11 +2539,11 @@ export class DesktopController {
           type: 'PAYMENT',
           status: 'PENDING',
           expiresAt: {
-            gte: new Date() // Not expired
-          }
-        }
+            gte: new Date(), // Not expired
+          },
+        },
       });
-      
+
       if (!otpRecord) {
         const response: ApiResponse = {
           success: false,
@@ -2403,7 +2554,7 @@ export class DesktopController {
         res.status(400).json(response);
         return;
       }
-      
+
       // Update the OTP record to mark as verified
       await prisma.otp.update({
         where: { id: otpRecord.id },
@@ -2411,16 +2562,16 @@ export class DesktopController {
           status: 'VERIFIED',
           verifiedAt: new Date(),
           updatedAt: new Date(),
-        }
+        },
       });
-      
+
       // Check if the customer has sufficient balance in wallet
       const wallet = await prisma.wallet.findFirst({
         where: {
-          customerId: user.customer.id
-        }
+          customerId: user.customer.id,
+        },
       });
-      
+
       if (!wallet) {
         const response: ApiResponse = {
           success: false,
@@ -2431,7 +2582,7 @@ export class DesktopController {
         res.status(404).json(response);
         return;
       }
-      
+
       if (Number(wallet.balance) < Number(amount)) {
         const response: ApiResponse = {
           success: false,
@@ -2442,7 +2593,7 @@ export class DesktopController {
         res.status(400).json(response);
         return;
       }
-      
+
       const response: ApiResponse = {
         success: true,
         data: {
@@ -2454,7 +2605,7 @@ export class DesktopController {
         message: 'OTP verified successfully',
         timestamp: new Date().toISOString(),
       };
-      
+
       res.status(200).json(response);
     } catch (error) {
       logger.error(`Error in verifyOtpForPayment: ${error}`);
