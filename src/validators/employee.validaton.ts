@@ -44,7 +44,7 @@ export const createEmployeeSchema = Joi.object({
   middleName: Joi.string().optional().allow(null, ''),
 
   // Employee details
-  employeeCode: Joi.string().required(),
+  employeeCode: Joi.string().optional(),
   departmentId: Joi.string().allow(null, ''),
   designation: Joi.string().required(),
   reportingTo: Joi.string().allow(null, ''),

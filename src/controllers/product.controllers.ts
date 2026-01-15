@@ -96,6 +96,15 @@ export class ProductController {
         }
       : null;
 
+    // Calculate total available quantity from all warehouses
+    const availableQuantity =
+      sanitized.inventory && Array.isArray(sanitized.inventory)
+        ? sanitized.inventory.reduce(
+            (total: number, inv: any) => total + (inv.availableQuantity || 0),
+            0
+          )
+        : 0;
+
     // Return only essential fields for product cards
     return {
       id: sanitized.id,
@@ -126,6 +135,13 @@ export class ProductController {
       isBestSeller: sanitized.isBestSeller,
       avgRating: sanitized.avgRating,
       totalReviews: sanitized.totalReviews,
+      availableQuantity: availableQuantity,
+      createdAt:
+        product.createdAt instanceof Date
+          ? product.createdAt.toISOString()
+          : typeof product.createdAt === 'string'
+            ? product.createdAt
+            : null,
     };
   }
 
@@ -316,6 +332,14 @@ export class ProductController {
         converted.taxRate = convertToNumber(converted.taxRate);
         converted.weight = convertToNumber(converted.weight);
         converted.avgRating = convertToNumber(converted.avgRating);
+
+        // Preserve createdAt as ISO string before image transformer corrupts Date objects
+        if (converted.createdAt) {
+          converted.createdAt =
+            converted.createdAt instanceof Date
+              ? converted.createdAt.toISOString()
+              : converted.createdAt;
+        }
 
         // Convert variant-level Float fields
         if (converted.variants && Array.isArray(converted.variants)) {
@@ -533,15 +557,241 @@ export class ProductController {
         return;
       }
 
-      // Transform image keys to signed URLs in the product response
+      // Helper to convert Decimal/number to proper number
+      // Must be called BEFORE image transformer which corrupts Decimal objects
+      const convertToNumber = (value: any): number | null => {
+        if (value === null || value === undefined) return null;
+        if (typeof value === 'number') return isNaN(value) ? null : value;
+        // Handle Prisma Decimal objects (they have a toNumber method)
+        if (typeof value === 'object' && typeof value.toNumber === 'function') {
+          return value.toNumber();
+        }
+        // Handle Decimal-like objects with {s, e, d} structure - convert via toString
+        if (
+          typeof value === 'object' &&
+          'd' in value &&
+          'e' in value &&
+          's' in value
+        ) {
+          try {
+            // Reconstruct decimal from {s, e, d} structure
+            const sign = value.s === 1 ? 1 : -1;
+            const digits = value.d;
+            const exponent = value.e;
+            if (digits && digits.length > 0) {
+              const num =
+                sign *
+                digits[0] *
+                Math.pow(10, exponent - Math.floor(Math.log10(digits[0])));
+              return isNaN(num) ? null : num;
+            }
+          } catch {
+            return null;
+          }
+        }
+        try {
+          const num = Number(value);
+          return isNaN(num) ? null : num;
+        } catch {
+          return null;
+        }
+      };
+
+      // Helper to convert Date to ISO string
+      // Must be called BEFORE image transformer which corrupts Date objects
+      const convertToISOString = (value: any): string | null => {
+        if (value === null || value === undefined) return null;
+        if (value instanceof Date) return value.toISOString();
+        if (typeof value === 'string') return value;
+        // Handle Date-like objects
+        if (
+          typeof value === 'object' &&
+          typeof value.toISOString === 'function'
+        ) {
+          return value.toISOString();
+        }
+        return null;
+      };
+
+      // IMPORTANT: Serialize Decimal and Date fields BEFORE image transformer
+      // The image transformer uses spread operator which corrupts Prisma Decimal/Date objects
+      // Cast to any to access included relations (variants, images, brand, categories, attributes)
+      const productWithRelations = product as any;
+      const serializedProduct = { ...productWithRelations } as any;
+
+      // Convert Decimal fields to numbers
+      serializedProduct.mrp = convertToNumber(productWithRelations.mrp);
+      serializedProduct.sellingPrice = convertToNumber(
+        productWithRelations.sellingPrice
+      );
+      serializedProduct.costPrice = convertToNumber(
+        productWithRelations.costPrice
+      );
+      serializedProduct.taxRate = convertToNumber(productWithRelations.taxRate);
+      serializedProduct.weight = convertToNumber(productWithRelations.weight);
+      serializedProduct.avgRating = convertToNumber(
+        productWithRelations.avgRating
+      );
+
+      // Convert Date fields to ISO strings
+      serializedProduct.createdAt = convertToISOString(
+        productWithRelations.createdAt
+      );
+      serializedProduct.updatedAt = convertToISOString(
+        productWithRelations.updatedAt
+      );
+      serializedProduct.publishedAt = convertToISOString(
+        productWithRelations.publishedAt
+      );
+      serializedProduct.deletedAt = convertToISOString(
+        productWithRelations.deletedAt
+      );
+
+      // Serialize nested variants
+      if (
+        productWithRelations.variants &&
+        Array.isArray(productWithRelations.variants)
+      ) {
+        serializedProduct.variants = productWithRelations.variants.map(
+          (variant: any) => ({
+            ...variant,
+            mrp: convertToNumber(variant.mrp),
+            sellingPrice: convertToNumber(variant.sellingPrice),
+            weight: convertToNumber(variant.weight),
+            createdAt: convertToISOString(variant.createdAt),
+            updatedAt: convertToISOString(variant.updatedAt),
+            // Serialize inventory data for each variant
+            inventory: variant.inventory
+              ? variant.inventory.map((inv: any) => ({
+                  ...inv,
+                  quantity: convertToNumber(inv.quantity),
+                  availableQuantity: convertToNumber(inv.availableQuantity),
+                  reservedQuantity: convertToNumber(inv.reservedQuantity),
+                  damagedQuantity: convertToNumber(inv.damagedQuantity),
+                  minStockLevel: convertToNumber(inv.minStockLevel),
+                  maxStockLevel: convertToNumber(inv.maxStockLevel),
+                  reorderPoint: convertToNumber(inv.reorderPoint),
+                  reorderQuantity: convertToNumber(inv.reorderQuantity),
+                  createdAt: convertToISOString(inv.createdAt),
+                  updatedAt: convertToISOString(inv.updatedAt),
+                  // Serialize warehouse info
+                  warehouse: inv.warehouse
+                    ? {
+                        ...inv.warehouse,
+                        createdAt: convertToISOString(inv.warehouse.createdAt),
+                        updatedAt: convertToISOString(inv.warehouse.updatedAt),
+                      }
+                    : null,
+                }))
+              : [],
+          })
+        );
+      }
+
+      // Serialize nested images
+      if (
+        productWithRelations.images &&
+        Array.isArray(productWithRelations.images)
+      ) {
+        serializedProduct.images = productWithRelations.images.map(
+          (image: any) => ({
+            ...image,
+            createdAt: convertToISOString(image.createdAt),
+          })
+        );
+      }
+
+      // Serialize nested brand
+      if (productWithRelations.brand) {
+        serializedProduct.brand = {
+          ...productWithRelations.brand,
+          createdAt: convertToISOString(productWithRelations.brand.createdAt),
+          updatedAt: convertToISOString(productWithRelations.brand.updatedAt),
+        };
+      }
+
+      // Serialize nested categories
+      if (
+        productWithRelations.categories &&
+        Array.isArray(productWithRelations.categories)
+      ) {
+        serializedProduct.categories = productWithRelations.categories.map(
+          (cat: any) => {
+            if (cat.category) {
+              return {
+                ...cat,
+                category: {
+                  ...cat.category,
+                  createdAt: convertToISOString(cat.category.createdAt),
+                  updatedAt: convertToISOString(cat.category.updatedAt),
+                },
+              };
+            }
+            return cat;
+          }
+        );
+      }
+
+      // Serialize nested attributes
+      if (
+        productWithRelations.attributes &&
+        Array.isArray(productWithRelations.attributes)
+      ) {
+        serializedProduct.attributes = productWithRelations.attributes.map(
+          (attr: any) => {
+            const serializedAttr = { ...attr };
+            if (attr.attributeType) {
+              serializedAttr.attributeType = {
+                ...attr.attributeType,
+                createdAt: convertToISOString(attr.attributeType.createdAt),
+              };
+            }
+            return serializedAttr;
+          }
+        );
+      }
+
+      // Serialize product-level inventory
+      if (
+        productWithRelations.inventory &&
+        Array.isArray(productWithRelations.inventory)
+      ) {
+        serializedProduct.inventory = productWithRelations.inventory.map(
+          (inv: any) => ({
+            ...inv,
+            quantity: convertToNumber(inv.quantity),
+            availableQuantity: convertToNumber(inv.availableQuantity),
+            reservedQuantity: convertToNumber(inv.reservedQuantity),
+            damagedQuantity: convertToNumber(inv.damagedQuantity),
+            minStockLevel: convertToNumber(inv.minStockLevel),
+            maxStockLevel: convertToNumber(inv.maxStockLevel),
+            reorderPoint: convertToNumber(inv.reorderPoint),
+            reorderQuantity: convertToNumber(inv.reorderQuantity),
+            createdAt: convertToISOString(inv.createdAt),
+            updatedAt: convertToISOString(inv.updatedAt),
+            // Serialize warehouse info
+            warehouse: inv.warehouse
+              ? {
+                  ...inv.warehouse,
+                  createdAt: convertToISOString(inv.warehouse.createdAt),
+                  updatedAt: convertToISOString(inv.warehouse.updatedAt),
+                }
+              : null,
+          })
+        );
+      }
+
+      // NOW transform image keys to signed URLs (after serialization is complete)
       const transformedProduct =
-        await this.imageUrlTransformer.transformCommonImageFields(product);
+        await this.imageUrlTransformer.transformCommonImageFields(
+          serializedProduct
+        );
 
       res.status(200).json({
         success: true,
         message: 'Product fetched successfully',
         data: { product: transformedProduct },
-        timeStamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       logger.error(`error: ${error}`);
@@ -1398,6 +1648,49 @@ export class AttributeController {
         success: false,
         error: (error as Error).message,
         message: 'Problem in Fetching Attributes',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
+  getAttributeById = async (
+    req: Request<IdParam>,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'Attribute ID is required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const attr = await this.repo.getTypeById(id);
+      if (!attr) {
+        res.status(404).json({
+          success: false,
+          message: 'Attribute not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Attribute fetched successfully',
+        data: { attr },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Fetching Attribute',
         timestamp: new Date().toISOString(),
       };
       res.status(500).json(response);

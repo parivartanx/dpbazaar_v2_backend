@@ -27,11 +27,6 @@ export class ProductRepository implements IProductRepository {
     isBestSeller?: boolean;
     barcode?: string;
   }): Promise<{ products: any[]; totalCount: number }> {
-    console.log(
-      'ProductRepository.getAllWithFilters called with filters:',
-      filters
-    );
-
     const {
       page = 1,
       limit = 10,
@@ -103,11 +98,6 @@ export class ProductRepository implements IProductRepository {
       where.barcode = filters.barcode;
     }
 
-    console.log(
-      'ProductRepository.getAllWithFilters - where clause:',
-      JSON.stringify(where, null, 2)
-    );
-
     // Get products (temporarily excluding inventory until inventory management is implemented)
     const [productsResult, totalCount] = await Promise.all([
       prisma.product.findMany({
@@ -127,10 +117,6 @@ export class ProductRepository implements IProductRepository {
       }),
       prisma.product.count({ where }),
     ]);
-
-    console.log(
-      `ProductRepository.getAllWithFilters - found ${totalCount} products, returning ${productsResult.length} products`
-    );
 
     // Return full product structure so controllers can transform as needed
     // This allows both extractProductCardFields and transformCommonImageFields to work correctly
@@ -233,8 +219,21 @@ export class ProductRepository implements IProductRepository {
         images: true,
         categories: { include: { category: true } },
         brand: true,
-        variants: true,
+        variants: {
+          include: {
+            inventory: {
+              include: {
+                warehouse: true,
+              },
+            },
+          },
+        },
         attributes: { include: { attributeType: true } },
+        inventory: {
+          include: {
+            warehouse: true,
+          },
+        },
       },
     });
   }
@@ -483,154 +482,161 @@ export class ProductRepository implements IProductRepository {
    * This includes: images, attributes, variants (with inventory), and base inventory.
    */
   async createComplete(data: any): Promise<any> {
-    return prisma.$transaction(async tx => {
-      // Extract nested data
-      const {
-        categoryId,
-        brandId,
-        vendorId,
-        images,
-        attributes,
-        variants,
-        inventory,
-        ...productData
-      } = data;
+    return prisma.$transaction(
+      async tx => {
+        // Extract nested data
+        const {
+          categoryId,
+          brandId,
+          vendorId,
+          images,
+          attributes,
+          variants,
+          inventory,
+          ...productData
+        } = data;
 
-      // 1. Create the base product
-      const productCreateData: any = {
-        ...productData,
-      };
-
-      // Handle category relation (many-to-many)
-      if (categoryId) {
-        productCreateData.categories = {
-          create: {
-            categoryId,
-            isPrimary: true,
-          },
+        // 1. Create the base product
+        const productCreateData: any = {
+          ...productData,
         };
-      }
 
-      // Handle brand relation
-      if (brandId) {
-        productCreateData.brand = {
-          connect: { id: brandId },
-        };
-      }
-
-      // Handle vendor relation
-      if (vendorId) {
-        productCreateData.vendor = {
-          connect: { id: vendorId },
-        };
-      }
-
-      const product = await tx.product.create({
-        data: productCreateData,
-      });
-
-      // 2. Create product images
-      if (images && images.length > 0) {
-        await tx.productImage.createMany({
-          data: images.map((img: any, index: number) => ({
-            productId: product.id,
-            url: img.imageKey,
-            isPrimary: img.isPrimary ?? index === 0,
-            alt: img.alt || null,
-            caption: img.caption || null,
-            displayOrder: index,
-          })),
-        });
-      }
-
-      // 3. Create product attributes
-      if (attributes && attributes.length > 0) {
-        await tx.productAttribute.createMany({
-          data: attributes.map((attr: any) => ({
-            productId: product.id,
-            attributeTypeId: attr.attributeTypeId,
-            value: attr.value,
-          })),
-        });
-      }
-
-      // 4. Create variants with their inventory
-      if (variants && variants.length > 0) {
-        for (const variantData of variants) {
-          const { inventory: variantInventory, ...variantFields } = variantData;
-
-          const variant = await tx.productVariant.create({
-            data: {
-              productId: product.id,
-              variantSku: variantFields.variantSku,
-              variantName: variantFields.variantName,
-              attributes: variantFields.attributes,
-              mrp: variantFields.mrp,
-              sellingPrice: variantFields.sellingPrice,
-              weight: variantFields.weight,
-              dimensions: variantFields.dimensions,
-              isActive: variantFields.isActive ?? true,
+        // Handle category relation (many-to-many)
+        if (categoryId) {
+          productCreateData.categories = {
+            create: {
+              categoryId,
+              isPrimary: true,
             },
-          });
+          };
+        }
 
-          // Create inventory for variant if provided
-          if (variantInventory) {
-            await tx.inventory.create({
+        // Handle brand relation
+        if (brandId) {
+          productCreateData.brand = {
+            connect: { id: brandId },
+          };
+        }
+
+        // Handle vendor relation
+        if (vendorId) {
+          productCreateData.vendor = {
+            connect: { id: vendorId },
+          };
+        }
+
+        const product = await tx.product.create({
+          data: productCreateData,
+        });
+
+        // 2. Create product images
+        if (images && images.length > 0) {
+          await tx.productImage.createMany({
+            data: images.map((img: any, index: number) => ({
+              productId: product.id,
+              url: img.imageKey,
+              isPrimary: img.isPrimary ?? index === 0,
+              alt: img.alt || null,
+              caption: img.caption || null,
+              displayOrder: index,
+            })),
+          });
+        }
+
+        // 3. Create product attributes
+        if (attributes && attributes.length > 0) {
+          await tx.productAttribute.createMany({
+            data: attributes.map((attr: any) => ({
+              productId: product.id,
+              attributeTypeId: attr.attributeTypeId,
+              value: attr.value,
+            })),
+          });
+        }
+
+        // 4. Create variants with their inventory
+        if (variants && variants.length > 0) {
+          for (const variantData of variants) {
+            const { inventory: variantInventory, ...variantFields } =
+              variantData;
+
+            const variant = await tx.productVariant.create({
               data: {
-                variantId: variant.id,
-                warehouseId: variantInventory.warehouseId,
-                availableQuantity: variantInventory.availableQuantity,
-                reservedQuantity: variantInventory.reservedQuantity ?? 0,
-                damagedQuantity: variantInventory.damagedQuantity ?? 0,
-                minStockLevel: variantInventory.minStockLevel ?? 10,
-                maxStockLevel: variantInventory.maxStockLevel ?? 1000,
-                reorderPoint: variantInventory.reorderPoint ?? 20,
-                reorderQuantity: variantInventory.reorderQuantity ?? 100,
-                rack: variantInventory.rack || null,
-                shelf: variantInventory.shelf || null,
-                bin: variantInventory.bin || null,
+                productId: product.id,
+                variantSku: variantFields.variantSku,
+                variantName: variantFields.variantName,
+                attributes: variantFields.attributes,
+                mrp: variantFields.mrp,
+                sellingPrice: variantFields.sellingPrice,
+                weight: variantFields.weight,
+                dimensions: variantFields.dimensions,
+                isActive: variantFields.isActive ?? true,
               },
             });
+
+            // Create inventory for variant if provided
+            if (variantInventory) {
+              await tx.inventory.create({
+                data: {
+                  variantId: variant.id,
+                  warehouseId: variantInventory.warehouseId,
+                  availableQuantity: variantInventory.availableQuantity,
+                  reservedQuantity: variantInventory.reservedQuantity ?? 0,
+                  damagedQuantity: variantInventory.damagedQuantity ?? 0,
+                  minStockLevel: variantInventory.minStockLevel ?? 10,
+                  maxStockLevel: variantInventory.maxStockLevel ?? 1000,
+                  reorderPoint: variantInventory.reorderPoint ?? 20,
+                  reorderQuantity: variantInventory.reorderQuantity ?? 100,
+                  rack: variantInventory.rack || null,
+                  shelf: variantInventory.shelf || null,
+                  bin: variantInventory.bin || null,
+                },
+              });
+            }
           }
         }
-      }
 
-      // 5. Create base product inventory (if inventory provided)
-      if (inventory) {
-        await tx.inventory.create({
-          data: {
-            productId: product.id,
-            warehouseId: inventory.warehouseId,
-            availableQuantity: inventory.availableQuantity,
-            reservedQuantity: inventory.reservedQuantity ?? 0,
-            damagedQuantity: inventory.damagedQuantity ?? 0,
-            minStockLevel: inventory.minStockLevel ?? 10,
-            maxStockLevel: inventory.maxStockLevel ?? 1000,
-            reorderPoint: inventory.reorderPoint ?? 20,
-            reorderQuantity: inventory.reorderQuantity ?? 100,
-            rack: inventory.rack || null,
-            shelf: inventory.shelf || null,
-            bin: inventory.bin || null,
+        // 5. Create base product inventory (if inventory provided)
+        if (inventory) {
+          await tx.inventory.create({
+            data: {
+              productId: product.id,
+              warehouseId: inventory.warehouseId,
+              availableQuantity: inventory.availableQuantity,
+              reservedQuantity: inventory.reservedQuantity ?? 0,
+              damagedQuantity: inventory.damagedQuantity ?? 0,
+              minStockLevel: inventory.minStockLevel ?? 10,
+              maxStockLevel: inventory.maxStockLevel ?? 1000,
+              reorderPoint: inventory.reorderPoint ?? 20,
+              reorderQuantity: inventory.reorderQuantity ?? 100,
+              rack: inventory.rack || null,
+              shelf: inventory.shelf || null,
+              bin: inventory.bin || null,
+            },
+          });
+        }
+
+        // 6. Return the complete product with all relations
+        return tx.product.findUnique({
+          where: { id: product.id },
+          include: {
+            images: true,
+            categories: { include: { category: true } },
+            brand: true,
+            variants: {
+              include: {
+                inventory: { include: { warehouse: true } },
+              },
+            },
+            attributes: { include: { attributeType: true } },
+            inventory: { include: { warehouse: true } },
           },
         });
+      },
+      {
+        maxWait: 5000, // default: 2000
+        timeout: 20000, // default: 5000
       }
-
-      // 6. Return the complete product with all relations
-      return tx.product.findUnique({
-        where: { id: product.id },
-        include: {
-          images: true,
-          categories: { include: { category: true } },
-          brand: true,
-          variants: {
-            include: {
-              inventory: { include: { warehouse: true } },
-            },
-          },
-          attributes: { include: { attributeType: true } },
-          inventory: { include: { warehouse: true } },
-        },
-      });
-    });
+    );
   }
 }

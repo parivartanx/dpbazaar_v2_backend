@@ -3,11 +3,19 @@ import { prisma } from '../../config/prismaClient';
 import { IDepartmentRepository } from '../interfaces/IDepartmentRepository';
 import { USER_FIELDS_SELECT } from '../constants';
 
-
-
 export class DepartmentRepository implements IDepartmentRepository {
   async create(data: Prisma.DepartmentCreateInput): Promise<Department> {
-    return prisma.department.create({ data });
+    return prisma.department.create({
+      data,
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
   }
 
   async findAll(skip = 0, take = 50): Promise<Department[]> {

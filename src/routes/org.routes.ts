@@ -637,6 +637,11 @@ router.get(
   checkPermission('attributes', PermissionAction.READ),
   attributeController.getAllAttributes
 );
+router.get(
+  '/attributes/:id',
+  checkPermission('attributes', PermissionAction.READ),
+  attributeController.getAttributeById
+);
 router.post(
   '/attributes',
   checkPermission('attributes', PermissionAction.CREATE),

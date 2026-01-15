@@ -592,7 +592,7 @@ export class DesktopController {
         prevTotalBills > 0
           ? ((totalBills - prevTotalBills) / prevTotalBills) * 100
           : 0;
-
+      
       // Calculate average bill value
       const avgBillValue = totalBills > 0 ? totalSales / totalBills : 0;
 
@@ -606,7 +606,7 @@ export class DesktopController {
         date.setHours(0, 0, 0, 0);
         const nextDate = new Date(date);
         nextDate.setDate(nextDate.getDate() + 1);
-
+        
         const daySales = orders
           .filter(order => {
             const orderDate = new Date(order.createdAt);
