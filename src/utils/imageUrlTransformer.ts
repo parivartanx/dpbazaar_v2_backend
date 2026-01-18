@@ -22,9 +22,16 @@ export class ImageUrlTransformer {
       return obj;
     }
 
+    // Preserve Date objects - don't spread them (spreading a Date creates an empty {})
+    if (obj instanceof Date) {
+      return obj;
+    }
+
     // If it's an array, process each element
     if (Array.isArray(obj)) {
-      return obj.map(item => this.transformImageKeysToUrls(item, fields)) as any;
+      return obj.map(item =>
+        this.transformImageKeysToUrls(item, fields)
+      ) as any;
     }
 
     // Create a copy of the object to avoid mutating the original
@@ -55,7 +62,7 @@ export class ImageUrlTransformer {
           // If it's an object, it might be a complex structure with image keys
           result[key] = this.transformImageKeysToUrls(value, fields);
         }
-      } 
+      }
       // If the value is an object or array, process it recursively
       else if (typeof value === 'object') {
         result[key] = this.transformImageKeysToUrls(value, fields);
@@ -71,8 +78,16 @@ export class ImageUrlTransformer {
    * @param fields - Array of field names that contain image keys to transform
    * @returns Object with image keys replaced by signed URLs
    */
-  async transformImageKeysToSignedUrls<T>(obj: T, fields: string[] = []): Promise<T> {
+  async transformImageKeysToSignedUrls<T>(
+    obj: T,
+    fields: string[] = []
+  ): Promise<T> {
     if (!obj || typeof obj !== 'object') {
+      return obj;
+    }
+
+    // Preserve Date objects - don't spread them (spreading a Date creates an empty {})
+    if (obj instanceof Date) {
       return obj;
     }
 
@@ -99,14 +114,17 @@ export class ImageUrlTransformer {
         if (typeof value === 'string') {
           // Check if the value looks like an R2 key (not a full URL)
           if (!value.startsWith('http')) {
-            result[key] = await this.r2Service.generatePresignedDownloadUrl(value);
+            result[key] =
+              await this.r2Service.generatePresignedDownloadUrl(value);
           }
         } else if (Array.isArray(value)) {
           // Handle array of image keys
           const transformedArray = [];
           for (const item of value) {
             if (typeof item === 'string' && !item.startsWith('http')) {
-              transformedArray.push(await this.r2Service.generatePresignedDownloadUrl(item));
+              transformedArray.push(
+                await this.r2Service.generatePresignedDownloadUrl(item)
+              );
             } else {
               transformedArray.push(item);
             }
@@ -114,9 +132,12 @@ export class ImageUrlTransformer {
           result[key] = transformedArray;
         } else if (typeof value === 'object') {
           // If it's an object, it might be a complex structure with image keys
-          result[key] = await this.transformImageKeysToSignedUrls(value, fields);
+          result[key] = await this.transformImageKeysToSignedUrls(
+            value,
+            fields
+          );
         }
-      } 
+      }
       // If the value is an object or array, process it recursively
       else if (typeof value === 'object') {
         result[key] = await this.transformImageKeysToSignedUrls(value, fields);
@@ -138,11 +159,18 @@ export class ImageUrlTransformer {
       return obj;
     }
 
+    // Preserve Date objects - don't spread them (spreading a Date creates an empty {})
+    if (obj instanceof Date) {
+      return obj;
+    }
+
     const targetField = urlField || keyField;
-    
+
     // If it's an array, process each element
     if (Array.isArray(obj)) {
-      return obj.map(item => this.transformImageKeyToUrl(item, keyField, urlField)) as any;
+      return obj.map(item =>
+        this.transformImageKeyToUrl(item, keyField, urlField)
+      ) as any;
     }
 
     const result: any = { ...obj };
@@ -156,8 +184,16 @@ export class ImageUrlTransformer {
 
     // Process nested objects
     for (const [nestedKey, nestedValue] of Object.entries(result)) {
-      if (nestedValue && typeof nestedValue === 'object' && !Array.isArray(nestedValue)) {
-        result[nestedKey] = this.transformImageKeyToUrl(nestedValue, keyField, urlField);
+      if (
+        nestedValue &&
+        typeof nestedValue === 'object' &&
+        !Array.isArray(nestedValue)
+      ) {
+        result[nestedKey] = this.transformImageKeyToUrl(
+          nestedValue,
+          keyField,
+          urlField
+        );
       } else if (Array.isArray(nestedValue)) {
         result[nestedKey] = nestedValue.map((item: any) => {
           if (item && typeof item === 'object') {
@@ -178,18 +214,29 @@ export class ImageUrlTransformer {
    * @param urlField - Field name where the signed URL should be stored (defaults to same as keyField)
    * @returns Object with image keys converted to signed URLs
    */
-  async transformImageKeyToSignedUrl<T>(obj: T, keyField: string, urlField?: string): Promise<T> {
+  async transformImageKeyToSignedUrl<T>(
+    obj: T,
+    keyField: string,
+    urlField?: string
+  ): Promise<T> {
     if (!obj || typeof obj !== 'object') {
       return obj;
     }
 
+    // Preserve Date objects - don't spread them (spreading a Date creates an empty {})
+    if (obj instanceof Date) {
+      return obj;
+    }
+
     const targetField = urlField || keyField;
-    
+
     // If it's an array, process each element
     if (Array.isArray(obj)) {
       const result = [];
       for (const item of obj) {
-        result.push(await this.transformImageKeyToSignedUrl(item, keyField, urlField));
+        result.push(
+          await this.transformImageKeyToSignedUrl(item, keyField, urlField)
+        );
       }
       return result as any;
     }
@@ -199,19 +246,30 @@ export class ImageUrlTransformer {
     if (keyField in result) {
       const value = result[keyField];
       if (typeof value === 'string' && !value.startsWith('http')) {
-        result[targetField] = await this.r2Service.generatePresignedDownloadUrl(value);
+        result[targetField] =
+          await this.r2Service.generatePresignedDownloadUrl(value);
       }
     }
 
     // Process nested objects
     for (const [nestedKey, nestedValue] of Object.entries(result)) {
-      if (nestedValue && typeof nestedValue === 'object' && !Array.isArray(nestedValue)) {
-        result[nestedKey] = await this.transformImageKeyToSignedUrl(nestedValue, keyField, urlField);
+      if (
+        nestedValue &&
+        typeof nestedValue === 'object' &&
+        !Array.isArray(nestedValue)
+      ) {
+        result[nestedKey] = await this.transformImageKeyToSignedUrl(
+          nestedValue,
+          keyField,
+          urlField
+        );
       } else if (Array.isArray(nestedValue)) {
         const nestedResult = [];
         for (const item of nestedValue) {
           if (item && typeof item === 'object') {
-            nestedResult.push(await this.transformImageKeyToSignedUrl(item, keyField, urlField));
+            nestedResult.push(
+              await this.transformImageKeyToSignedUrl(item, keyField, urlField)
+            );
           } else {
             nestedResult.push(item);
           }
@@ -235,9 +293,17 @@ export class ImageUrlTransformer {
 
     // Common image-related field names that might contain R2 keys
     const imageFields = [
-      'url', 'imageUrl', 'mobileImageUrl', 'videoUrl', 
-      'thumbnailUrl', 'image', 'avatar', 'logo', 
-      'bannerImage', 'productImage', 'profileImage'
+      'url',
+      'imageUrl',
+      'mobileImageUrl',
+      'videoUrl',
+      'thumbnailUrl',
+      'image',
+      'avatar',
+      'logo',
+      'bannerImage',
+      'productImage',
+      'profileImage',
     ];
 
     return await this.transformImageKeysToSignedUrls(obj, imageFields);

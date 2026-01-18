@@ -593,8 +593,18 @@ export class EmployeeController {
       // Prepare employee update data with proper date conversions
       const updateData: any = { ...employeeFields };
 
+      // Debug logging for joiningDate
+      logger.info(
+        `[updateEmployee] Received joiningDate: ${joiningDate}, type: ${typeof joiningDate}`
+      );
+
       // Convert date strings to Date objects if provided
-      if (joiningDate) updateData.joiningDate = new Date(joiningDate);
+      if (joiningDate) {
+        updateData.joiningDate = new Date(joiningDate);
+        logger.info(
+          `[updateEmployee] Converted joiningDate: ${updateData.joiningDate}`
+        );
+      }
       if (confirmationDate)
         updateData.confirmationDate = new Date(confirmationDate);
       if (lastWorkingDate)
