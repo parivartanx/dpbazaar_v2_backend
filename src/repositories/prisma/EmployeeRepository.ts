@@ -3,8 +3,6 @@ import { prisma } from '../../config/prismaClient';
 import { IEmployeeRepository } from '../interfaces/IEmployeeRepository';
 import { USER_FIELDS_SELECT } from '../constants';
 
-
-
 export class EmployeeRepository implements IEmployeeRepository {
   async create(data: Prisma.EmployeeCreateInput): Promise<Employee> {
     return prisma.employee.create({
@@ -109,7 +107,15 @@ export class EmployeeRepository implements IEmployeeRepository {
     page?: number;
     limit?: number;
   }): Promise<Employee[]> {
-    const { search, status, departmentId, designation, employmentType, page = 1, limit = 20 } = params;
+    const {
+      search,
+      status,
+      departmentId,
+      designation,
+      employmentType,
+      page = 1,
+      limit = 20,
+    } = params;
 
     const where: any = {
       deletedAt: null,
@@ -124,7 +130,10 @@ export class EmployeeRepository implements IEmployeeRepository {
     }
 
     if (designation) {
-      where.designation = { contains: designation, mode: 'insensitive' as const };
+      where.designation = {
+        contains: designation,
+        mode: 'insensitive' as const,
+      };
     }
 
     if (employmentType) {
@@ -169,7 +178,8 @@ export class EmployeeRepository implements IEmployeeRepository {
     designation?: string;
     employmentType?: string;
   }): Promise<number> {
-    const { search, status, departmentId, designation, employmentType } = params;
+    const { search, status, departmentId, designation, employmentType } =
+      params;
 
     const where: any = {
       deletedAt: null,
@@ -184,7 +194,10 @@ export class EmployeeRepository implements IEmployeeRepository {
     }
 
     if (designation) {
-      where.designation = { contains: designation, mode: 'insensitive' as const };
+      where.designation = {
+        contains: designation,
+        mode: 'insensitive' as const,
+      };
     }
 
     if (employmentType) {
@@ -195,12 +208,60 @@ export class EmployeeRepository implements IEmployeeRepository {
       where.OR = [
         { employeeCode: { contains: search, mode: 'insensitive' as const } },
         { designation: { contains: search, mode: 'insensitive' as const } },
-        { user: { firstName: { contains: search, mode: 'insensitive' as const } } },
-        { user: { lastName: { contains: search, mode: 'insensitive' as const } } },
+        {
+          user: {
+            firstName: { contains: search, mode: 'insensitive' as const },
+          },
+        },
+        {
+          user: {
+            lastName: { contains: search, mode: 'insensitive' as const },
+          },
+        },
         { user: { email: { contains: search, mode: 'insensitive' as const } } },
       ];
     }
 
     return prisma.employee.count({ where });
+  }
+
+  async getStats(): Promise<{
+    totalEmployees: number;
+    activeEmployees: number;
+    inactiveEmployees: number;
+    departmentCount: number;
+  }> {
+    const [
+      totalEmployees,
+      activeEmployees,
+      inactiveEmployees,
+      departmentCount,
+    ] = await Promise.all([
+      // Total employees (not deleted)
+      prisma.employee.count({ where: { deletedAt: null } }),
+      // Active employees
+      prisma.employee.count({
+        where: { deletedAt: null, status: 'ACTIVE' },
+      }),
+      // Inactive employees (includes INACTIVE and TERMINATED)
+      prisma.employee.count({
+        where: {
+          deletedAt: null,
+          status: { in: ['INACTIVE', 'TERMINATED'] },
+        },
+      }),
+      // Distinct departments with employees
+      prisma.employee.groupBy({
+        by: ['departmentId'],
+        where: { deletedAt: null, departmentId: { not: null } },
+      }),
+    ]);
+
+    return {
+      totalEmployees,
+      activeEmployees,
+      inactiveEmployees,
+      departmentCount: departmentCount.length,
+    };
   }
 }

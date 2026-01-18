@@ -965,6 +965,110 @@ export class ProductController {
     }
   };
 
+  /**
+   * Update a complete product with all related entities (images, variants, attributes, inventory)
+   * in a single atomic transaction.
+   */
+  updateProductComplete = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: 'Product ID is required',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      logger.info('=== updateProductComplete START ===');
+      logger.info(`Product ID: ${id}`);
+      // logger.info('Full Request Body:', JSON.stringify(req.body, null, 2));
+
+      // Log summary of what's being updated
+      const { images, variants, attributes, inventory, ...basicFields } =
+        req.body;
+      logger.info('Basic fields to update:', Object.keys(basicFields));
+      logger.info(
+        `Images: ${images ? `${images.length} items (${images.filter((i: any) => i.id).length} existing, ${images.filter((i: any) => !i.id).length} new)` : 'not provided'}`
+      );
+      logger.info(
+        `Variants: ${variants ? `${variants.length} items` : 'not provided'}`
+      );
+      logger.info(
+        `Attributes: ${attributes ? `${attributes.length} items (${attributes.filter((a: any) => a.id).length} existing, ${attributes.filter((a: any) => !a.id).length} new)` : 'not provided'}`
+      );
+      logger.info(`Inventory: ${inventory ? 'provided' : 'not provided'}`);
+
+      const product = await this.repo.updateComplete(id, req.body);
+
+      // Transform image keys to signed URLs in the product response
+      const transformedProduct =
+        await this.imageUrlTransformer.transformCommonImageFields(product);
+
+      res.status(200).json({
+        success: true,
+        message: 'Product updated successfully with all related entities',
+        data: { product: transformedProduct },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      logger.error(`error in updateProductComplete: ${error}`);
+
+      // Handle product not found
+      if (error.message === 'Product not found') {
+        res.status(404).json({
+          success: false,
+          error: 'Not found',
+          message: 'Product not found',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Handle Prisma unique constraint error (P2002) - SKU/slug/barcode/variantSku uniqueness
+      if (error.code === 'P2002') {
+        const target = error.meta?.target;
+        let fieldName = 'field';
+        if (target?.includes('sku')) fieldName = 'SKU';
+        else if (target?.includes('slug')) fieldName = 'slug';
+        else if (target?.includes('barcode')) fieldName = 'barcode';
+        else if (target?.includes('variantSku')) fieldName = 'variant SKU';
+
+        res.status(409).json({
+          success: false,
+          error: 'Duplicate entry',
+          message: `A record with this ${fieldName} already exists. Field(s): ${target?.join(', ') || 'unknown'}`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Handle foreign key constraint error (P2003) - invalid reference
+      if (error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid reference',
+          message:
+            'One of the provided IDs (categoryId, brandId, vendorId, warehouseId, attributeTypeId) does not exist.',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Updating Complete Product',
+        timestamp: new Date().toISOString(),
+      };
+      res.status(500).json(response);
+    }
+  };
+
   updateProduct = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;

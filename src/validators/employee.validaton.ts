@@ -82,19 +82,39 @@ export const createEmployeeSchema = Joi.object({
 });
 
 export const updateEmployeeSchema = Joi.object({
-  // Note: firstName, lastName, middleName are now in User model
-  // Note: personalEmail, workPhone removed - use User.email and User.phone
+  // User fields (for updating the associated user record)
+  firstName: Joi.string().min(2).max(50).optional().messages({
+    'string.min': 'First name must be at least 2 characters',
+  }),
+  lastName: Joi.string().min(2).max(50).optional().messages({
+    'string.min': 'Last name must be at least 2 characters',
+  }),
+  middleName: Joi.string().optional().allow(null, ''),
+  phone: Joi.string()
+    .pattern(/^[0-9]{10,15}$/)
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.pattern.base': 'Phone number must be 10–15 digits',
+    }),
+
+  // Employee fields
   departmentId: Joi.string().allow(null, ''),
   designation: Joi.string().optional(),
   reportingTo: Joi.string().allow(null, ''),
   status: Joi.string().valid('ACTIVE', 'INACTIVE', 'SUSPENDED'),
-  employmentType: Joi.string().valid('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'FREELANCE'),
+  employmentType: Joi.string().valid(
+    'FULL_TIME',
+    'PART_TIME',
+    'CONTRACT',
+    'INTERN',
+    'FREELANCE'
+  ),
   joiningDate: Joi.date().optional(),
   confirmationDate: Joi.date().optional(),
   lastWorkingDate: Joi.date().optional(),
   salary: Joi.number().precision(2).allow(null),
   currency: Joi.string().optional(),
-  // Note: profileImage removed - use User.avatar
   documents: Joi.object().pattern(Joi.string(), Joi.string().uri()).allow(null),
   emergencyContactName: Joi.string().allow(null, ''),
   emergencyContactPhone: Joi.string().allow(null, ''),
@@ -114,7 +134,9 @@ export const createPermissionSchema = Joi.object({
 
 export const updatePermissionSchema = Joi.object({
   resource: Joi.string().optional(),
-  action: Joi.string().valid('CREATE', 'READ', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT').optional(),
+  action: Joi.string()
+    .valid('CREATE', 'READ', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT')
+    .optional(),
   description: Joi.string().optional().allow(null, ''),
 });
 

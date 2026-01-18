@@ -10,7 +10,10 @@ import { logger } from '../utils/logger';
 import { ApiResponse } from '@/types/common';
 import { R2Service } from '../services/r2.service';
 import { ImageUrlTransformer } from '../utils/imageUrlTransformer';
-import { generateEmployeeUserId, generateEmployeeCode } from '../utils/idGenerator';
+import {
+  generateEmployeeUserId,
+  generateEmployeeCode,
+} from '../utils/idGenerator';
 
 /**
  * ===========================
@@ -226,7 +229,9 @@ export class EmployeeController {
   private userRepo = new UserRepository();
   private departmentRepo = new DepartmentRepository();
   private r2Service = new R2Service();
-  private imageUrlTransformer = new ImageUrlTransformer({ r2Service: this.r2Service });
+  private imageUrlTransformer = new ImageUrlTransformer({
+    r2Service: this.r2Service,
+  });
 
   /**
    * Helper function to flatten employee response by merging user fields into employee object
@@ -285,16 +290,16 @@ export class EmployeeController {
 
       // Check if user already exists with this email
       const existingUser = await this.userRepo.findByEmail(email);
-      
+
       let userToUse;
-      
+
       if (existingUser) {
         // Check if this user is already an employee
         const existingEmployee = await prisma!.employee.findUnique({
           where: { userId: existingUser.id },
-          select: { id: true, employeeCode: true }
+          select: { id: true, employeeCode: true },
         });
-        
+
         if (existingEmployee) {
           return res.status(400).json({
             success: false,
@@ -303,10 +308,10 @@ export class EmployeeController {
             timestamp: new Date().toISOString(),
           });
         }
-        
+
         // User exists but is not an employee - use existing user
         userToUse = existingUser;
-        
+
         // Update user fields if provided
         const updateData: any = {};
         if (firstName) updateData.firstName = firstName;
@@ -314,12 +319,12 @@ export class EmployeeController {
         if (phone) updateData.phone = phone;
         if (middleName !== undefined) updateData.middleName = middleName;
         if (password) updateData.password = password; // Will be hashed in UserRepository
-        
+
         // Update role to EMPLOYEE if not already
         if (existingUser.role !== UserRole.EMPLOYEE) {
           updateData.role = UserRole.EMPLOYEE;
         }
-        
+
         if (Object.keys(updateData).length > 0) {
           await this.userRepo.update(existingUser.id, updateData);
           // Fetch updated user
@@ -331,13 +336,15 @@ export class EmployeeController {
       } else {
         // Generate meaningful user ID and employee code
         const generatedUserId = generateEmployeeUserId(firstName, lastName);
-        
+
         // Get last employee code to generate next sequential code
         const lastEmployee = await prisma.employee.findFirst({
           orderBy: { employeeCode: 'desc' },
-          select: { employeeCode: true }
+          select: { employeeCode: true },
         });
-        const generatedEmployeeCode = generateEmployeeCode(lastEmployee?.employeeCode);
+        const generatedEmployeeCode = generateEmployeeCode(
+          lastEmployee?.employeeCode
+        );
 
         // Create new User with custom ID and role EMPLOYEE
         userToUse = await prisma.user.create({
@@ -349,7 +356,7 @@ export class EmployeeController {
             password,
             role: UserRole.EMPLOYEE,
             isEmailVerified: false,
-          }
+          },
         });
 
         // Update phone and middleName if provided
@@ -359,7 +366,7 @@ export class EmployeeController {
             middleName: middleName || null,
           });
         }
-        
+
         // Override the employeeCode with our generated one
         employeeCode = generatedEmployeeCode;
       }
@@ -401,13 +408,15 @@ export class EmployeeController {
 
       // Create Employee
       const employee = await this.repo.create(employeeData);
-      
+
       // Transform image keys to public URLs in the employee response
-      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(employee);
-      
+      const transformedEmployee =
+        await this.imageUrlTransformer.transformCommonImageFields(employee);
+
       // Flatten employee response by merging user fields
-      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
-      
+      const flattenedEmployee =
+        this.flattenEmployeeResponse(transformedEmployee);
+
       return res.status(201).json({
         success: true,
         message: 'Employee created successfully',
@@ -428,7 +437,15 @@ export class EmployeeController {
 
   getAllEmployees = async (req: Request, res: Response) => {
     try {
-      const { search, status, departmentId, designation, employmentType, page, limit } = req.query;
+      const {
+        search,
+        status,
+        departmentId,
+        designation,
+        employmentType,
+        page,
+        limit,
+      } = req.query;
 
       const pageNum = Number(page) || 1;
       const limitNum = Number(limit) || 20;
@@ -456,7 +473,8 @@ export class EmployeeController {
       const transformedEmployees = employees; // Temporarily bypass to test date serialization
 
       // Flatten employee responses by merging user fields
-      const flattenedEmployees = this.flattenEmployeeArray(transformedEmployees);
+      const flattenedEmployees =
+        this.flattenEmployeeArray(transformedEmployees);
 
       const response: ApiResponse = {
         success: true,
@@ -505,11 +523,13 @@ export class EmployeeController {
         });
 
       // Transform image keys to public URLs in the employee response
-      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(employee);
-      
+      const transformedEmployee =
+        await this.imageUrlTransformer.transformCommonImageFields(employee);
+
       // Flatten employee response by merging user fields
-      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
-      
+      const flattenedEmployee =
+        this.flattenEmployeeResponse(transformedEmployee);
+
       return res.status(200).json({
         success: true,
         message: 'Employee fetched successfully',
@@ -547,29 +567,49 @@ export class EmployeeController {
           timestamp: new Date().toISOString(),
         });
 
-      // Prepare update data with proper date conversions
+      // Extract user fields and employee fields separately
       const {
+        firstName,
+        lastName,
+        middleName,
+        phone,
         joiningDate,
         confirmationDate,
         lastWorkingDate,
-        ...otherFields
+        ...employeeFields
       } = req.body;
 
-      const updateData: any = { ...otherFields };
+      // Update User record if user fields are provided
+      const userUpdateData: any = {};
+      if (firstName !== undefined) userUpdateData.firstName = firstName;
+      if (lastName !== undefined) userUpdateData.lastName = lastName;
+      if (middleName !== undefined) userUpdateData.middleName = middleName;
+      if (phone !== undefined) userUpdateData.phone = phone;
+
+      if (Object.keys(userUpdateData).length > 0) {
+        await this.userRepo.update(existingEmployee.userId, userUpdateData);
+      }
+
+      // Prepare employee update data with proper date conversions
+      const updateData: any = { ...employeeFields };
 
       // Convert date strings to Date objects if provided
       if (joiningDate) updateData.joiningDate = new Date(joiningDate);
-      if (confirmationDate) updateData.confirmationDate = new Date(confirmationDate);
-      if (lastWorkingDate) updateData.lastWorkingDate = new Date(lastWorkingDate);
+      if (confirmationDate)
+        updateData.confirmationDate = new Date(confirmationDate);
+      if (lastWorkingDate)
+        updateData.lastWorkingDate = new Date(lastWorkingDate);
 
       const updated = await this.repo.update(id, updateData);
-      
+
       // Transform image keys to public URLs in the employee response
-      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(updated);
-      
+      const transformedEmployee =
+        await this.imageUrlTransformer.transformCommonImageFields(updated);
+
       // Flatten employee response by merging user fields
-      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
-      
+      const flattenedEmployee =
+        this.flattenEmployeeResponse(transformedEmployee);
+
       return res.status(200).json({
         success: true,
         message: 'Employee updated successfully',
@@ -630,22 +670,22 @@ export class EmployeeController {
       const { id } = req.params;
       const { status } = req.body;
       if (!id || !status)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Id & status required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Id & status required',
+          timestamp: new Date().toISOString(),
+        });
 
       const updated = await this.repo.updateStatus(id, status);
-      
+
       // Transform image keys to public URLs in the employee response
-      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(updated);
-      
+      const transformedEmployee =
+        await this.imageUrlTransformer.transformCommonImageFields(updated);
+
       // Flatten employee response by merging user fields
-      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
-      
+      const flattenedEmployee =
+        this.flattenEmployeeResponse(transformedEmployee);
+
       return res.status(200).json({
         success: true,
         message: 'Employee status updated successfully',
@@ -669,22 +709,22 @@ export class EmployeeController {
       const { id } = req.params;
       const { departmentId } = req.body;
       if (!id || !departmentId)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Id & departmentId required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Id & departmentId required',
+          timestamp: new Date().toISOString(),
+        });
 
       const updated = await this.repo.assignDepartment(id, departmentId);
-      
+
       // Transform image keys to public URLs in the employee response
-      const transformedEmployee = await this.imageUrlTransformer.transformCommonImageFields(updated);
-      
+      const transformedEmployee =
+        await this.imageUrlTransformer.transformCommonImageFields(updated);
+
       // Flatten employee response by merging user fields
-      const flattenedEmployee = this.flattenEmployeeResponse(transformedEmployee);
-      
+      const flattenedEmployee =
+        this.flattenEmployeeResponse(transformedEmployee);
+
       return res.status(200).json({
         success: true,
         message: 'Employee department assigned successfully',
@@ -697,6 +737,40 @@ export class EmployeeController {
         success: false,
         error: (error as Error).message,
         message: 'Problem in Assigning Department',
+        timestamp: new Date().toISOString(),
+      };
+      return res.status(500).json(response);
+    }
+  };
+
+  /**
+   * Get employee statistics for Performance Overview
+   */
+  getStats = async (req: Request, res: Response) => {
+    try {
+      const stats = await this.repo.getStats();
+
+      const response: ApiResponse = {
+        success: true,
+        message: 'Employee stats fetched successfully',
+        data: {
+          stats: {
+            totalEmployees: stats.totalEmployees,
+            activeEmployees: stats.activeEmployees,
+            inactiveEmployees: stats.inactiveEmployees,
+            departmentCount: stats.departmentCount,
+          },
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      return res.status(200).json(response);
+    } catch (error) {
+      logger.error(`error: ${error}`);
+      const response: ApiResponse = {
+        success: false,
+        error: (error as Error).message,
+        message: 'Problem in Fetching Employee Stats',
         timestamp: new Date().toISOString(),
       };
       return res.status(500).json(response);
@@ -737,13 +811,11 @@ export class EmployeePermissionController {
     try {
       const { id } = req.params;
       if (!id) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Permission ID is required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Permission ID is required',
+          timestamp: new Date().toISOString(),
+        });
       }
 
       await this.repo.revoke(id as string);
@@ -768,13 +840,11 @@ export class EmployeePermissionController {
     try {
       const { employeeId } = req.params;
       if (!employeeId) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: 'Employee ID is required',
-            timestamp: new Date().toISOString(),
-          });
+        return res.status(400).json({
+          success: false,
+          message: 'Employee ID is required',
+          timestamp: new Date().toISOString(),
+        });
       }
 
       const permissions = await this.repo.findByEmployeeId(
@@ -818,7 +888,7 @@ export class PermissionController {
       });
     } catch (error: any) {
       logger.error(`error: ${error}`);
-      
+
       // Handle Prisma unique constraint error (P2002)
       if (error.code === 'P2002') {
         const target = error.meta?.target;
@@ -971,7 +1041,7 @@ export class PermissionController {
       });
     } catch (error: any) {
       logger.error(`error: ${error}`);
-      
+
       // Handle Prisma unique constraint error (P2002)
       if (error.code === 'P2002') {
         const target = error.meta?.target;

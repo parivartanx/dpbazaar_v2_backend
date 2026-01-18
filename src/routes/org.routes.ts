@@ -371,6 +371,11 @@ router.delete(
  * Employees Routes
  */
 router.get(
+  '/employees/stats',
+  checkPermission('employees', PermissionAction.READ),
+  employeeController.getStats
+);
+router.get(
   '/employees',
   checkPermission('employees', PermissionAction.READ),
   employeeController.getAllEmployees
@@ -557,6 +562,11 @@ router.post(
   checkPermission('products', PermissionAction.CREATE),
   validateJoi(createProductCompleteSchema),
   productController.createProductComplete
+);
+router.put(
+  '/products/:id/complete',
+  checkPermission('products', PermissionAction.UPDATE),
+  productController.updateProductComplete
 );
 router.put(
   '/products/:id',
