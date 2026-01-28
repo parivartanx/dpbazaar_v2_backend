@@ -57,10 +57,10 @@ initializeCronJobs();
 
 // Start server only when running locally
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     logger.info(`Server running on port ${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
+  });  
 }
 
 export default app;
