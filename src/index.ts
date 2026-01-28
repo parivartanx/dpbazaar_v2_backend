@@ -17,9 +17,20 @@ dotenv.config();
 const app = express();
 const PORT = config.port;
 
-// Security middleware
-app.use(helmet()); 
-app.use(cors());
+// Security middleware - configure Helmet to work with CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+})); 
+
+// CORS configuration - use config values for proper external access
+const corsOptions = {
+  origin: config.cors.origin === '*' ? '*' : config.cors.origin.split(',').map(origin => origin.trim()),
+  credentials: config.cors.credentials,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({

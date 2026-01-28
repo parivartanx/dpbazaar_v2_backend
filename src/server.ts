@@ -7,14 +7,26 @@ import dotenv from 'dotenv';
 import { errorHandler } from './middlewares/errorHandler';
 import { notFoundHandler } from './middlewares/notFoundHandler';
 import { routes } from './routes';
+import { config } from './config/environment';
 
 dotenv.config();
 
 const app = express();
 
-// Security middleware
-app.use(helmet()); 
-app.use(cors());
+// Security middleware - configure Helmet to work with CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+})); 
+
+// CORS configuration - use config values for proper external access
+const corsOptions = {
+  origin: config.cors.origin === '*' ? '*' : config.cors.origin.split(',').map(origin => origin.trim()),
+  credentials: config.cors.credentials,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
