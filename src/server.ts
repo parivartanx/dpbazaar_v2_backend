@@ -13,6 +13,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy - important for Digital Ocean App Platform and other reverse proxies
+app.set('trust proxy', 1);
+
 // Security middleware - configure Helmet to work with CORS
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
