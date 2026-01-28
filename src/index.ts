@@ -69,12 +69,26 @@ app.use(errorHandler);
 // Initialize cron jobs
 initializeCronJobs();
 
-// Start server only when running locally
-if (require.main === module) {
+// Start server for traditional deployments (Digital Ocean, Heroku, etc.)
+// Digital Ocean App Platform always sets PORT, so we start the server when PORT is available
+// For serverless (Vercel), api/index.ts imports server.ts which doesn't have this code
+const isServerless = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+logger.info(`PORT: ${PORT}, isServerless: ${isServerless}, require.main === module: ${require.main === module}`);
+
+if (!isServerless && PORT) {
   app.listen(PORT, '0.0.0.0', () => {
     logger.info(`Server running on port ${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  });  
+  });
+} else if (require.main === module) {
+  // Fallback: if run directly and not serverless, start server
+  app.listen(PORT, '0.0.0.0', () => {
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+} else {
+  logger.warn('Server not started - check PORT environment variable and deployment configuration');
 }
 
 export default app;
